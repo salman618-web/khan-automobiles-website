@@ -1123,11 +1123,158 @@ function makeTodayStatsClickable() {
     }
 }
 
-// Export to Excel function (.xlsx with separate tabs)
-async function exportToExcel() {
+// Report Button State Management Functions
+function setButtonState(buttonElement, state) {
+    if (!buttonElement) return;
+    
+    // Remove all state classes
+    buttonElement.classList.remove('active', 'pressed', 'loading', 'success', 'ripple');
+    
+    // Add the specified state
+    if (state) {
+        buttonElement.classList.add(state);
+    }
+    
+    // Auto-remove some states after delay
+    if (state === 'success') {
+        setTimeout(() => {
+            buttonElement.classList.remove('success');
+        }, 2000);
+    }
+    
+    if (state === 'pressed') {
+        setTimeout(() => {
+            buttonElement.classList.remove('pressed');
+        }, 150);
+    }
+    
+    if (state === 'ripple') {
+        setTimeout(() => {
+            buttonElement.classList.remove('ripple');
+        }, 600);
+    }
+}
+
+function addButtonClickEffects() {
+    // Get report buttons
+    const generateBtn = document.querySelector('[onclick="generateReport()"]');
+    const exportBtn = document.querySelector('[onclick="exportToExcel()"]');
+    
+    // Add click effects to Generate Report button
+    if (generateBtn) {
+        generateBtn.addEventListener('mousedown', function() {
+            setButtonState(this, 'pressed');
+        });
+        
+        generateBtn.addEventListener('mouseup', function() {
+            setButtonState(this, 'ripple');
+        });
+        
+        generateBtn.addEventListener('click', function() {
+            setButtonState(this, 'active');
+        });
+    }
+    
+    // Add click effects to Export Excel button  
+    if (exportBtn) {
+        exportBtn.addEventListener('mousedown', function() {
+            setButtonState(this, 'pressed');
+        });
+        
+        exportBtn.addEventListener('mouseup', function() {
+            setButtonState(this, 'ripple');
+        });
+        
+        exportBtn.addEventListener('click', function() {
+            setButtonState(this, 'active');
+        });
+    }
+}
+
+// Enhanced Report Generation with Button States
+async function generateReport() {
+    const generateBtn = document.querySelector('[onclick="generateReport()"]');
+    
     try {
+        // Set loading state
+        setButtonState(generateBtn, 'loading');
+        
+        const reportType = document.getElementById('reportType').value;
+        const reportMonth = document.getElementById('reportMonth').value;
+        const reportYear = document.getElementById('reportYear').value;
+        
+        // Get all data from server
+        const salesResponse = await fetch('/api/sales');
+        const salesData = await salesResponse.json();
+        
+        const purchasesResponse = await fetch('/api/purchases');
+        const purchaseData = await purchasesResponse.json();
+        
+        // Apply filters client-side
+        let filteredSales = salesData;
+        let filteredPurchases = purchaseData;
+        
+        // Filter by month and year
+        if (reportMonth || reportYear) {
+            filteredSales = salesData.filter(sale => {
+                const saleDate = sale.sale_date;
+                if (!saleDate) return false;
+                
+                const [year, month] = saleDate.split('-');
+                
+                if (reportMonth && month !== reportMonth) return false;
+                if (reportYear && year !== reportYear) return false;
+                
+                return true;
+            });
+            
+            filteredPurchases = purchaseData.filter(purchase => {
+                const purchaseDate = purchase.purchase_date;
+                if (!purchaseDate) return false;
+                
+                const [year, month] = purchaseDate.split('-');
+                
+                if (reportMonth && month !== reportMonth) return false;
+                if (reportYear && year !== reportYear) return false;
+                
+                return true;
+            });
+        }
+        
+        // Apply report type filter
+        if (reportType === 'sales') {
+            filteredPurchases = [];
+        } else if (reportType === 'purchases') {
+            filteredSales = [];
+        }
+        
+        // Generate chart and table
+        generateReportChart(filteredSales, filteredPurchases, reportType);
+        generateReportTable(filteredSales, filteredPurchases, reportType);
+        
+        // Set success state
+        setButtonState(generateBtn, 'success');
+        
+        console.log('✅ Report generated successfully');
+        
+    } catch (error) {
+        console.error('Error generating report:', error);
+        setButtonState(generateBtn, ''); // Remove loading state
+        showNotification('Error generating report. Please try again.', 'error');
+    }
+}
+
+// Enhanced Excel Export with Button States  
+async function exportToExcel() {
+    const exportBtn = document.querySelector('[onclick="exportToExcel()"]');
+    
+    try {
+        // Set loading state
+        setButtonState(exportBtn, 'loading');
+        
         // Check if XLSX library is loaded
         if (typeof XLSX === 'undefined') {
+            setButtonState(exportBtn, ''); // Remove loading state
             showNotification('Excel library not loaded. Please refresh the page.', 'error');
             return;
         }
@@ -1170,120 +1317,70 @@ async function exportToExcel() {
         // Apply report type filter (but still create both tabs for full Excel export)
         let salesForExport = filteredSales;
         let purchasesForExport = filteredPurchases;
-        
-        if (reportType === 'sales') {
-            purchasesForExport = []; // Only export sales if sales-only selected
-        } else if (reportType === 'purchases') {
-            salesForExport = []; // Only export purchases if purchases-only selected
-        }
-        
+
         // Create workbook
         const wb = XLSX.utils.book_new();
-        
-        // Prepare Sales data for Excel
-        if (salesForExport.length > 0 || reportType !== 'purchases') {
-            const salesExcelData = salesForExport.map(sale => ({
-                'Date': sale.sale_date || '',
-            'Customer': sale.customer || '',
-            'Category': sale.category || '',
-            'Description': sale.description || '',
-                'Payment Method': sale.paymentMethod || '',
-                'Amount (₹)': parseFloat(sale.total || 0),
-            'Notes': sale.notes || ''
-        }));
 
-            // Add summary at the bottom
-            const salesSummary = [{
-                'Date': '',
-                'Customer': '',
-                'Category': '',
-                'Description': '',
-                'Payment Method': '',
-                'Amount (₹)': '',
-                'Notes': ''
-            }, {
-                'Date': 'SALES SUMMARY',
-                'Customer': '',
-                'Category': '',
-                'Description': '',
-                'Payment Method': '',
-                'Amount (₹)': '',
-                'Notes': ''
-            }, {
-                'Date': `Total Sales: ${salesForExport.length}`,
-                'Customer': '',
-                'Category': '',
-                'Description': '',
-                'Payment Method': '',
-                'Amount (₹)': salesForExport.reduce((sum, sale) => sum + parseFloat(sale.total || 0), 0),
-                'Notes': ''
-            }];
+        // Sales sheet
+        if (salesForExport.length > 0) {
+            const salesSheet = salesForExport.map(sale => ({
+                'Date': sale.sale_date,
+                'Customer': sale.customer_name,
+                'Description': sale.product_description,
+                'Quantity': sale.quantity,
+                'Unit Price (₹)': parseFloat(sale.unit_price || 0),
+                'Total Amount (₹)': parseFloat(sale.total_amount || 0),
+                'Payment Method': sale.payment_method || 'N/A'
+            }));
             
-            const salesSheet = XLSX.utils.json_to_sheet([...salesExcelData, ...salesSummary]);
-            XLSX.utils.book_append_sheet(wb, salesSheet, 'Sales');
+            const salesWS = XLSX.utils.json_to_sheet(salesSheet);
+            XLSX.utils.book_append_sheet(wb, salesWS, "Sales");
         }
-        
-        // Prepare Purchases data for Excel
-        if (purchasesForExport.length > 0 || reportType !== 'sales') {
-            const purchasesExcelData = purchasesForExport.map(purchase => ({
-                'Date': purchase.purchase_date || '',
-            'Supplier': purchase.supplier || '',
-            'Category': purchase.category || '',
-            'Description': purchase.description || '',
-            'Invoice Number': purchase.invoice_number || '',
-                'Amount (₹)': parseFloat(purchase.total || 0),
-            'Notes': purchase.notes || ''
-        }));
 
-            // Add summary at the bottom
-            const purchasesSummary = [{
-                'Date': '',
-                'Supplier': '',
-                'Category': '',
-                'Description': '',
-                'Invoice Number': '',
-                'Amount (₹)': '',
-                'Notes': ''
-            }, {
-                'Date': 'PURCHASES SUMMARY',
-                'Supplier': '',
-                'Category': '',
-                'Description': '',
-                'Invoice Number': '',
-                'Amount (₹)': '',
-                'Notes': ''
-            }, {
-                'Date': `Total Purchases: ${purchasesForExport.length}`,
-                'Supplier': '',
-                'Category': '',
-                'Description': '',
-                'Invoice Number': '',
-                'Amount (₹)': purchasesForExport.reduce((sum, purchase) => sum + parseFloat(purchase.total || 0), 0),
-                'Notes': ''
-            }];
+        // Purchases sheet  
+        if (purchasesForExport.length > 0) {
+            const purchasesSheet = purchasesForExport.map(purchase => ({
+                'Date': purchase.purchase_date,
+                'Supplier': purchase.supplier_name,
+                'Description': purchase.product_description,
+                'Quantity': purchase.quantity,
+                'Unit Price (₹)': parseFloat(purchase.unit_price || 0),
+                'Total Amount (₹)': parseFloat(purchase.total_amount || 0),
+                'Payment Method': purchase.payment_method || 'N/A'
+            }));
             
-            const purchasesSheet = XLSX.utils.json_to_sheet([...purchasesExcelData, ...purchasesSummary]);
-            XLSX.utils.book_append_sheet(wb, purchasesSheet, 'Purchases');
+            const purchasesWS = XLSX.utils.json_to_sheet(purchasesSheet);
+            XLSX.utils.book_append_sheet(wb, purchasesWS, "Purchases");
         }
-        
-        // Generate filename with current date and filters
+
+        // Generate filename
         let filename = 'Khan_Automobiles_Report';
-        if (reportMonth || reportYear) {
-            filename += '_';
-            if (reportYear) filename += reportYear;
-            if (reportMonth) filename += `-${reportMonth}`;
-        }
-        filename += `_${new Date().toISOString().split('T')[0]}.xlsx`;
-        
-        // Write and download the Excel file
+        if (reportMonth) filename += `_${getMonthName(reportMonth)}`;
+        if (reportYear) filename += `_${reportYear}`;
+        filename += '.xlsx';
+
+        // Write file
         XLSX.writeFile(wb, filename);
         
-        showNotification('Excel report exported successfully!', 'success');
+        // Set success state
+        setButtonState(exportBtn, 'success');
+        
+        console.log('✅ Excel export completed successfully');
+        showNotification(`Excel file "${filename}" downloaded successfully!`, 'success');
         
     } catch (error) {
-        console.error('Export error:', error);
-        showNotification('Error exporting Excel report', 'error');
+        console.error('Export to Excel error:', error);
+        setButtonState(exportBtn, ''); // Remove loading state
+        showNotification('Error exporting to Excel. Please try again.', 'error');
     }
+}
+
+function getMonthName(monthNumber) {
+    const months = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return months[parseInt(monthNumber) - 1] || '';
 }
 
 // Populate year options dynamically based on actual data
@@ -1366,6 +1463,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(async () => {
         await populateYearOptions();
     }, 500);
+    setTimeout(addButtonClickEffects, 1000); // Add button effects after DOM is ready
 });
 
 // Manage Entries functionality

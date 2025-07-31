@@ -2181,6 +2181,175 @@ a:focus {
     height: auto !important;
 }
 
+/* Report Button Highlighting Styles */
+
+/* Report Buttons Active/Pressed States */
+.btn-primary.active,
+.btn-secondary.active {
+    background: #dc2626 !important;
+    color: white !important;
+    border-color: #dc2626 !important;
+    box-shadow: 0 4px 14px 0 rgba(220, 38, 38, 0.4) !important;
+    transform: translateY(-1px);
+}
+
+.btn-primary.pressed,
+.btn-secondary.pressed {
+    background: #b91c1c !important;
+    color: white !important;
+    border-color: #b91c1c !important;
+    box-shadow: 0 2px 8px 0 rgba(185, 28, 28, 0.5) !important;
+    transform: translateY(1px);
+}
+
+/* Report Button Hover States with Red Theme */
+.btn-primary:hover {
+    background: #ef4444;
+    border-color: #ef4444;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
+}
+
+.btn-secondary:hover {
+    background: #ef4444;
+    color: white;
+    border-color: #ef4444;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
+}
+
+/* Report Button Loading State */
+.btn-primary.loading,
+.btn-secondary.loading {
+    background: #fca5a5 !important;
+    color: #7f1d1d !important;
+    cursor: not-allowed !important;
+    opacity: 0.7;
+}
+
+.btn-primary.loading::after,
+.btn-secondary.loading::after {
+    content: "";
+    width: 16px;
+    height: 16px;
+    margin-left: 8px;
+    border: 2px solid transparent;
+    border-top: 2px solid #7f1d1d;
+    border-radius: 50%;
+    display: inline-block;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Report Button Success State */
+.btn-primary.success,
+.btn-secondary.success {
+    background: #22c55e !important;
+    color: white !important;
+    border-color: #22c55e !important;
+    box-shadow: 0 4px 14px 0 rgba(34, 197, 94, 0.4) !important;
+}
+
+.btn-primary.success::before,
+.btn-secondary.success::before {
+    content: "✓ ";
+    font-weight: bold;
+}
+
+/* Report Button Enhanced Focus States */
+.btn-primary:focus,
+.btn-secondary:focus {
+    outline: 3px solid rgba(220, 38, 38, 0.3);
+    outline-offset: 2px;
+    background: #dc2626;
+    color: white;
+    border-color: #dc2626;
+}
+
+/* Report Button Ripple Effect */
+.btn-primary,
+.btn-secondary {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-primary::before,
+.btn-secondary::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transition: width 0.6s, height 0.6s;
+    transform: translate(-50%, -50%);
+    z-index: 0;
+}
+
+.btn-primary.ripple::before,
+.btn-secondary.ripple::before {
+    width: 300px;
+    height: 300px;
+}
+
+/* Report Button Content Above Ripple */
+.btn-primary span,
+.btn-secondary span,
+.btn-primary i,
+.btn-secondary i {
+    position: relative;
+    z-index: 1;
+}
+
+/* Report Section Button Container Enhancements */
+.filter-container .btn-primary,
+.filter-container .btn-secondary {
+    min-width: 140px;
+    text-align: center;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+}
+
+/* Export Buttons Container Enhanced */
+.export-buttons {
+    display: flex;
+    gap: 1rem;
+}
+
+.export-buttons .btn-secondary {
+    flex: 1;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Mobile Report Button Adjustments */
+@media (max-width: 767px) {
+    .filter-container .btn-primary,
+    .filter-container .btn-secondary {
+        min-width: 120px;
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .export-buttons {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+    
+    .export-buttons .btn-secondary {
+        width: 100%;
+    }
+}
+
 /* Mobile-specific responsive overrides */
 @media (max-width: 767px) {
     /* Chart Containers Mobile */
@@ -2291,6 +2460,23 @@ a:focus {
     
     .stat-card p {
         font-size: 0.85rem;
+    }
+
+    /* Mobile Report Button Adjustments */
+    .filter-container .btn-primary,
+    .filter-container .btn-secondary {
+        min-width: 120px;
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .export-buttons {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+    
+    .export-buttons .btn-secondary {
+        width: 100%;
     }
 }
 
