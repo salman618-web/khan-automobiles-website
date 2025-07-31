@@ -405,23 +405,50 @@ async function loadQuickChart() {
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
                         title: {
                             display: true,
                             text: 'Monthly Sales vs Purchases',
-                            font: { size: 16, weight: 'bold' }
+                            font: { 
+                                size: window.innerWidth < 768 ? 12 : 16, 
+                                weight: 'bold' 
+                            }
                         },
-                        legend: { position: 'top' }
+                        legend: { 
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: window.innerWidth < 768 ? 10 : 12
+                                },
+                                padding: window.innerWidth < 768 ? 10 : 20
+                            }
+                        }
                     },
                     scales: {
+                        x: {
+                            ticks: {
+                                font: {
+                                    size: window.innerWidth < 768 ? 9 : 11
+                                },
+                                maxRotation: window.innerWidth < 768 ? 45 : 0
+                            }
+                        },
                         y: {
                             beginAtZero: true,
                             ticks: {
+                                font: {
+                                    size: window.innerWidth < 768 ? 9 : 11
+                                },
                                 callback: function(value) {
                                     return '₹' + value.toLocaleString('en-IN');
                                 }
                             }
                         }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
                     }
                 }
             });
@@ -486,26 +513,26 @@ async function loadRecentTransactions() {
                     : `Date: ${transaction.date}`;
             
             return `
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #f3f4f6;">
-                        <div style="display: flex; align-items: center; gap: 0.75rem;">
-                            <span style="font-size: 1.2rem;">${icon}</span>
-                        <div>
-                                <div style="font-weight: 500; color: #374151;">${transaction.contact}</div>
-                                <div style="font-size: 0.875rem; color: #6b7280;">${transaction.description || 'No description'}</div>
-                            </div>
+                    <div class="transaction-item" data-type="${transaction.type}">
+                        <div class="transaction-header">
+                            <span class="transaction-icon">${icon}</span>
+                            <div class="transaction-contact">${transaction.contact}</div>
+                            <div class="transaction-amount" style="color: ${color};">${sign}₹${parseFloat(transaction.amount || 0).toLocaleString('en-IN')}</div>
                         </div>
-                        <div style="text-align: right;">
-                            <div style="font-weight: 600; color: ${color};">${sign}₹${parseFloat(transaction.amount || 0).toLocaleString('en-IN')}</div>
-                            <div style="font-size: 0.75rem; color: #6b7280;" title="${displayDate}">${displayDate}</div>
+                        <div class="transaction-details">
+                            <div>${transaction.description || 'No description'}</div>
+                        </div>
+                        <div class="transaction-meta">
+                            <span>${displayDate}</span>
+                        </div>
                     </div>
-                </div>
             `;
         }).join('');
         
-            container.innerHTML = `<div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-                <h3 style="margin: 0 0 1rem 0; color: #374151; font-size: 1.1rem;">Recent Transactions</h3>
+            container.innerHTML = `
+                <h3>Recent Transactions</h3>
                 ${transactionsList}
-            </div>`;
+            `;
         } else if (container) {
             container.innerHTML = '<p style="text-align: center; color: #666; padding: 2rem;">No recent transactions</p>';
         }
@@ -918,22 +945,49 @@ function generateReportChart(salesData, purchaseData, reportType) {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
                 title: {
                     display: true,
                     text: 'Performance Analysis',
-                    font: { size: 16, weight: 'bold' }
+                    font: { 
+                        size: window.innerWidth < 768 ? 12 : 16, 
+                        weight: 'bold' 
+                    }
+                },
+                legend: {
+                    labels: {
+                        font: {
+                            size: window.innerWidth < 768 ? 10 : 12
+                        },
+                        padding: window.innerWidth < 768 ? 10 : 20
+                    }
                 }
             },
             scales: {
+                x: {
+                    ticks: {
+                        font: {
+                            size: window.innerWidth < 768 ? 9 : 11
+                        },
+                        maxRotation: window.innerWidth < 768 ? 45 : 0
+                    }
+                },
                 y: {
                     beginAtZero: true,
                     ticks: {
+                        font: {
+                            size: window.innerWidth < 768 ? 9 : 11
+                        },
                         callback: function(value) {
                             return '₹' + value.toLocaleString('en-IN');
                         }
                     }
                 }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
             }
         }
     });
