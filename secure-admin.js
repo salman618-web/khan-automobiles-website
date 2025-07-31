@@ -126,9 +126,18 @@ async function handleLogin(e) {
             localStorage.setItem('adminUsername', username);
             currentUser = response.user;
             
-            hideLoginModal();
+            // Force hide the modal
+            const modal = document.getElementById('adminModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+            
             showNotification(`Welcome back, ${currentUser.username}!`, 'success');
-            showDashboard();
+            
+            // Small delay to ensure modal is hidden before showing dashboard
+            setTimeout(() => {
+                showDashboard();
+            }, 100);
         } else {
             throw new Error(response.error || 'Login failed');
         }

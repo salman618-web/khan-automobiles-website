@@ -758,9 +758,19 @@ body {
     }
     
     /* Header & Navigation */
+    .header {
+        position: fixed !important;
+        top: 0 !important;
+        width: 100% !important;
+        z-index: 1000 !important;
+        height: 80px;
+    }
+    
     .nav-container {
         padding: 1rem 1rem;
         flex-wrap: wrap;
+        height: 100%;
+        align-items: center;
     }
     
     .logo {
@@ -773,8 +783,8 @@ body {
     
     .nav-menu {
         display: none;
-        position: absolute;
-        top: 100%;
+        position: fixed;
+        top: 80px;
         left: 0;
         width: 100%;
         background: white;
@@ -783,10 +793,25 @@ body {
         box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         border-radius: 0 0 15px 15px;
         padding: 1rem 0;
+        z-index: 999;
+        max-height: calc(100vh - 80px);
+        overflow-y: auto;
     }
     
     .nav-menu.active {
         display: flex;
+    }
+    
+    /* Mobile menu backdrop */
+    .nav-menu.active::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: -1;
     }
     
     .nav-menu a {
@@ -810,8 +835,14 @@ body {
     .hero {
         flex-direction: column;
         text-align: center;
-        padding: 8rem 1rem 4rem;
+        padding: 10rem 1rem 4rem;
         min-height: auto;
+        margin-top: 0;
+    }
+    
+    /* Ensure content doesn't hide behind fixed header */
+    body {
+        padding-top: 80px;
     }
     
     .hero h1 {
