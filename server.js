@@ -15,11 +15,21 @@ app.use(express.static('./', {
     index: 'index.html'
 }));
 
-// Data file paths - works both locally and in cloud
+// Data file paths - Cloud-friendly data persistence
 const DATA_DIR = process.env.DATA_DIR || './data';
-const SALES_FILE = path.join(DATA_DIR, 'sales.json');
+const SALES_FILE = path.join(DATA_DIR, 'sales.json');  
 const PURCHASES_FILE = path.join(DATA_DIR, 'purchases.json');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
+
+// Environment variable for persistent data (for cloud deployments)
+const PERSISTENT_SALES_DATA = process.env.PERSISTENT_SALES_DATA;
+const PERSISTENT_PURCHASES_DATA = process.env.PERSISTENT_PURCHASES_DATA;
+
+console.log('🔧 Data Configuration:');
+console.log(`   - DATA_DIR: ${DATA_DIR}`);
+console.log(`   - NODE_ENV: ${process.env.NODE_ENV}`);
+console.log(`   - PERSISTENT_SALES_DATA available: ${!!PERSISTENT_SALES_DATA}`);
+console.log(`   - PERSISTENT_PURCHASES_DATA available: ${!!PERSISTENT_PURCHASES_DATA}`);
 
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
@@ -27,16 +37,21 @@ if (!fs.existsSync(DATA_DIR)) {
     console.log('📁 Created data directory:', DATA_DIR);
 }
 
-// Load data from files or create defaults
+// Enhanced data loading with fallback to environment variables
 function loadData() {
-    console.log('📖 Loading data from files...');
+    console.log('📖 Loading data from multiple sources...');
     
-    // Load sales
+    // Load sales with environment variable fallback
     try {
-        if (fs.existsSync(SALES_FILE)) {
+        if (PERSISTENT_SALES_DATA) {
+            // Load from environment variable (cloud-persistent)
+            sales = JSON.parse(PERSISTENT_SALES_DATA);
+            console.log(`📈 Loaded ${sales.length} sales records from environment variable`);
+        } else if (fs.existsSync(SALES_FILE)) {
+            // Load from file (local development)
             const salesData = fs.readFileSync(SALES_FILE, 'utf8');
             sales = JSON.parse(salesData);
-            console.log(`📈 Loaded ${sales.length} sales records`);
+            console.log(`📈 Loaded ${sales.length} sales records from file`);
         } else {
             sales = [];
             console.log('📈 No existing sales data - starting fresh');
@@ -46,12 +61,17 @@ function loadData() {
         sales = [];
     }
     
-    // Load purchases
+    // Load purchases with environment variable fallback
     try {
-        if (fs.existsSync(PURCHASES_FILE)) {
+        if (PERSISTENT_PURCHASES_DATA) {
+            // Load from environment variable (cloud-persistent)
+            purchases = JSON.parse(PERSISTENT_PURCHASES_DATA);
+            console.log(`📉 Loaded ${purchases.length} purchase records from environment variable`);
+        } else if (fs.existsSync(PURCHASES_FILE)) {
+            // Load from file (local development)
             const purchasesData = fs.readFileSync(PURCHASES_FILE, 'utf8');
             purchases = JSON.parse(purchasesData);
-            console.log(`📉 Loaded ${purchases.length} purchase records`);
+            console.log(`📉 Loaded ${purchases.length} purchase records from file`);
         } else {
             purchases = [];
             console.log('📉 No existing purchase data - starting fresh');
@@ -66,14 +86,17 @@ function loadData() {
         if (fs.existsSync(USERS_FILE)) {
             const usersData = fs.readFileSync(USERS_FILE, 'utf8');
             users = JSON.parse(usersData);
-            console.log(`👥 Loaded ${users.length} user accounts`);
+            console.log(`👥 Loaded ${users.length} user records`);
         } else {
+            // Create default admin user
+            const defaultAdminPassword = process.env.ADMIN_PASSWORD || 'admin123';
             users = [
                 {
                     id: 1,
                     username: 'admin',
-                    password: process.env.ADMIN_PASSWORD || '[SET_ADMIN_PASSWORD_ENV_VAR]',
-                    role: 'admin'
+                    password: defaultAdminPassword,
+                    role: 'admin',
+                    created_at: new Date().toISOString()
                 }
             ];
             saveUsers();
@@ -81,30 +104,39 @@ function loadData() {
         }
     } catch (error) {
         console.error('❌ Error loading users:', error);
+        const defaultAdminPassword = process.env.ADMIN_PASSWORD || 'admin123';
         users = [
             {
                 id: 1,
-                username: 'admin',
-                password: process.env.ADMIN_PASSWORD || '[SET_ADMIN_PASSWORD_ENV_VAR]',
-                role: 'admin'
+                username: 'admin', 
+                password: defaultAdminPassword,
+                role: 'admin',
+                created_at: new Date().toISOString()
             }
         ];
     }
     
-    // Calculate next ID
-    const maxSalesId = sales.length > 0 ? Math.max(...sales.map(s => s.id)) : 0;
-    const maxPurchasesId = purchases.length > 0 ? Math.max(...purchases.map(p => p.id)) : 0;
-    const maxUsersId = users.length > 0 ? Math.max(...users.map(u => u.id)) : 0;
+    // Set next ID based on existing data
+    const maxSalesId = sales.length > 0 ? Math.max(...sales.map(s => s.id || 0)) : 0;
+    const maxPurchasesId = purchases.length > 0 ? Math.max(...purchases.map(p => p.id || 0)) : 0;
+    const maxUsersId = users.length > 0 ? Math.max(...users.map(u => u.id || 0)) : 0;
     nextId = Math.max(maxSalesId, maxPurchasesId, maxUsersId) + 1;
     
-    console.log(`🔢 Next ID will be: ${nextId}`);
+    console.log(`🆔 Next ID will be: ${nextId}`);
+    console.log(`📊 Data loaded successfully: ${sales.length} sales, ${purchases.length} purchases, ${users.length} users`);
 }
 
-// Save functions
+// Enhanced save functions with better error handling
 function saveSales() {
     try {
-        fs.writeFileSync(SALES_FILE, JSON.stringify(sales, null, 2));
-        console.log(`💾 Saved ${sales.length} sales records`);
+        const data = JSON.stringify(sales, null, 2);
+        fs.writeFileSync(SALES_FILE, data, 'utf8');
+        console.log(`💾 Saved ${sales.length} sales records to ${SALES_FILE}`);
+        
+        // Log a warning about data persistence in cloud deployments
+        if (process.env.NODE_ENV === 'production' && !PERSISTENT_SALES_DATA) {
+            console.log('⚠️  WARNING: In cloud deployment, consider using PERSISTENT_SALES_DATA environment variable for data persistence');
+        }
     } catch (error) {
         console.error('❌ Error saving sales:', error);
     }
@@ -112,8 +144,14 @@ function saveSales() {
 
 function savePurchases() {
     try {
-        fs.writeFileSync(PURCHASES_FILE, JSON.stringify(purchases, null, 2));
-        console.log(`💾 Saved ${purchases.length} purchase records`);
+        const data = JSON.stringify(purchases, null, 2);
+        fs.writeFileSync(PURCHASES_FILE, data, 'utf8');
+        console.log(`💾 Saved ${purchases.length} purchase records to ${PURCHASES_FILE}`);
+        
+        // Log a warning about data persistence in cloud deployments
+        if (process.env.NODE_ENV === 'production' && !PERSISTENT_PURCHASES_DATA) {
+            console.log('⚠️  WARNING: In cloud deployment, consider using PERSISTENT_PURCHASES_DATA environment variable for data persistence');
+        }
     } catch (error) {
         console.error('❌ Error saving purchases:', error);
     }
@@ -121,8 +159,9 @@ function savePurchases() {
 
 function saveUsers() {
     try {
-        fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
-        console.log(`💾 Saved ${users.length} user accounts`);
+        const data = JSON.stringify(users, null, 2);
+        fs.writeFileSync(USERS_FILE, data, 'utf8');
+        console.log(`💾 Saved ${users.length} user records to ${USERS_FILE}`);
     } catch (error) {
         console.error('❌ Error saving users:', error);
     }

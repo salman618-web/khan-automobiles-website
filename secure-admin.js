@@ -553,8 +553,8 @@ async function updateDataCountInfo() {
         const purchasesResponse = await fetch('/api/purchases');
         const purchaseData = await purchasesResponse.json();
         
-        const totalSales = salesData.reduce((sum, sale) => sum + parseFloat(sale.total || 0), 0);
-        const totalPurchases = purchaseData.reduce((sum, purchase) => sum + parseFloat(purchase.total || 0), 0);
+        const totalSales = salesData.reduce((sum, sale) => sum + parseFloat(sale.total_amount || sale.total || 0), 0);
+        const totalPurchases = purchaseData.reduce((sum, purchase) => sum + parseFloat(purchase.total_amount || purchase.total || 0), 0);
         
         dataCountElement.innerHTML = `
             <i class="fas fa-database"></i> 

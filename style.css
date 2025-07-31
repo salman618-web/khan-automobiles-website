@@ -2543,3 +2543,140 @@ a:focus {
         padding-left: 0;
     }
 }
+
+/* Data Count Info Responsive Styles */
+.data-count-info {
+    background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.data-count-info:hover {
+    background: linear-gradient(135deg, #e5e7eb, #d1d5db);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+.data-count-info i {
+    color: #6366f1;
+    font-size: 1.1em;
+    margin-right: 0.5rem;
+}
+
+/* Reports Header Responsive */
+.reports-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+/* Mobile Responsive for Data Count Info */
+@media (max-width: 767px) {
+    .data-count-info {
+        font-size: 0.8rem;
+        padding: 0.6rem 1rem;
+        white-space: normal;
+        text-align: center;
+        line-height: 1.4;
+        min-height: 2.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.3rem;
+    }
+    
+    .data-count-info i {
+        font-size: 1rem;
+        margin-right: 0;
+        margin-bottom: 0.2rem;
+    }
+    
+    /* Split sales and purchases on mobile */
+    .data-count-info {
+        word-break: break-word;
+        overflow-wrap: break-word;
+    }
+    
+    /* Reports header mobile layout */
+    .reports-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+    
+    .reports-header h2 {
+        text-align: center;
+        margin: 0;
+        font-size: 1.3rem;
+    }
+    
+    .data-count-info {
+        order: 2;
+        width: 100%;
+        max-width: none;
+    }
+}
+
+/* Tablet Responsive for Data Count Info */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .data-count-info {
+        font-size: 0.9rem;
+        padding: 0.7rem 1.2rem;
+        flex-shrink: 1;
+        min-width: 0;
+    }
+    
+    .reports-header {
+        gap: 1.5rem;
+    }
+    
+    .reports-header h2 {
+        font-size: 1.4rem;
+        flex-shrink: 0;
+    }
+    
+    .data-count-info {
+        flex-shrink: 1;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+}
+
+/* Desktop Responsive for Data Count Info */
+@media (min-width: 1025px) {
+    .data-count-info {
+        font-size: 1rem;
+        padding: 1rem 1.5rem;
+        white-space: nowrap;
+    }
+    
+    .reports-header {
+        margin-bottom: 2rem;
+    }
+    
+    .reports-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .data-count-info {
+        flex-shrink: 0;
+    }
+}
