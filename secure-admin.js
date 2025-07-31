@@ -11,25 +11,72 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function initializeSecureApp() {
     try {
-        // Check if user is already authenticated (simple approach)
-        const isLoggedIn = localStorage.getItem('isAdminLoggedIn');
-        const username = localStorage.getItem('adminUsername');
+        console.log('🔄 Initializing admin app...');
         
-        if (isLoggedIn === 'true' && username) {
-            currentUser = { username: username, role: 'admin' };
-            console.log('✅ User is authenticated, showing dashboard');
-            showDashboard();
-            return;
+        // Check if user just logged in - if so, be more patient
+        const justLoggedIn = sessionStorage.getItem('justLoggedIn');
+        if (justLoggedIn) {
+            console.log('ℹ️ User just logged in, waiting longer for authentication to settle...');
+            await new Promise(resolve => setTimeout(resolve, 500));
+            sessionStorage.removeItem('justLoggedIn');
+        } else {
+            // Wait a moment for any pending localStorage operations to complete
+            await new Promise(resolve => setTimeout(resolve, 100));
         }
         
-        // If not authenticated on admin page, redirect to login
-        console.log('❌ User not authenticated, redirecting to login page');
+        // Check authentication with multiple attempts for timing issues
+        let attempts = 0;
+        const maxAttempts = justLoggedIn ? 5 : 3;
+        
+        while (attempts < maxAttempts) {
+            // Check both localStorage and sessionStorage
+            const isLoggedInLocal = localStorage.getItem('isAdminLoggedIn');
+            const usernameLocal = localStorage.getItem('adminUsername');
+            const isLoggedInSession = sessionStorage.getItem('isAdminLoggedIn');
+            const usernameSession = sessionStorage.getItem('adminUsername');
+            
+            console.log(`Attempt ${attempts + 1}:`);
+            console.log(`  localStorage: isLoggedIn=${isLoggedInLocal}, username=${usernameLocal}`);
+            console.log(`  sessionStorage: isLoggedIn=${isLoggedInSession}, username=${usernameSession}`);
+            
+            // Accept authentication from either storage method
+            const isAuthenticated = (isLoggedInLocal === 'true' && usernameLocal) || (isLoggedInSession === 'true' && usernameSession);
+            const authenticatedUsername = usernameLocal || usernameSession;
+            
+            if (isAuthenticated && authenticatedUsername) {
+                currentUser = { username: authenticatedUsername, role: 'admin' };
+                console.log('✅ User is authenticated, showing dashboard');
+                
+                // Ensure both storage methods have the values
+                if (!isLoggedInLocal) {
+                    localStorage.setItem('isAdminLoggedIn', 'true');
+                    localStorage.setItem('adminUsername', authenticatedUsername);
+                }
+                if (!isLoggedInSession) {
+                    sessionStorage.setItem('isAdminLoggedIn', 'true');
+                    sessionStorage.setItem('adminUsername', authenticatedUsername);
+                }
+                
+                showDashboard();
+                return;
+            }
+            
+            attempts++;
+            if (attempts < maxAttempts) {
+                const delay = justLoggedIn ? 500 : 300;
+                console.log(`⏳ Retrying authentication check in ${delay}ms...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+        
+        // If we get here, user is not authenticated after all attempts
+        console.log('❌ User not authenticated after multiple checks, redirecting to login page');
         showNotification('Please login to access the admin panel', 'error');
         
-        // Redirect to index.html after a short delay
+        // Redirect to index.html after a longer delay
         setTimeout(() => {
             window.location.href = 'index.html';
-        }, 2000);
+        }, 3000);
         
     } catch (error) {
         console.error('Initialization error:', error);
@@ -161,9 +208,18 @@ async function handleLogin(e) {
         if (response.success) {
             console.log('✅ Login successful, processing...');
             
+            // Set both localStorage and sessionStorage for reliability
             localStorage.setItem('isAdminLoggedIn', 'true');
             localStorage.setItem('adminUsername', username);
+            sessionStorage.setItem('isAdminLoggedIn', 'true');
+            sessionStorage.setItem('adminUsername', username);
             currentUser = response.user;
+            
+            // Debug: Verify localStorage was set correctly
+            console.log('🔍 localStorage after setting:');
+            console.log('  isAdminLoggedIn:', localStorage.getItem('isAdminLoggedIn'));
+            console.log('  adminUsername:', localStorage.getItem('adminUsername'));
+            console.log('  currentUser:', currentUser);
             
             // Hide modal if it exists (on index.html)
             const modal = document.getElementById('adminModal');
@@ -189,11 +245,16 @@ async function handleLogin(e) {
             
             showNotification(`Welcome back, ${currentUser.username}!`, 'success');
             
-            // Longer delay to ensure everything is processed
+            // Redirect to admin page after successful login
             setTimeout(() => {
-                console.log('🎯 Showing dashboard...');
-                showDashboard();
-            }, 300);
+                console.log('🎯 Redirecting to admin dashboard...');
+                
+                // Add a flag to indicate we just logged in
+                sessionStorage.setItem('justLoggedIn', 'true');
+                
+                // Force a redirect to admin.html to ensure clean state
+                window.location.href = 'admin.html';
+            }, 1500);
         } else {
             throw new Error(response.error || 'Login failed');
         }
@@ -209,10 +270,14 @@ async function handleLogin(e) {
 // Logout function
 async function logout() {
     try {
+        // Clear both storage methods
         localStorage.removeItem('isAdminLoggedIn');
         localStorage.removeItem('adminUsername');
+        sessionStorage.removeItem('isAdminLoggedIn');
+        sessionStorage.removeItem('adminUsername');
         currentUser = null;
         
+        console.log('🚪 User logged out, clearing all authentication data');
         showNotification('Logged out successfully', 'success');
         setTimeout(() => window.location.href = 'index.html', 1000);
     } catch (error) {
