@@ -13,20 +13,12 @@ async function initializeSecureApp() {
     try {
         console.log('🔄 Initializing admin app...');
         
-        // Check if user just logged in - if so, be more patient
-        const justLoggedIn = sessionStorage.getItem('justLoggedIn');
-        if (justLoggedIn) {
-            console.log('ℹ️ User just logged in, waiting longer for authentication to settle...');
-            await new Promise(resolve => setTimeout(resolve, 500));
-            sessionStorage.removeItem('justLoggedIn');
-        } else {
-            // Wait a moment for any pending localStorage operations to complete
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
+        // Wait a moment for any pending localStorage operations to complete
+        await new Promise(resolve => setTimeout(resolve, 200));
         
         // Check authentication with multiple attempts for timing issues
         let attempts = 0;
-        const maxAttempts = justLoggedIn ? 5 : 3;
+        const maxAttempts = 3;
         
         while (attempts < maxAttempts) {
             // Check both localStorage and sessionStorage
@@ -63,9 +55,8 @@ async function initializeSecureApp() {
             
             attempts++;
             if (attempts < maxAttempts) {
-                const delay = justLoggedIn ? 500 : 300;
-                console.log(`⏳ Retrying authentication check in ${delay}ms...`);
-                await new Promise(resolve => setTimeout(resolve, delay));
+                console.log(`⏳ Retrying authentication check in 300ms...`);
+                await new Promise(resolve => setTimeout(resolve, 300));
             }
         }
         
@@ -133,10 +124,14 @@ function hideLoginModal() {
 
 // Setup form handlers
 function setupFormHandlers() {
-    // Login form handler
+    // Login form handler - only handle if we're on admin.html
+    // On index.html, script.js handles the login form
     const adminForm = document.getElementById('adminForm');
-    if (adminForm) {
+    if (adminForm && window.location.pathname.includes('admin.html')) {
+        console.log('ℹ️ Setting up admin form handler on admin.html');
         adminForm.addEventListener('submit', handleLogin);
+    } else if (adminForm) {
+        console.log('ℹ️ Login form found but on index.html - script.js will handle it');
     }
 
     // Sales form handler
@@ -206,55 +201,21 @@ async function handleLogin(e) {
         const response = await loginResponse.json();
         
         if (response.success) {
-            console.log('✅ Login successful, processing...');
+            console.log('✅ Login successful on admin.html (unlikely scenario)');
             
-            // Set both localStorage and sessionStorage for reliability
+            // Set authentication data
             localStorage.setItem('isAdminLoggedIn', 'true');
             localStorage.setItem('adminUsername', username);
             sessionStorage.setItem('isAdminLoggedIn', 'true');
             sessionStorage.setItem('adminUsername', username);
             currentUser = response.user;
             
-            // Debug: Verify localStorage was set correctly
-            console.log('🔍 localStorage after setting:');
-            console.log('  isAdminLoggedIn:', localStorage.getItem('isAdminLoggedIn'));
-            console.log('  adminUsername:', localStorage.getItem('adminUsername'));
-            console.log('  currentUser:', currentUser);
-            
-            // Hide modal if it exists (on index.html)
-            const modal = document.getElementById('adminModal');
-            if (modal) {
-                modal.style.display = 'none';
-                modal.style.visibility = 'hidden';
-                modal.style.opacity = '0';
-                modal.classList.remove('show');
-                modal.classList.add('hide');
-                console.log('🔒 Login modal hidden after successful login');
-                
-                // Clear the form
-                const form = document.getElementById('adminForm');
-                if (form) {
-                    form.reset();
-                }
-            } else {
-                console.log('ℹ️ No login modal to hide - user logged in successfully');
-            }
-            
-            // Also try the hideLoginModal function
             hideLoginModal();
-            
             showNotification(`Welcome back, ${currentUser.username}!`, 'success');
             
-            // Redirect to admin page after successful login
             setTimeout(() => {
-                console.log('🎯 Redirecting to admin dashboard...');
-                
-                // Add a flag to indicate we just logged in
-                sessionStorage.setItem('justLoggedIn', 'true');
-                
-                // Force a redirect to admin.html to ensure clean state
-                window.location.href = 'admin.html';
-            }, 1500);
+                showDashboard();
+            }, 500);
         } else {
             throw new Error(response.error || 'Login failed');
         }

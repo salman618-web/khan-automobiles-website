@@ -108,10 +108,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if (data.success) {
                     console.log('✅ Login successful');
+                    
+                    // Save both authentication flag and username
                     localStorage.setItem('isAdminLoggedIn', 'true');
-                    window.location.href = 'admin.html';
+                    localStorage.setItem('adminUsername', username);
+                    sessionStorage.setItem('isAdminLoggedIn', 'true');
+                    sessionStorage.setItem('adminUsername', username);
+                    
+                    console.log('💾 Saved authentication data:', {
+                        isAdminLoggedIn: localStorage.getItem('isAdminLoggedIn'),
+                        adminUsername: localStorage.getItem('adminUsername')
+                    });
+                    
+                    // Close the modal
+                    if (adminModal) {
+                        adminModal.style.display = 'none';
+                    }
+                    
+                    // Show success message and redirect
+                    alert('Login successful! Redirecting to admin dashboard...');
+                    setTimeout(() => {
+                        window.location.href = 'admin.html';
+                    }, 1000);
+                    
                 } else {
-                    console.log('❌ Login failed:', data.message);
+                    console.log('❌ Login failed:', data.message || data.error);
                     alert('Incorrect username or password. Please try again.');
                 }
             })
