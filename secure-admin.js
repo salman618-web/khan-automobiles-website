@@ -17,8 +17,9 @@ async function initializeSecureApp() {
         
         if (isLoggedIn === 'true' && username) {
             currentUser = { username: username, role: 'admin' };
-                showDashboard();
-                return;
+            hideLoginModal(); // Ensure modal is hidden
+            showDashboard();
+            return;
         }
         
         // Show login if not authenticated
@@ -31,19 +32,38 @@ async function initializeSecureApp() {
 
 // Authentication functions
 function showLoginModal() {
+    console.log('🔐 Attempting to show login modal...');
     const modal = document.getElementById('adminModal');
     if (modal) {
         modal.style.display = 'block';
-        document.getElementById('username').focus();
+        modal.style.visibility = 'visible';
+        modal.style.opacity = '1';
+        
+        // Focus on username field after a brief delay
+        setTimeout(() => {
+            const usernameField = document.getElementById('username');
+            if (usernameField) {
+                usernameField.focus();
+            }
+        }, 100);
+        
+        console.log('✅ Login modal displayed successfully');
     } else {
+        console.error('❌ Admin modal element not found!');
         showNotification('Please login to access the admin panel', 'error');
     }
 }
 
 function hideLoginModal() {
+    console.log('🔒 Hiding login modal...');
     const modal = document.getElementById('adminModal');
     if (modal) {
         modal.style.display = 'none';
+        modal.style.visibility = 'hidden';
+        modal.style.opacity = '0';
+        console.log('✅ Login modal hidden successfully');
+    } else {
+        console.error('❌ Could not find modal to hide');
     }
 }
 
@@ -122,22 +142,39 @@ async function handleLogin(e) {
         const response = await loginResponse.json();
         
         if (response.success) {
+            console.log('✅ Login successful, processing...');
+            
             localStorage.setItem('isAdminLoggedIn', 'true');
             localStorage.setItem('adminUsername', username);
             currentUser = response.user;
             
-            // Force hide the modal
+            // Multiple methods to ensure modal is hidden
             const modal = document.getElementById('adminModal');
             if (modal) {
                 modal.style.display = 'none';
+                modal.style.visibility = 'hidden';
+                modal.style.opacity = '0';
+                modal.classList.remove('show');
+                modal.classList.add('hide');
+                console.log('🔒 Modal forcibly hidden using multiple methods');
+            }
+            
+            // Also try the hideLoginModal function
+            hideLoginModal();
+            
+            // Clear the form
+            const form = document.getElementById('adminForm');
+            if (form) {
+                form.reset();
             }
             
             showNotification(`Welcome back, ${currentUser.username}!`, 'success');
             
-            // Small delay to ensure modal is hidden before showing dashboard
+            // Longer delay to ensure everything is processed
             setTimeout(() => {
+                console.log('🎯 Showing dashboard...');
                 showDashboard();
-            }, 100);
+            }, 300);
         } else {
             throw new Error(response.error || 'Login failed');
         }
