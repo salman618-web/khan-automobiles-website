@@ -586,6 +586,14 @@ async function updateDataCountInfo() {
 async function handleAddSale(e) {
     e.preventDefault();
     
+    // Get submit button for loading state
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    // Show immediate loading feedback
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding Sale...';
+    submitBtn.disabled = true;
+    
     const saleData = {
         customer: document.getElementById('customerName').value,
         category: document.getElementById('saleCategory').value,
@@ -605,29 +613,47 @@ async function handleAddSale(e) {
         
         const result = await response.json();
         if (result.success) {
-            showNotification('Sale added successfully! Redirecting to Dashboard...', 'success');
-        e.target.reset();
-        setSalesDefaults();
-        await loadDashboard();
-        
-            // Update year options in case a new year was added
-            populateYearOptions();
+            showNotification('Sale added successfully!', 'success');
             
-            // Navigate back to Dashboard
-            setTimeout(() => {
-                showSection('dashboard');
-            }, 1500);
+            // Reset form immediately for better UX
+            e.target.reset();
+            setSalesDefaults();
+            
+            // Navigate back to Dashboard immediately (no delay!)
+            showSection('dashboard');
+            
+            // Refresh dashboard data in background (parallel operations)
+            Promise.all([
+                loadDashboard(),
+                populateYearOptions()
+            ]).catch(error => {
+                console.error('Background refresh error:', error);
+                // Still works, just logs error
+            });
+            
         } else {
             showNotification('Error adding sale', 'error');
         }
     } catch (error) {
         console.error('Add sale error:', error);
         showNotification('Error adding sale', 'error');
+    } finally {
+        // Restore button state
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
     }
 }
 
 async function handleAddPurchase(e) {
     e.preventDefault();
+    
+    // Get submit button for loading state
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    // Show immediate loading feedback
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding Purchase...';
+    submitBtn.disabled = true;
     
     const purchaseData = {
         supplier: document.getElementById('supplierName').value,
@@ -648,24 +674,34 @@ async function handleAddPurchase(e) {
         
         const result = await response.json();
         if (result.success) {
-            showNotification('Purchase added successfully! Redirecting to Dashboard...', 'success');
-        e.target.reset();
-        setPurchaseDefaults();
-        await loadDashboard();
-        
-            // Update year options in case a new year was added
-            populateYearOptions();
+            showNotification('Purchase added successfully!', 'success');
             
-            // Navigate back to Dashboard
-            setTimeout(() => {
-                showSection('dashboard');
-            }, 1500);
+            // Reset form immediately for better UX
+            e.target.reset();
+            setPurchaseDefaults();
+            
+            // Navigate back to Dashboard immediately (no delay!)
+            showSection('dashboard');
+            
+            // Refresh dashboard data in background (parallel operations)
+            Promise.all([
+                loadDashboard(),
+                populateYearOptions()
+            ]).catch(error => {
+                console.error('Background refresh error:', error);
+                // Still works, just logs error
+            });
+            
         } else {
             showNotification('Error adding purchase', 'error');
         }
     } catch (error) {
         console.error('Add purchase error:', error);
         showNotification('Error adding purchase', 'error');
+    } finally {
+        // Restore button state
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
     }
 }
 

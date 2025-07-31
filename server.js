@@ -476,14 +476,34 @@ app.get('/api/dashboard', async (req, res) => {
         const totalPurchases = currentPurchases.reduce((sum, purchase) => sum + parseFloat(purchase.total_amount || purchase.total || 0), 0);
         const netProfit = totalSales - totalPurchases;
         
-        // Today's data
-        const today = new Date().toISOString().split('T')[0];
+        // Today's data (timezone-aware local date calculation)
+        const getTodayLocal = () => {
+            const today = new Date();
+            const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000));
+            return localDate.toISOString().split('T')[0];
+        };
+        const today = getTodayLocal();
+        console.log('📅 Server calculating today as:', today);
+        
         const todaySales = currentSales
-            .filter(sale => (sale.sale_date || sale.date || '').startsWith(today))
+            .filter(sale => {
+                const dateToCheck = sale.sale_date || sale.date || '';
+                const match = dateToCheck.startsWith(today);
+                if (match) console.log('📈 Found today\'s sale:', { id: sale.id, date: dateToCheck, amount: sale.total_amount || sale.total });
+                return match;
+            })
             .reduce((sum, sale) => sum + parseFloat(sale.total_amount || sale.total || 0), 0);
+            
         const todayPurchases = currentPurchases
-            .filter(purchase => (purchase.purchase_date || purchase.date || '').startsWith(today))
+            .filter(purchase => {
+                const dateToCheck = purchase.purchase_date || purchase.date || '';
+                const match = dateToCheck.startsWith(today);
+                if (match) console.log('📉 Found today\'s purchase:', { id: purchase.id, date: dateToCheck, amount: purchase.total_amount || purchase.total });
+                return match;
+            })
             .reduce((sum, purchase) => sum + parseFloat(purchase.total_amount || purchase.total || 0), 0);
+            
+        console.log('📊 Today\'s totals:', { sales: todaySales, purchases: todayPurchases });
         
         res.json({
             totalSales,
