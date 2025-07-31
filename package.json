@@ -1,27 +1,26 @@
 {
   "name": "khan-automobiles-website",
   "version": "1.0.0",
-  "description": "Khan Automobiles Management System",
+  "description": "Khan Automobiles - Auto Parts & Service Center Website",
   "main": "server.js",
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
-  },
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js",
-    "test": "echo \"No tests specified\" && exit 0"
+    "dev": "nodemon server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "dependencies": {
-    "express": "^4.18.2"
-  },
-  "keywords": [
-    "automobile",
-    "management",
-    "business",
-    "nodejs",
-    "express"
-  ],
+  "keywords": ["automobiles", "auto-parts", "service-center", "khan-automobiles"],
   "author": "Khan Automobiles",
-  "license": "ISC"
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "path": "^0.12.7",
+    "fs": "^0.0.1-security",
+    "firebase-admin": "^12.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
 } 
