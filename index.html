@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Khan Automobiles - Premier Auto Service & Parts</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* Professional MotrParts-inspired styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        .hero-section {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 8rem 2rem 4rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><polygon points="0,1000 1000,800 1000,1000" fill="rgba(255,255,255,0.05)"/><circle cx="200" cy="200" r="3" fill="rgba(255,255,255,0.1)"/><circle cx="800" cy="300" r="2" fill="rgba(255,255,255,0.1)"/></svg>');
+            z-index: 1;
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .hero-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 4.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #ffffff;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+        }
+        
+        .title-logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 3.5rem;
+            color: #ffd700;
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+        }
+        
+        .title-text {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .title-main {
+            font-size: 4.5rem;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+        
+        .title-sub {
+            font-size: 1.2rem;
+            font-weight: 400;
+            letter-spacing: 8px;
+            color: #ffd700;
+            opacity: 0.9;
+        }
+        
+        .auto-icons {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .auto-icon {
+            font-size: 2.5rem;
+            color: #ffffff;
+            opacity: 0.8;
+            transition: all 0.3s ease;
+            animation: floatIcon 3s ease-in-out infinite;
+        }
+        
+        .auto-icon:nth-child(1) { animation-delay: 0s; color: #ff6b35; }
+        .auto-icon:nth-child(2) { animation-delay: 0.5s; color: #ffd700; }
+        .auto-icon:nth-child(3) { animation-delay: 1s; color: #ffffff; }
+        .auto-icon:nth-child(4) { animation-delay: 1.5s; color: #ff6b35; }
+        .auto-icon:nth-child(5) { animation-delay: 2s; color: #ffd700; }
+        
+        .auto-icon:hover {
+            transform: scale(1.2);
+            opacity: 1;
+        }
+        
+        @keyframes floatIcon {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .phone-link:hover {
+            background: #e3f2fd !important;
+            border-color: #ff6b35 !important;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.2);
+        }
+        
+        .hero-subtitle {
+            font-size: 1.4rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        .hero-badges {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin: 3rem 0;
+            flex-wrap: wrap;
+        }
+        
+        .badge {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 1rem 2.5rem;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.4);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(255, 107, 53, 0.6);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+        
+        .btn-secondary:hover {
+            background: white;
+            color: #1e3c72;
+        }
+        
+        .categories-section {
+            padding: 4rem 2rem;
+            background: #f8fafc;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            color: #2c3e50;
+            font-weight: 700;
+        }
+        
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+        
+        .category-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+            cursor: pointer;
+        }
+        
+        .category-card:hover {
+            transform: translateY(-10px);
+            border-color: #ff6b35;
+            box-shadow: 0 15px 30px rgba(255, 107, 53, 0.2);
+        }
+        
+        .category-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #ff6b35;
+        }
+        
+        .category-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #2c3e50;
+        }
+        
+        .category-items {
+            list-style: none;
+            font-size: 0.9rem;
+            line-height: 1.8;
+            color: #666;
+        }
+        
+        .category-items li:before {
+            content: "• ";
+            color: #ff6b35;
+            font-weight: bold;
+        }
+        
+        .brands-section {
+            padding: 4rem 2rem;
+            background: white;
+        }
+        
+        .brands-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        
+        .brand-card {
+            background: #f8fafc;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+            cursor: pointer;
+        }
+        
+        .brand-card:hover {
+            transform: scale(1.05);
+            border-color: #ff6b35;
+            background: white;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        
+        .brand-logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1rem;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .vehicle-showcase {
+            padding: 4rem 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .showcase-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        
+        .showcase-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+        
+        .showcase-card:hover {
+            transform: translateY(-10px);
+        }
+        
+        .showcase-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: #ffd700;
+        }
+        
+        .testimonials-section {
+            padding: 4rem 2rem;
+            background: #f8fafc;
+        }
+        
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        
+        .testimonial-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .testimonial-card:before {
+            content: '"';
+            font-size: 4rem;
+            color: #ff6b35;
+            position: absolute;
+            top: -10px;
+            left: 20px;
+            line-height: 1;
+        }
+        
+        .testimonial-text {
+            font-style: italic;
+            margin-bottom: 1rem;
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .testimonial-author {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .contact-section {
+            padding: 4rem 2rem;
+            background: #2c3e50;
+            color: white;
+        }
+        
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        
+        .contact-item {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .contact-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: #ff6b35;
+        }
+        
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            .categories-grid {
+                grid-template-columns: 1fr;
+            }
+            .brands-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header" style="position: fixed; top: 0; width: 100%; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); z-index: 1000; padding: 1rem 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <nav class="navbar">
+            <div class="nav-container" style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; padding: 0 2rem;">
+                <div class="logo" style="display: flex; align-items: center; gap: 0.5rem; font-size: 1.5rem; font-weight: 700; color: #2c3e50;">
+                    <i class="fas fa-car" style="color: #ff6b35;"></i>
+                    <span>Khan Automobiles</span>
+                </div>
+                <ul class="nav-menu" style="display: flex; list-style: none; gap: 2rem; align-items: center;">
+                    <li><a href="#home" style="text-decoration: none; color: #2c3e50; font-weight: 500; transition: color 0.3s;">Home</a></li>
+                    <li><a href="#categories" style="text-decoration: none; color: #2c3e50; font-weight: 500; transition: color 0.3s;">Categories</a></li>
+                    <li><a href="#brands" style="text-decoration: none; color: #2c3e50; font-weight: 500; transition: color 0.3s;">Brands</a></li>
+                    <li><a href="#vehicles" style="text-decoration: none; color: #2c3e50; font-weight: 500; transition: color 0.3s;">Vehicles</a></li>
+                    <li><a href="#contact" style="text-decoration: none; color: #2c3e50; font-weight: 500; transition: color 0.3s;">Contact</a></li>
+                    <li><a href="#" id="adminBtn" class="btn btn-primary" style="font-size: 0.9rem; padding: 0.5rem 1.5rem;">Admin Portal</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero-section">
+        <div class="hero-content">
+            <div class="hero-title">
+                <div class="title-logo">
+                    <i class="fas fa-car"></i>
+                </div>
+                <div class="title-text">
+                    <div class="title-main">KHAN AUTOMOBILES</div>
+                    <div class="title-sub">SINCE 1998</div>
+                </div>
+                <div class="title-logo">
+                    <i class="fas fa-wrench"></i>
+                </div>
+            </div>
+            
+            <div class="auto-icons">
+                <div class="auto-icon">
+                    <i class="fas fa-motorcycle"></i>
+                </div>
+                <div class="auto-icon">
+                    <i class="fas fa-car"></i>
+                </div>
+                <div class="auto-icon">
+                    <i class="fas fa-truck"></i>
+                </div>
+                <div class="auto-icon">
+                    <i class="fas fa-tractor"></i>
+                </div>
+                <div class="auto-icon">
+                    <i class="fas fa-tools"></i>
+                </div>
+            </div>
+            
+            <p class="hero-subtitle">Semriyawa's Most Trusted Auto Parts & Service Center | Serving Sant Kabir Nagar</p>
+            
+            <div class="hero-badges">
+                <div class="badge">
+                    <i class="fas fa-award"></i>
+                    <span>25+ Years Experience</span>
+                </div>
+                <div class="badge">
+                    <i class="fas fa-users"></i>
+                    <span>5000+ Happy Customers</span>
+                </div>
+                <div class="badge">
+                    <i class="fas fa-tools"></i>
+                    <span>Expert Service</span>
+                </div>
+            </div>
+            
+            <div class="cta-buttons">
+                <a href="https://maps.app.goo.gl/1BbVexYJgGJyZHmk7?g_st=ic" target="_blank" class="btn btn-primary" id="exploreServicesBtn">
+                    <i class="fas fa-map-marker-alt"></i>
+                    Visit Our Location
+                </a>
+                <button class="btn btn-secondary" id="contactBtn">
+                    <i class="fas fa-phone"></i>
+                    Call Now
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Categories Section -->
+    <section id="categories" class="categories-section">
+        <div class="container">
+            <h2 class="section-title">
+                <i class="fas fa-th-large"></i>
+                Our Product Categories
+            </h2>
+            <div class="categories-grid">
+                <div class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <h3 class="category-title">Engine Parts</h3>
+                    <ul class="category-items">
+                        <li>Pistons, Rings & Liners</li>
+                        <li>Filters - Air, Oil, Fuel</li>
+                        <li>Gaskets & Seals</li>
+                        <li>Engine Belts & Timing Kits</li>
+                        <li>Water Pumps & Thermostats</li>
+                        <li>Turbo Chargers</li>
+                        <li>Fuel Injectors & Pumps</li>
+                    </ul>
+                </div>
+                
+                <div class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-car-crash"></i>
+                    </div>
+                    <h3 class="category-title">Brake System</h3>
+                    <ul class="category-items">
+                        <li>Brake Pads & Shoes</li>
+                        <li>Disc Rotors & Drums</li>
+                        <li>Brake Master Cylinder</li>
+                        <li>Wheel Cylinders</li>
+                        <li>Brake Boosters</li>
+                        <li>Brake Oils & Fluids</li>
+                        <li>ABS System Parts</li>
+                    </ul>
+                </div>
+                
+                <div class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-compress-arrows-alt"></i>
+                    </div>
+                    <h3 class="category-title">Suspension & Steering</h3>
+                    <ul class="category-items">
+                        <li>Shock Absorbers & Struts</li>
+                        <li>Coil Springs & Bushes</li>
+                        <li>Control Arms & Ball Joints</li>
+                        <li>Tie Rod Ends & Rack Ends</li>
+                        <li>Power Steering Pumps</li>
+                        <li>Steering Boxes & Racks</li>
+                        <li>Stabilizer Links</li>
+                    </ul>
+                </div>
+                
+                <div class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3 class="category-title">Electrical Parts</h3>
+                    <ul class="category-items">
+                        <li>Alternators & Starters</li>
+                        <li>Spark Plugs & Ignition Coils</li>
+                        <li>Batteries & Horns</li>
+                        <li>Bulbs & LED Lights</li>
+                        <li>Switches & Sensors</li>
+                        <li>Wiring Harnesses</li>
+                        <li>ECU & Control Modules</li>
+                    </ul>
+                </div>
+                
+                <div class="category-card">
+                    <div class="category-icon">
+                <i class="fas fa-car-side"></i>
+                    </div>
+                    <h3 class="category-title">Body Parts</h3>
+                    <ul class="category-items">
+                        <li>Headlights & Tail Lights</li>
+                        <li>Bumpers & Grills</li>
+                        <li>Mirrors & Door Handles</li>
+                        <li>Fenders & Bonnets</li>
+                        <li>Windshields & Glass</li>
+                        <li>Body Panels</li>
+                        <li>Exterior Accessories</li>
+                    </ul>
+                </div>
+                
+                <div class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-snowflake"></i>
+                    </div>
+                    <h3 class="category-title">HVAC & Cooling</h3>
+                    <ul class="category-items">
+                        <li>AC Compressors & Condensers</li>
+                        <li>Radiators & Cooling Fans</li>
+                        <li>Evaporators & Cabin Filters</li>
+                        <li>Coolant & AC Gas</li>
+                        <li>Radiator Hoses</li>
+                        <li>Intercoolers</li>
+                        <li>Heater Cores</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Top Brands Section -->
+    <section id="brands" class="brands-section">
+        <div class="container">
+            <h2 class="section-title">
+                <i class="fas fa-award"></i>
+                Genuine Spare Parts & Service Partner
+            </h2>
+            <p style="text-align: center; font-size: 1.1rem; color: #666; max-width: 800px; margin: 0 auto;">
+                Your vehicle's performance and value are our priority. We exclusively use genuine parts sourced directly from trusted automotive brands, ensuring every repair maintains your vehicle's original integrity.    
+            </p>
+            
+            <div class="brands-grid">
+                <!-- Vehicle Brands -->
+                <div class="brand-card">
+                    <div class="brand-logo" style="color: #dc3545;">
+                        <i class="fas fa-motorcycle"></i>
+                    </div>
+                    <h4>Hero MotoCorp</h4>
+                    <p style="color: #666; font-size: 0.9rem;">India's Largest Two-Wheeler</p>
+                </div>
+                
+                <div class="brand-card">
+                    <div class="brand-logo" style="color: #ff0000;">
+                        <i class="fas fa-car-side"></i>
+                    </div>
+                    <h4>Honda</h4>
+                    <p style="color: #666; font-size: 0.9rem;">Bikes & Cars</p>
+                </div>
+                
+                <div class="brand-card">
+                    <div class="brand-logo" style="color: #0066cc;">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h4>TVS Motor</h4>
+                    <p style="color: #666; font-size: 0.9rem;">Premium Motorcycles</p>
+                </div>
+                
+                <div class="brand-card">
+                    <div class="brand-logo" style="color: #ff6600;">
+                        <i class="fas fa-fire"></i>
+                    </div>
+                    <h4>Bajaj Auto</h4>
+                    <p style="color: #666; font-size: 0.9rem;">Sports & Commuter</p>
+                </div>
+                
+                <div class="brand-card">
+                    <div class="brand-logo" style="color: #2c1810;">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <h4>Royal Enfield</h4>
+                    <p style="color: #666; font-size: 0.9rem;">Classic Motorcycles</p>
+                </div>
+                
+                <div class="brand-card">
+                    <div class="brand-logo" style="color: #c41e3a;">
+                        <i class="fas fa-tractor"></i>
+                    </div>
+                    <h4>Mahindra</h4>
+                    <p style="color: #666; font-size: 0.9rem;">SUVs & Tractors</p>
+                </div>
+                
+                <div class="brand-card">
+                    <div class="brand-logo" style="color: #ff9900;">
+                        <i class="fas fa-car"></i>
+                    </div>
+                    <h4>Maruti Suzuki</h4>
+                    <p style="color: #666; font-size: 0.9rem;">India's Favorite Car</p>
+                </div>
+                
+                <div class="brand-card">
+                    <div class="brand-logo" style="color: #003d82;">
+                        <i class="fas fa-car-side"></i>
+                    </div>
+                    <h4>Hyundai</h4>
+                    <p style="color: #666; font-size: 0.9rem;">Modern Premium Cars</p>
+                </div>
+                
+                <div class="brand-card">
+                    <div class="brand-logo" style="color: #1a5f7a;">
+                        <i class="fas fa-circle"></i>
+                    </div>
+                    <h4>CEAT Tyres</h4>
+                    <p style="color: #666; font-size: 0.9rem;">Premium Tyres</p>
+                </div>
+                
+                <div class="brand-card">
+                    <div class="brand-logo" style="color: #ffcc00;">
+                        <i class="fas fa-circle"></i>
+                    </div>
+                    <h4>MRF Tyres</h4>
+                    <p style="color: #666; font-size: 0.9rem;">Racing Heritage</p>
+                </div>
+                
+                <div class="brand-card">
+                    <div class="brand-logo" style="color: #e31e25;">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <h4>Bosch</h4>
+                    <p style="color: #666; font-size: 0.9rem;">Auto Components</p>
+                </div>
+                
+                <div class="brand-card">
+                    <div class="brand-logo" style="color: #0066b2;">
+                        <i class="fas fa-car-battery"></i>
+                    </div>
+                    <h4>Minda/Exide</h4>
+                    <p style="color: #666; font-size: 0.9rem;">Batteries & Power</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Vehicle Showcase -->
+    <section id="vehicles" class="vehicle-showcase">
+        <div class="container">
+            <h2 class="section-title" style="color: white;">
+                <i class="fas fa-star"></i>
+                Vehicles We Service
+            </h2>
+            
+            <div class="showcase-grid">
+                <div class="showcase-card">
+                    <div class="showcase-icon">
+                        <i class="fas fa-motorcycle"></i>
+                    </div>
+                    <h3>Motorcycles & Scooters</h3>
+                    <p>Complete service for all two-wheelers including sports bikes, commuter motorcycles, and scooters from all major brands.</p>
+                        </div>
+                
+                <div class="showcase-card">
+                    <div class="showcase-icon">
+                        <i class="fas fa-car"></i>
+                        </div>
+                    <h3>Cars & Hatchbacks</h3>
+                    <p>Professional car servicing for hatchbacks, sedans, and compact cars with genuine spare parts and expert mechanics.</p>
+                        </div>
+                
+                <div class="showcase-card">
+                    <div class="showcase-icon">
+                        <i class="fas fa-truck"></i>
+                    </div>
+                    <h3>SUVs & Commercial</h3>
+                    <p>Specialized service for SUVs, MUVs, and light commercial vehicles with heavy-duty parts and equipment.</p>
+                </div>
+                
+                <div class="showcase-card">
+                    <div class="showcase-icon">
+                        <i class="fas fa-tractor"></i>
+                    </div>
+                    <h3>Tractors & Farm Equipment</h3>
+                    <p>Agricultural vehicle service and parts supply for tractors, harvesters, and other farm machinery.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="testimonials-section">
+        <div class="container">
+            <h2 class="section-title">
+                <i class="fas fa-comments"></i>
+                What Our Customers Say
+            </h2>
+            
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <p class="testimonial-text">
+                        Excellent service! Khan Automobiles provided genuine Hero parts for my bike at very reasonable prices. 
+                        The mechanic was very knowledgeable and fixed my bike perfectly. Highly recommended!
+                    </p>
+                    <p class="testimonial-author">- Saeed Akhtar/Jitendar, Semriyawa</p>
+                </div>
+                
+                <div class="testimonial-card">
+                    <p class="testimonial-text">
+                        Best place for Spare parts in Sant Kabir Nagar. They have all genuine parts in stock and 
+                        the service is very professional. My bike runs like new after their service.
+                    </p>
+                    <p class="testimonial-author">- Khursheed Ahmad/Harish, Semriyawa</p>
+                </div>
+                
+                <div class="testimonial-card">
+                    <p class="testimonial-text">
+                        Amazing experience! Quick delivery of Bajaj bike parts and expert repair service. 
+                        The staff is very helpful and prices are fair. Will definitely come back!
+                    </p>
+                    <p class="testimonial-author">- Santosh, Baghnagar</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact-section">
+        <div class="container">
+            <h2 class="section-title" style="color: white;">
+                <i class="fas fa-map-marker-alt"></i>
+                Visit Our Service Center
+            </h2>
+            
+            <div class="contact-grid">
+                <div class="contact-item">
+                    <div class="contact-icon">
+                    <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <h3>Address</h3>
+                    <p>Khan Automobiles<br>
+                    Near ZiyaUr Rehman Building Materials,<br>
+                    100 Meters from State Bank,<br>
+                    Semriyawa, Sant Kabir Nagar<br>
+                    Uttar Pradesh - 272126</p>
+                </div>
+                
+                <div class="contact-item">
+                    <div class="contact-icon">
+                    <i class="fas fa-phone"></i>
+                    </div>
+                    <h3>Phone Numbers</h3>
+                    <p><strong>Mobile:</strong> +91 8052594809<br>
+                    <strong>Mobile:</strong> +91 9118819531<br>
+                    <strong>WhatsApp:</strong> Available</p>
+                </div>
+                
+                <div class="contact-item">
+                    <div class="contact-icon">
+                    <i class="fas fa-clock"></i>
+                    </div>
+                    <h3>Business Hours</h3>
+                    <p><strong>Mon - Sun:</strong> 9:00 AM - 7:00 PM<br>
+                    <strong>Open:</strong> All Days<br>
+                    <strong>Emergency:</strong> Call Anytime</p>
+                </div>
+                
+                <div class="contact-item">
+                    <div class="contact-icon">
+                    <i class="fas fa-envelope"></i>
+                    </div>
+                    <h3>Email & Services</h3>
+                    <p><strong>Email:</strong> <a href="mailto:khanautomobiles1998@gmail.com" style="color: white;">khanautomobiles1998</a><br>
+                    <strong>Services:</strong> Repairs, Parts, Consultation<br>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer style="background: #1a1a1a; color: white; padding: 3rem 2rem 1rem; text-align: center;">
+        <div class="container">
+            <div style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+                <i class="fas fa-car" style="font-size: 2rem; color: #ff6b35;"></i>
+                <span style="font-size: 1.5rem; font-weight: 700;">Khan Automobiles</span>
+            </div>
+            <p style="margin-bottom: 1rem; opacity: 0.8;">
+                Your Trusted Partner for Genuine Auto Parts & Professional Service Since 1998
+            </p>
+            <p style="font-size: 0.9rem; opacity: 0.6;">
+                &copy; 2024 Khan Automobiles. All rights reserved. | 
+                Spare Parts Shop & More
+            </p>
+        </div>
+    </footer>
+
+    <!-- Admin Modal -->
+    <div id="adminModal" class="modal" style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);">
+        <div class="modal-content" style="background: white; margin: 5% auto; padding: 2rem; border-radius: 15px; width: 90%; max-width: 400px; position: relative;">
+            <span class="close" style="position: absolute; top: 1rem; right: 1.5rem; font-size: 2rem; cursor: pointer; color: #999;">&times;</span>
+            <h2 style="margin-bottom: 2rem; color: #2c3e50; text-align: center;">Admin Login</h2>
+            <form id="adminForm">
+                <div style="margin-bottom: 1.5rem;">
+                    <input type="text" id="username" placeholder="Username" required 
+                           style="width: 100%; padding: 1rem; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem;">
+                </div>
+                <div style="margin-bottom: 2rem;">
+                    <input type="password" id="password" placeholder="Password" required 
+                           style="width: 100%; padding: 1rem; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem;">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1.1rem;">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Phone Numbers Modal -->
+    <div id="phoneNumbersModal" class="modal" style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);">
+        <div class="modal-content" style="background: white; margin: 5% auto; padding: 2rem; border-radius: 15px; width: 90%; max-width: 400px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            <span class="close-phone" style="position: absolute; top: 1rem; right: 1.5rem; font-size: 2rem; cursor: pointer; color: #999;">&times;</span>
+            <h2 style="margin-bottom: 2rem; color: #2c3e50; text-align: center;">
+                <i class="fas fa-phone" style="color: #ff6b35; margin-right: 0.5rem;"></i>
+                &emsp; &emsp; Call Us
+            </h2>
+            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <a href="tel:9118819531" class="phone-link" style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: #f8fafc; border-radius: 10px; text-decoration: none; color: #2c3e50; border: 2px solid transparent; transition: all 0.3s ease;">
+                    <div>
+                        <div style="font-weight: 600; font-size: 1.1rem;">Mobile 1</div>
+                        <div style="color: #666; font-size: 0.9rem;">WhatsApp Available</div>
+                    </div>
+                    <div style="font-size: 1.2rem; font-weight: 700; color: #ff6b35;">9118819531</div>
+                </a>
+                <a href="tel:8052594809" class="phone-link" style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: #f8fafc; border-radius: 10px; text-decoration: none; color: #2c3e50; border: 2px solid transparent; transition: all 0.3s ease;">
+                    <div>
+                        <div style="font-weight: 600; font-size: 1.1rem;">Mobile 2</div>
+                        <div style="color: #666; font-size: 0.9rem;">WhatsApp Available</div>
+                    </div>
+                    <div style="font-size: 1.2rem; font-weight: 700; color: #ff6b35;">8052594809</div>
+                </a>
+            </div>
+            <div style="text-align: center; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; color: #666; font-size: 0.9rem;">
+                <i class="fas fa-clock" style="margin-right: 0.5rem;"></i>
+                Available: 9:00 AM - 7:00 PM (All Days)
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

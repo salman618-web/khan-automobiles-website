@@ -1,0 +1,3 @@
+# This file ensures the data directory is included in Git repository
+# Your actual data files (sales.json, purchases.json, users.json) will be created here
+# This directory is essential for the cloud deployment to work properly 

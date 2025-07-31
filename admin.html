@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Khan Automobiles</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Header -->
+        <div class="admin-header">
+            <h1><i class="fas fa-tachometer-alt"></i> Khan Automobiles Admin Dashboard</h1>
+            <div class="admin-info">
+                <span>Welcome, <span id="adminName">Admin</span></span>
+                <button onclick="logout()" class="btn-secondary" style="margin-left: 1rem;">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+                <a href="index.html" class="btn-secondary" style="margin-left: 0.5rem;">
+                    <i class="fas fa-home"></i> Home
+                </a>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="admin-nav">
+            <button class="nav-btn active" onclick="showSection('dashboard')">
+                <i class="fas fa-chart-bar"></i> Dashboard
+            </button>
+            <button class="nav-btn" onclick="showSection('sales')">
+                <i class="fas fa-money-bill-wave"></i> Add Sale
+            </button>
+            <button class="nav-btn" onclick="showSection('purchase')">
+                <i class="fas fa-shopping-cart"></i> Add Purchase
+            </button>
+            <button class="nav-btn" onclick="showSection('manage')">
+                <i class="fas fa-edit"></i> Manage Entries
+            </button>
+            <button class="nav-btn" onclick="showSection('reports')">
+                <i class="fas fa-chart-line"></i> Reports
+            </button>
+        </div>
+
+        <!-- Dashboard Section -->
+        <div id="dashboard" class="admin-section active">
+            <h2>Dashboard Overview</h2>
+            
+            <!-- Quick Stats -->
+            <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; margin-bottom: 2rem;">
+                <div class="stat-card">
+                    <div class="stat-icon" style="color: #27ae60;">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalSales">₹0</h3>
+                        <p>Total Sales</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="color: #e74c3c;">
+                        <i class="fas fa-shopping-cart"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalPurchases">₹0</h3>
+                        <p>Total Purchases</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="color: #3498db;">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="netProfit">₹0</h3>
+                        <p>Net Profit</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="color: #f39c12;">
+                        <i class="fas fa-calendar-day"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="todaySales">₹0</h3>
+                        <p>Today's Sales</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="color: #9b59b6;">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="todayPurchases">₹0</h3>
+                        <p>Today's Purchases</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Charts -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+                <div class="chart-container">
+                    <h3>📊 Monthly Sales vs Purchases</h3>
+                    <div style="height: 300px; position: relative;">
+                        <canvas id="quickChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <h3>🕒 Recent Transactions</h3>
+                    <div id="recentTransactions" style="max-height: 300px; overflow-y: auto; padding: 0.5rem;">
+                        <p style="text-align: center; color: #666; padding: 2rem;">No transactions yet</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sales Section -->
+        <div id="sales" class="admin-section">
+            <h1>Add New Sale</h1>
+            <p style="color: #ef4444; font-style: italic; margin-bottom: 1.5rem; font-size: 14px; font-weight: 500;">
+                <i class="fas fa-info-circle"></i> Please add / update daily sales at the end of the day
+            </p>
+            <form id="salesForm">
+                <div class="form-row">
+                    <input type="date" id="saleDate" required>
+                    <input type="text" placeholder="Customer Name" id="customerName" required>
+                    <select id="saleCategory" required>
+                        <option value="">Select Category</option>
+                        <option value="bike-parts">Bike Parts</option>
+                        <option value="car-parts">Car Parts</option>
+                        <option value="bike-service">Bike Service</option>
+                        <option value="car-service">Car Service</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <input type="text" placeholder="Item/Service Description" id="saleDescription" required>
+                </div>
+                <div class="form-row">
+                    <input type="number" placeholder="Total Amount (₹)" id="saleTotal" required min="0" step="0.01">
+                    <input type="text" placeholder="Payment Method" id="paymentMethod" required>
+                    <textarea placeholder="Notes (optional)" id="saleNotes" style="grid-column: 1/-1; padding: 1rem; border: 2px solid #ddd; border-radius: 8px; resize: vertical;"></textarea>
+                </div>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-plus"></i> Add Sale
+                </button>
+            </form>
+        </div>
+
+                <!-- Purchase Section -->
+        <div id="purchase" class="admin-section">
+            <h1>Add New Purchase</h1>
+            <p style="color: #ef4444; font-style: italic; margin-bottom: 1.5rem; font-size: 14px; font-weight: 500;">
+                <i class="fas fa-info-circle"></i> Please add / update each of your purchase
+            </p>
+            <form id="purchaseForm">
+                <div class="form-row">
+                    <input type="date" id="purchaseDate" required>
+                    <input type="text" placeholder="Supplier Name" id="supplierName" required>
+                    <select id="purchaseCategory" required>
+                        <option value="">Select Category</option>
+                        <option value="bike-parts">Bike Parts</option>
+                        <option value="car-parts">Car Parts</option>
+                        <option value="tools">Tools & Equipment</option>
+                        <option value="consumables">Consumables</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <input type="text" placeholder="Purchased Item Description" id="purchaseDescription" required>
+                </div>
+                <div class="form-row">
+                    <input type="number" placeholder="Total Purchased Cost (₹)" id="purchaseTotal" required min="0" step="0.01">
+                    <input type="text" placeholder="Invoice Number" id="invoiceNumber">
+                    <textarea placeholder="Notes (optional)" id="purchaseNotes" style="grid-column: 1/-1; padding: 1rem; border: 2px solid #ddd; border-radius: 8px; resize: vertical;"></textarea>
+                </div>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-plus"></i> Add Purchase
+                </button>
+            </form>
+        </div>
+
+        <!-- Manage Entries Section -->
+        <div id="manage" class="admin-section">
+            <h1>Manage Sales & Purchase Entries</h1>
+            <p style="color: #6b7280; margin-bottom: 2rem;">View, edit, or delete existing sales and purchase entries. Use search and filters to find specific entries.</p>
+            <div style="background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; font-size: 14px; color: #0c4a6e;">
+                <i class="fas fa-info-circle" style="color: #0ea5e9; margin-right: 0.5rem;"></i>
+                <strong>Note:</strong> Entries are sorted by creation time (when they were added to the system), with the most recently added entries shown first.
+            </div>
+            
+            <!-- Search and Filter Controls -->
+            <div style="background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 2rem;">
+                <div style="display: grid; grid-template-columns: 1fr 200px 200px 150px; gap: 1rem; align-items: center;">
+                    <input type="text" id="searchEntries" placeholder="Search by customer, supplier, or description..." style="padding: 0.75rem; border: 2px solid #ddd; border-radius: 8px;">
+                    <select id="filterType" style="padding: 0.75rem; border: 2px solid #ddd; border-radius: 8px;">
+                        <option value="all">All Entries</option>
+                        <option value="sales">Sales Only</option>
+                        <option value="purchases">Purchases Only</option>
+                    </select>
+                    <select id="filterCategory" style="padding: 0.75rem; border: 2px solid #ddd; border-radius: 8px;">
+                        <option value="">All Categories</option>
+                        <option value="bike-parts">Bike Parts</option>
+                        <option value="car-parts">Car Parts</option>
+                        <option value="bike-service">Bike Service</option>
+                        <option value="car-service">Car Service</option>
+                        <option value="tools">Tools & Equipment</option>
+                        <option value="consumables">Consumables</option>
+                    </select>
+                    <button onclick="searchAndFilterEntries()" class="btn-primary" style="padding: 0.75rem;">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+            </div>
+
+            <!-- Entries Table -->
+            <div id="entriesContainer" style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden;">
+                <div id="entriesTableHeader" style="background: #f8fafc; padding: 1rem; border-bottom: 1px solid #e2e8f0; font-weight: 600; display: grid; grid-template-columns: 100px 120px 130px 150px 180px 120px 120px 130px; gap: 1rem; align-items: center;">
+                    <div>Date</div>
+                    <div>Type</div>
+                    <div>Contact</div>
+                    <div>Category</div>
+                    <div>Description</div>
+                    <div>Amount (₹)</div>
+                    <div>Created</div>
+                    <div>Actions</div>
+                </div>
+                <div id="entriesTableBody" style="max-height: 600px; overflow-y: auto;">
+                    <div style="padding: 3rem; text-align: center; color: #6b7280;">
+                        <i class="fas fa-search" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                        <p>Click "Search" to load entries or use filters to find specific entries.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div id="entriesPagination" style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem; display: none;">
+                <button onclick="previousPage()" class="btn-secondary" id="prevPageBtn">
+                    <i class="fas fa-arrow-left"></i> Previous
+                </button>
+                <span id="pageInfo" style="font-weight: 600; color: #374151;">Page 1 of 1</span>
+                <button onclick="nextPage()" class="btn-secondary" id="nextPageBtn">
+                    Next <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Reports Section -->
+        <div id="reports" class="admin-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2>Sales & Purchase Reports</h2>
+                <div id="dataCountInfo" style="
+                    background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+                    padding: 0.8rem 1.2rem;
+                    border-radius: 12px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    color: #374151;
+                    border: 1px solid #d1d5db;
+                ">
+                    <i class="fas fa-database"></i> Loading data...
+                </div>
+            </div>
+            
+            <!-- Info Note about Dynamic Years -->
+            <div style="background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; font-size: 14px; color: #0c4a6e;">
+                <i class="fas fa-info-circle" style="color: #0ea5e9; margin-right: 0.5rem;"></i>
+                <strong>Smart Year Filter:</strong> The year dropdown automatically includes all years that have sales or purchase data. As you add entries over the years, all relevant years will be available for filtering.
+            </div>
+            
+            <!-- Filters -->
+            <div class="filter-container">
+                <select id="reportType">
+                    <option value="both">Sales & Purchases</option>
+                    <option value="sales">Sales Only</option>
+                    <option value="purchases">Purchases Only</option>
+                </select>
+                <select id="reportMonth">
+                    <option value="">All Months</option>
+                    <option value="01">January</option>
+                    <option value="02">February</option>
+                    <option value="03">March</option>
+                    <option value="04">April</option>
+                    <option value="05">May</option>
+                    <option value="06">June</option>
+                    <option value="07">July</option>
+                    <option value="08">August</option>
+                    <option value="09">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                </select>
+                <select id="reportYear">
+                    <option value="">All Years</option>
+                </select>
+                <button onclick="generateReport()" class="btn-primary">
+                    <i class="fas fa-chart-bar"></i> Generate Report
+                </button>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button onclick="exportToExcel()" class="btn-secondary">
+                        <i class="fas fa-file-excel"></i> Export Excel
+                    </button>
+                </div>
+            </div>
+
+            <!-- Chart Container -->
+            <div class="chart-container">
+                <h3>📈 Performance Analysis</h3>
+                <div style="height: 400px; position: relative;">
+                    <canvas id="reportChart"></canvas>
+                </div>
+                
+                <!-- Chart Summary -->
+                <div id="chartSummary" style="display: none; margin-top: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <div style="display: flex; justify-content: center; gap: 3rem; align-items: center;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #22c55e; margin-bottom: 0.25rem;" id="totalSalesAmount">₹0</div>
+                            <div style="font-size: 0.875rem; color: #6b7280; font-weight: 500;">Total Sales</div>
+                        </div>
+                        <div style="width: 1px; height: 40px; background: #d1d5db;"></div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #ef4444; margin-bottom: 0.25rem;" id="totalPurchasesAmount">₹0</div>
+                            <div style="font-size: 0.875rem; color: #6b7280; font-weight: 500;">Total Purchases</div>
+                        </div>
+                        <div style="width: 1px; height: 40px; background: #d1d5db;"></div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.25rem;" id="netProfitAmount">₹0</div>
+                            <div style="font-size: 0.875rem; color: #6b7280; font-weight: 500;">Net Profit</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Table -->
+            <div class="chart-container">
+                <h3>📋 Transaction Details</h3>
+                <div id="reportTable" style="overflow-x: auto;">
+                    <p style="text-align: center; color: #666; padding: 2rem;">Click "Generate Report" to view data</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Transaction Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <span class="close" id="editModalClose">&times;</span>
+            <h2 id="editModalTitle">Edit Transaction</h2>
+            <form id="editTransactionForm">
+                <input type="hidden" id="editTransactionId">
+                <input type="hidden" id="editTransactionType">
+                
+                <div class="form-row">
+                    <input type="date" id="editDate" required>
+                    <input type="text" id="editContact" placeholder="Customer/Supplier Name" required>
+                    <select id="editCategory" required>
+                        <option value="">Select Category</option>
+                        <option value="bike-parts">Bike Parts</option>
+                        <option value="car-parts">Car Parts</option>
+                        <option value="bike-service">Bike Service</option>
+                        <option value="car-service">Car Service</option>
+                        <option value="tools">Tools & Equipment</option>
+                        <option value="consumables">Consumables</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <input type="text" id="editDescription" placeholder="Description" required>
+                    <input type="number" id="editTotal" placeholder="Total Amount (₹)" required min="0" step="0.01">
+                </div>
+                <div class="form-row">
+                    <input type="text" id="editPaymentMethod" placeholder="Payment Method">
+                    <input type="text" id="editInvoiceNumber" placeholder="Invoice Number">
+                </div>
+                <div class="form-row">
+                    <textarea id="editNotes" placeholder="Notes (optional)" style="grid-column: 1/-1; padding: 1rem; border: 2px solid #ddd; border-radius: 8px; resize: vertical;"></textarea>
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+                    <button type="button" onclick="closeEditModal()" class="btn-secondary">Cancel</button>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-save"></i> Update Transaction
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Additional CSS for Manage Entries -->
+    <style>
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 12px;
+            border-radius: 6px;
+            border: 1px solid;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary.btn-sm {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+        }
+        
+        .btn-primary.btn-sm:hover {
+            background: #2563eb;
+            border-color: #2563eb;
+        }
+        
+        .btn-danger.btn-sm {
+            background: #ef4444;
+            border-color: #ef4444;
+            color: white;
+        }
+        
+        .btn-danger.btn-sm:hover {
+            background: #dc2626;
+            border-color: #dc2626;
+        }
+        
+        .btn-sm:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        #entriesTableBody::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        #entriesTableBody::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        
+        #entriesTableBody::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        
+        #entriesTableBody::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+
+    <!-- SheetJS library for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="secure-admin.js"></script>
+</body>
+</html>

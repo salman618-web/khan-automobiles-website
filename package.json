@@ -1,0 +1,27 @@
+{
+  "name": "khan-automobiles-website",
+  "version": "1.0.0",
+  "description": "Khan Automobiles Management System",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "keywords": [
+    "automobile",
+    "management",
+    "business",
+    "nodejs",
+    "express"
+  ],
+  "author": "Khan Automobiles",
+  "license": "ISC"
+} 
