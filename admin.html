@@ -189,15 +189,15 @@
             </div>
             
             <!-- Search and Filter Controls -->
-            <div style="background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 2rem;">
-                <div style="display: grid; grid-template-columns: 1fr 200px 200px 150px; gap: 1rem; align-items: center;">
-                    <input type="text" id="searchEntries" placeholder="Search by customer, supplier, or description..." style="padding: 0.75rem; border: 2px solid #ddd; border-radius: 8px;">
-                    <select id="filterType" style="padding: 0.75rem; border: 2px solid #ddd; border-radius: 8px;">
+            <div class="search-filter-container">
+                <div class="search-filter-grid">
+                    <input type="text" id="searchEntries" placeholder="Search by customer, supplier, or description...">
+                    <select id="filterType">
                         <option value="all">All Entries</option>
                         <option value="sales">Sales Only</option>
                         <option value="purchases">Purchases Only</option>
                     </select>
-                    <select id="filterCategory" style="padding: 0.75rem; border: 2px solid #ddd; border-radius: 8px;">
+                    <select id="filterCategory">
                         <option value="">All Categories</option>
                         <option value="bike-parts">Bike Parts</option>
                         <option value="car-parts">Car Parts</option>
@@ -206,15 +206,15 @@
                         <option value="tools">Tools & Equipment</option>
                         <option value="consumables">Consumables</option>
                     </select>
-                    <button onclick="searchAndFilterEntries()" class="btn-primary" style="padding: 0.75rem;">
+                    <button onclick="searchAndFilterEntries()" class="btn-primary">
                         <i class="fas fa-search"></i> Search
                     </button>
                 </div>
             </div>
 
             <!-- Entries Table -->
-            <div id="entriesContainer" style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden;">
-                <div id="entriesTableHeader" style="background: #f8fafc; padding: 1rem; border-bottom: 1px solid #e2e8f0; font-weight: 600; display: grid; grid-template-columns: 100px 120px 130px 150px 180px 120px 120px 130px; gap: 1rem; align-items: center;">
+            <div id="entriesContainer" class="table-responsive">
+                <div id="entriesTableHeader">
                     <div>Date</div>
                     <div>Type</div>
                     <div>Contact</div>
@@ -224,7 +224,7 @@
                     <div>Created</div>
                     <div>Actions</div>
                 </div>
-                <div id="entriesTableBody" style="max-height: 600px; overflow-y: auto;">
+                <div id="entriesTableBody">
                     <div style="padding: 3rem; text-align: center; color: #6b7280;">
                         <i class="fas fa-search" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
                         <p>Click "Search" to load entries or use filters to find specific entries.</p>
@@ -233,14 +233,18 @@
             </div>
 
             <!-- Pagination -->
-            <div id="entriesPagination" style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem; display: none;">
-                <button onclick="previousPage()" class="btn-secondary" id="prevPageBtn">
-                    <i class="fas fa-arrow-left"></i> Previous
-                </button>
-                <span id="pageInfo" style="font-weight: 600; color: #374151;">Page 1 of 1</span>
-                <button onclick="nextPage()" class="btn-secondary" id="nextPageBtn">
-                    Next <i class="fas fa-arrow-right"></i>
-                </button>
+            <div id="entriesPagination" class="pagination-container" style="display: none;">
+                <div class="pagination-info">
+                    <span id="pageInfo">Page 1 of 1</span>
+                </div>
+                <div class="pagination-buttons">
+                    <button onclick="previousPage()" id="prevPageBtn">
+                        <i class="fas fa-arrow-left"></i> Previous
+                    </button>
+                    <button onclick="nextPage()" id="nextPageBtn">
+                        Next <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -295,7 +299,7 @@
                 <button onclick="generateReport()" class="btn-primary">
                     <i class="fas fa-chart-bar"></i> Generate Report
                 </button>
-                <div style="display: flex; gap: 0.5rem;">
+                <div class="export-buttons">
                     <button onclick="exportToExcel()" class="btn-secondary">
                         <i class="fas fa-file-excel"></i> Export Excel
                     </button>
@@ -310,21 +314,19 @@
                 </div>
                 
                 <!-- Chart Summary -->
-                <div id="chartSummary" style="display: none; margin-top: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
-                    <div style="display: flex; justify-content: center; gap: 3rem; align-items: center;">
-                        <div style="text-align: center;">
-                            <div style="font-size: 1.5rem; font-weight: 700; color: #22c55e; margin-bottom: 0.25rem;" id="totalSalesAmount">₹0</div>
-                            <div style="font-size: 0.875rem; color: #6b7280; font-weight: 500;">Total Sales</div>
+                <div id="chartSummary" style="display: none;">
+                    <div class="chart-summary-grid">
+                        <div class="chart-summary-item">
+                            <div class="chart-summary-value" style="color: #22c55e;" id="totalSalesAmount">₹0</div>
+                            <div class="chart-summary-label">Total Sales</div>
                         </div>
-                        <div style="width: 1px; height: 40px; background: #d1d5db;"></div>
-                        <div style="text-align: center;">
-                            <div style="font-size: 1.5rem; font-weight: 700; color: #ef4444; margin-bottom: 0.25rem;" id="totalPurchasesAmount">₹0</div>
-                            <div style="font-size: 0.875rem; color: #6b7280; font-weight: 500;">Total Purchases</div>
+                        <div class="chart-summary-item">
+                            <div class="chart-summary-value" style="color: #ef4444;" id="totalPurchasesAmount">₹0</div>
+                            <div class="chart-summary-label">Total Purchases</div>
                         </div>
-                        <div style="width: 1px; height: 40px; background: #d1d5db;"></div>
-                        <div style="text-align: center;">
-                            <div style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.25rem;" id="netProfitAmount">₹0</div>
-                            <div style="font-size: 0.875rem; color: #6b7280; font-weight: 500;">Net Profit</div>
+                        <div class="chart-summary-item">
+                            <div class="chart-summary-value" id="netProfitAmount">₹0</div>
+                            <div class="chart-summary-label">Net Profit</div>
                         </div>
                     </div>
                 </div>
@@ -333,7 +335,7 @@
             <!-- Data Table -->
             <div class="chart-container">
                 <h3>📋 Transaction Details</h3>
-                <div id="reportTable" style="overflow-x: auto;">
+                <div id="reportTable" class="table-responsive">
                     <p style="text-align: center; color: #666; padding: 2rem;">Click "Generate Report" to view data</p>
                 </div>
             </div>

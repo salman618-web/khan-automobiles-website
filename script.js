@@ -125,11 +125,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         adminModal.style.display = 'none';
                     }
                     
-                    // Show success message and redirect
-                    alert('Login successful! Redirecting to admin dashboard...');
-                    setTimeout(() => {
-                        window.location.href = 'admin.html';
-                    }, 1000);
+                    // Direct redirect without popup
+                    window.location.href = 'admin.html';
                     
                 } else {
                     console.log('❌ Login failed:', data.message || data.error);
