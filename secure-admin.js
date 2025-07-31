@@ -1602,10 +1602,10 @@ function displayEntries() {
             <div style="font-size: 14px; font-weight: 600;">₹${parseFloat(entry.total || 0).toLocaleString('en-IN')}</div>
             <div style="font-size: 12px; color: #6b7280;" title="${createdDisplay}">${createdDisplay}</div>
             <div style="display: flex; gap: 0.5rem;">
-                <button onclick="editEntry(${entry.id}, '${entry.type}')" class="btn-sm btn-primary" style="padding: 0.25rem 0.5rem; font-size: 12px; border-radius: 6px;" title="Edit Entry">
+                <button onclick="editEntry('${entry.id}', '${entry.type}')" class="btn-sm btn-primary" style="padding: 0.25rem 0.5rem; font-size: 12px; border-radius: 6px;" title="Edit Entry">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button onclick="deleteEntry(${entry.id}, '${entry.type}')" class="btn-sm btn-danger" style="padding: 0.25rem 0.5rem; font-size: 12px; border-radius: 6px; background: #ef4444; border: none; color: white;" title="Delete Entry">
+                <button onclick="deleteEntry('${entry.id}', '${entry.type}')" class="btn-sm btn-danger" style="padding: 0.25rem 0.5rem; font-size: 12px; border-radius: 6px; background: #ef4444; border: none; color: white;" title="Delete Entry">
                     <i class="fas fa-trash"></i>
                 </button>
             </div>
@@ -1655,12 +1655,22 @@ function nextPage() {
 
 async function editEntry(id, type) {
     try {
-        // Find the entry in our local data
-        const entry = allEntries.find(e => e.id === id && e.type === type);
+        console.log('🔍 Editing entry:', { id, type, idType: typeof id });
+        
+        // Find the entry in our local data (handle both string and numeric IDs)
+        const entry = allEntries.find(e => {
+            const match = (String(e.id) === String(id)) && e.type === type;
+            console.log('  Checking entry:', { entryId: e.id, entryIdType: typeof e.id, entryType: e.type, match });
+            return match;
+        });
+        
         if (!entry) {
+            console.error('❌ Entry not found:', { searchId: id, searchType: type, availableEntries: allEntries.length });
             showNotification('Entry not found', 'error');
             return;
         }
+        
+        console.log('✅ Found entry for editing:', entry);
         
         // Use the existing populateEditForm function
         populateEditForm(entry, type);
@@ -1675,6 +1685,8 @@ async function editEntry(id, type) {
 }
 
 async function deleteEntry(id, type) {
+    console.log('🗑️ Deleting entry:', { id, type, idType: typeof id });
+    
     if (!confirm(`Are you sure you want to delete this ${type}?\n\nThis action cannot be undone.`)) {
         return;
     }
