@@ -440,26 +440,7 @@
         }
     </style>
 
-    <!-- Admin Login Modal (Required for authentication) -->
-    <div id="adminModal" class="modal" style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);">
-        <div class="modal-content" style="background: white; margin: 5% auto; padding: 2rem; border-radius: 15px; width: 90%; max-width: 400px; position: relative;">
-            <span class="close" style="position: absolute; top: 1rem; right: 1.5rem; font-size: 2rem; cursor: pointer; color: #999;">&times;</span>
-            <h2 style="margin-bottom: 2rem; color: #2c3e50; text-align: center;">Admin Login</h2>
-            <form id="adminForm">
-                <div style="margin-bottom: 1.5rem;">
-                    <input type="text" id="username" placeholder="Username" required 
-                           style="width: 100%; padding: 1rem; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem;">
-                </div>
-                <div style="margin-bottom: 2rem;">
-                    <input type="password" id="password" placeholder="Password" required 
-                           style="width: 100%; padding: 1rem; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem;">
-                </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1.1rem;">
-                    <i class="fas fa-sign-in-alt"></i> Login
-                </button>
-            </form>
-        </div>
-    </div>
+    <!-- No login modal needed on admin page - users should login from index.html first -->
 
     <!-- SheetJS library for Excel export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
