@@ -493,8 +493,16 @@ async function loadRecentTransactions() {
 
         // Sort by creation time (most recent first), fallback to transaction date if no created_at
         allTransactions.sort((a, b) => {
-            const dateA = new Date(a.created_at || a.date);
-            const dateB = new Date(b.created_at || b.date);
+            const getValidDate = (item) => {
+                if (item.created_at) {
+                    const date = new Date(item.created_at);
+                    if (!isNaN(date.getTime())) return date;
+                }
+                return new Date(item.date);
+            };
+            
+            const dateA = getValidDate(a);
+            const dateB = getValidDate(b);
             return dateB - dateA;
         });
         const recentTransactions = allTransactions.slice(0, 10);
@@ -506,11 +514,19 @@ async function loadRecentTransactions() {
                 const color = transaction.type === 'sale' ? '#22c55e' : '#ef4444';
                 const sign = transaction.type === 'sale' ? '+' : '-';
                 
-                // Format creation time if available
-                const createdDate = transaction.created_at ? new Date(transaction.created_at) : null;
-                const displayDate = createdDate ? 
-                    `Added: ${createdDate.toLocaleDateString('en-IN')} ${createdDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}` 
-                    : `Date: ${transaction.date}`;
+                // Format creation time if available (with robust date handling)
+                let displayDate = `Date: ${transaction.date}`;
+                
+                if (transaction.created_at) {
+                    try {
+                        const createdDate = new Date(transaction.created_at);
+                        if (!isNaN(createdDate.getTime())) {
+                            displayDate = `Added: ${createdDate.toLocaleDateString('en-IN')} ${createdDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`;
+                        }
+                    } catch (error) {
+                        console.warn('Invalid created_at date for transaction:', transaction.id, error);
+                    }
+                }
             
             return `
                     <div class="transaction-item" data-type="${transaction.type}">
@@ -1547,8 +1563,16 @@ async function searchAndFilterEntries() {
         
         // Sort by creation time (most recent first), fallback to transaction date if no created_at
         filteredEntries.sort((a, b) => {
-            const dateA = new Date(a.created_at || a.date);
-            const dateB = new Date(b.created_at || b.date);
+            const getValidDate = (item) => {
+                if (item.created_at) {
+                    const date = new Date(item.created_at);
+                    if (!isNaN(date.getTime())) return date;
+                }
+                return new Date(item.date);
+            };
+            
+            const dateA = getValidDate(a);
+            const dateB = getValidDate(b);
             return dateB - dateA;
         });
         
@@ -1580,11 +1604,19 @@ function displayEntries() {
     const pageEntries = filteredEntries.slice(startIndex, endIndex);
     
     tableBody.innerHTML = pageEntries.map(entry => {
-        // Format creation date/time
-        const createdDate = entry.created_at ? new Date(entry.created_at) : null;
-        const createdDisplay = createdDate ? 
-            `${createdDate.toLocaleDateString('en-IN')} ${createdDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}` 
-            : 'N/A';
+        // Format creation date/time (with robust date handling)
+        let createdDisplay = 'N/A';
+        
+        if (entry.created_at) {
+            try {
+                const createdDate = new Date(entry.created_at);
+                if (!isNaN(createdDate.getTime())) {
+                    createdDisplay = `${createdDate.toLocaleDateString('en-IN')} ${createdDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`;
+                }
+            } catch (error) {
+                console.warn('Invalid created_at date for entry:', entry.id, error);
+            }
+        }
         
         return `
         <div style="padding: 1rem; border-bottom: 1px solid #e2e8f0; display: grid; grid-template-columns: 100px 120px 130px 150px 180px 120px 120px 130px; gap: 1rem; align-items: center; transition: background-color 0.2s;" 

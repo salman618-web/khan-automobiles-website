@@ -73,6 +73,20 @@ class FirestoreService {
         return this.db !== null;
     }
 
+    // Helper: Convert Firestore Timestamps to ISO strings for JavaScript compatibility
+    convertTimestamps(obj) {
+        if (!obj) return obj;
+        
+        const converted = { ...obj };
+        Object.keys(converted).forEach(key => {
+            if (converted[key] && typeof converted[key].toDate === 'function') {
+                // This is a Firestore Timestamp - convert to ISO string
+                converted[key] = converted[key].toDate().toISOString();
+            }
+        });
+        return converted;
+    }
+
     // Generic get all documents from collection
     async getAll(collection) {
         try {
@@ -84,7 +98,7 @@ class FirestoreService {
             snapshot.forEach(doc => {
                 documents.push({
                     id: doc.id,
-                    ...doc.data()
+                    ...this.convertTimestamps(doc.data())
                 });
             });
             
@@ -168,7 +182,7 @@ class FirestoreService {
             
             return {
                 id: doc.id,
-                ...doc.data()
+                ...this.convertTimestamps(doc.data())
             };
         } catch (error) {
             console.error(`❌ Error getting document ${id} from ${collection}:`, error.message);
@@ -238,7 +252,7 @@ class FirestoreService {
             const doc = snapshot.docs[0];
             return {
                 id: doc.id,
-                ...doc.data()
+                ...this.convertTimestamps(doc.data())
             };
         } catch (error) {
             console.error('❌ Error getting user by username:', error.message);
