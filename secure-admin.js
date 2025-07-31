@@ -752,9 +752,18 @@ function populateEditForm(transaction, type) {
 }
 
 // Utility functions
+// Helper function to get today's date in local timezone (fixes timezone issues)
+function getTodayLocalDate() {
+    const today = new Date();
+    const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000));
+    return localDate.toISOString().split('T')[0];
+}
+
 function setSalesDefaults() {
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('saleDate').value = today;
+    // Get today's date in local timezone (fixes timezone issue for Indian users)
+    const todayString = getTodayLocalDate();
+    
+    document.getElementById('saleDate').value = todayString;
     document.getElementById('customerName').value = 'All Customers';
     document.getElementById('saleCategory').value = 'bike-parts';
     document.getElementById('saleDescription').value = 'Todays total sale including everything';
@@ -762,8 +771,10 @@ function setSalesDefaults() {
 }
 
 function setPurchaseDefaults() {
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('purchaseDate').value = today;
+    // Get today's date in local timezone (fixes timezone issue for Indian users)
+    const todayString = getTodayLocalDate();
+    
+    document.getElementById('purchaseDate').value = todayString;
     document.getElementById('supplierName').value = 'Lakhan Autoparts';
     document.getElementById('purchaseCategory').value = 'bike-parts';
     document.getElementById('purchaseDescription').value = 'Purchased this/these items today';
@@ -1072,7 +1083,7 @@ function makeTodayStatsClickable() {
         todaySalesElement.style.cursor = 'pointer';
         todaySalesElement.style.transition = 'transform 0.2s ease';
         todaySalesElement.addEventListener('click', function() {
-            const today = new Date().toISOString().split('T')[0];
+            const today = getTodayLocalDate();
             showSection('reports');
             const reportType = document.getElementById('reportType');
             const reportMonth = document.getElementById('reportMonth');
@@ -1099,7 +1110,7 @@ function makeTodayStatsClickable() {
         todayPurchasesElement.style.cursor = 'pointer';
         todayPurchasesElement.style.transition = 'transform 0.2s ease';
         todayPurchasesElement.addEventListener('click', function() {
-            const today = new Date().toISOString().split('T')[0];
+            const today = getTodayLocalDate();
             showSection('reports');
             const reportType = document.getElementById('reportType');
             const reportMonth = document.getElementById('reportMonth');
