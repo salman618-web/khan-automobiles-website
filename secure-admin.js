@@ -1384,34 +1384,36 @@ async function exportToExcel() {
         // Create workbook
         const wb = XLSX.utils.book_new();
 
-        // Sales sheet
+        // Sales sheet (using correct field names)
         if (salesForExport.length > 0) {
             const salesSheet = salesForExport.map(sale => ({
-                'Date': sale.sale_date,
-                'Customer': sale.customer_name,
-                'Description': sale.product_description,
-                'Quantity': sale.quantity,
-                'Unit Price (₹)': parseFloat(sale.unit_price || 0),
-                'Total Amount (₹)': parseFloat(sale.total_amount || 0),
-                'Payment Method': sale.payment_method || 'N/A'
+                'Date': sale.sale_date || sale.date,
+                'Customer': sale.customer || sale.customer_name || 'N/A',
+                'Category': sale.category || 'N/A',
+                'Description': sale.description || sale.product_description || 'N/A',
+                'Total Amount (₹)': parseFloat(sale.total || sale.total_amount || 0),
+                'Payment Method': sale.paymentMethod || sale.payment_method || 'N/A',
+                'Notes': sale.notes || 'N/A'
             }));
             
+            console.log('📊 Excel Sales Data Preview:', salesSheet.slice(0, 2));
             const salesWS = XLSX.utils.json_to_sheet(salesSheet);
             XLSX.utils.book_append_sheet(wb, salesWS, "Sales");
         }
 
-        // Purchases sheet  
+        // Purchases sheet (using correct field names)
         if (purchasesForExport.length > 0) {
             const purchasesSheet = purchasesForExport.map(purchase => ({
-                'Date': purchase.purchase_date,
-                'Supplier': purchase.supplier_name,
-                'Description': purchase.product_description,
-                'Quantity': purchase.quantity,
-                'Unit Price (₹)': parseFloat(purchase.unit_price || 0),
-                'Total Amount (₹)': parseFloat(purchase.total_amount || 0),
-                'Payment Method': purchase.payment_method || 'N/A'
+                'Date': purchase.purchase_date || purchase.date,
+                'Supplier': purchase.supplier || purchase.supplier_name || 'N/A',
+                'Category': purchase.category || 'N/A',
+                'Description': purchase.description || purchase.product_description || 'N/A',
+                'Total Amount (₹)': parseFloat(purchase.total || purchase.total_amount || 0),
+                'Invoice Number': purchase.invoice_number || purchase.invoiceNumber || 'N/A',
+                'Notes': purchase.notes || 'N/A'
             }));
             
+            console.log('📊 Excel Purchases Data Preview:', purchasesSheet.slice(0, 2));
             const purchasesWS = XLSX.utils.json_to_sheet(purchasesSheet);
             XLSX.utils.book_append_sheet(wb, purchasesWS, "Purchases");
         }

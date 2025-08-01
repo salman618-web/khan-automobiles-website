@@ -484,6 +484,13 @@ app.get('/api/dashboard', async (req, res) => {
         };
         const today = getTodayLocal();
         console.log('📅 Server calculating today as:', today);
+        console.log('📊 Total sales records:', currentSales.length);
+        console.log('📊 Sample sales dates:', currentSales.slice(0, 3).map(s => ({
+            id: s.id,
+            sale_date: s.sale_date,
+            date: s.date,
+            total: s.total || s.total_amount
+        })));
         
         const todaySales = currentSales
             .filter(sale => {
@@ -494,6 +501,14 @@ app.get('/api/dashboard', async (req, res) => {
             })
             .reduce((sum, sale) => sum + parseFloat(sale.total_amount || sale.total || 0), 0);
             
+        console.log('📊 Total purchase records:', currentPurchases.length);
+        console.log('📊 Sample purchase dates:', currentPurchases.slice(0, 3).map(p => ({
+            id: p.id,
+            purchase_date: p.purchase_date,
+            date: p.date,
+            total: p.total || p.total_amount
+        })));
+        
         const todayPurchases = currentPurchases
             .filter(purchase => {
                 const dateToCheck = purchase.purchase_date || purchase.date || '';

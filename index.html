@@ -999,26 +999,26 @@
 
     <!-- Phone Numbers Modal -->
     <div id="phoneNumbersModal" class="modal" style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);">
-        <div class="modal-content" style="background: white; margin: 5% auto; padding: 2rem; border-radius: 15px; width: 90%; max-width: 400px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-            <span class="close-phone" style="position: absolute; top: 1rem; right: 1.5rem; font-size: 2rem; cursor: pointer; color: #999;">&times;</span>
-            <h2 style="margin-bottom: 2rem; color: #2c3e50; text-align: center;">
+        <div class="modal-content" style="background: white; margin: 5% auto; padding: 1.5rem; border-radius: 15px; width: 95%; max-width: 400px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto;">
+            <span class="close-phone" style="position: absolute; top: 1rem; right: 1.5rem; font-size: 2rem; cursor: pointer; color: #999; z-index: 1;">&times;</span>
+            <h2 style="margin-bottom: 2rem; color: #2c3e50; text-align: center; font-size: 1.5rem; padding-right: 2rem;">
                 <i class="fas fa-phone" style="color: #ff6b35; margin-right: 0.5rem;"></i>
-                &emsp; &emsp; Call Us
+                Call Us
             </h2>
             <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-                <a href="tel:9118819531" class="phone-link" style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: #f8fafc; border-radius: 10px; text-decoration: none; color: #2c3e50; border: 2px solid transparent; transition: all 0.3s ease;">
-                    <div>
+                <a href="tel:9118819531" class="phone-link" style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: #f8fafc; border-radius: 10px; text-decoration: none; color: #2c3e50; border: 2px solid transparent; transition: all 0.3s ease; flex-wrap: wrap; gap: 0.5rem;">
+                    <div style="flex: 1; min-width: 120px;">
                         <div style="font-weight: 600; font-size: 1.1rem;">Mobile 1</div>
                         <div style="color: #666; font-size: 0.9rem;">WhatsApp Available</div>
                     </div>
-                    <div style="font-size: 1.2rem; font-weight: 700; color: #ff6b35;">9118819531</div>
+                    <div style="font-size: 1.2rem; font-weight: 700; color: #ff6b35; word-break: break-all;">9118819531</div>
                 </a>
-                <a href="tel:8052594809" class="phone-link" style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: #f8fafc; border-radius: 10px; text-decoration: none; color: #2c3e50; border: 2px solid transparent; transition: all 0.3s ease;">
-                    <div>
+                <a href="tel:8052594809" class="phone-link" style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: #f8fafc; border-radius: 10px; text-decoration: none; color: #2c3e50; border: 2px solid transparent; transition: all 0.3s ease; flex-wrap: wrap; gap: 0.5rem;">
+                    <div style="flex: 1; min-width: 120px;">
                         <div style="font-weight: 600; font-size: 1.1rem;">Mobile 2</div>
                         <div style="color: #666; font-size: 0.9rem;">WhatsApp Available</div>
                     </div>
-                    <div style="font-size: 1.2rem; font-weight: 700; color: #ff6b35;">8052594809</div>
+                    <div style="font-size: 1.2rem; font-weight: 700; color: #ff6b35; word-break: break-all;">8052594809</div>
                 </a>
             </div>
             <div style="text-align: center; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; color: #666; font-size: 0.9rem;">
@@ -1027,6 +1027,50 @@
             </div>
         </div>
     </div>
+
+    <style>
+    /* Additional responsive styles for Call Now modal */
+    @media (max-width: 768px) {
+        #phoneNumbersModal .modal-content {
+            margin: 10% auto !important;
+            padding: 1rem !important;
+            width: 95% !important;
+        }
+        
+        #phoneNumbersModal .phone-link {
+            flex-direction: column !important;
+            text-align: center !important;
+            gap: 1rem !important;
+        }
+        
+        #phoneNumbersModal h2 {
+            font-size: 1.3rem !important;
+            margin-bottom: 1.5rem !important;
+        }
+        
+        #phoneNumbersModal .close-phone {
+            top: 0.5rem !important;
+            right: 1rem !important;
+            font-size: 1.8rem !important;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        #phoneNumbersModal .modal-content {
+            margin: 15% auto !important;
+            padding: 0.8rem !important;
+            width: 98% !important;
+        }
+        
+        #phoneNumbersModal .phone-link div {
+            font-size: 1rem !important;
+        }
+        
+        #phoneNumbersModal .phone-link div:last-child {
+            font-size: 1.1rem !important;
+        }
+    }
+    </style>
 
     <script src="script.js"></script>
 </body>
