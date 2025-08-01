@@ -1381,6 +1381,10 @@ async function exportToExcel() {
         let salesForExport = filteredSales;
         let purchasesForExport = filteredPurchases;
 
+        // Calculate totals once for reuse
+        const totalSalesAmount = salesForExport.reduce((sum, sale) => sum + parseFloat(sale.total || sale.total_amount || 0), 0);
+        const totalPurchasesAmount = purchasesForExport.reduce((sum, purchase) => sum + parseFloat(purchase.total || purchase.total_amount || 0), 0);
+
         // Create workbook
         const wb = XLSX.utils.book_new();
 
@@ -1396,8 +1400,47 @@ async function exportToExcel() {
                 'Notes': sale.notes || 'N/A'
             }));
             
+            // Add empty row and total row
+            salesSheet.push({
+                'Date': '',
+                'Customer': '',
+                'Category': '',
+                'Description': '',
+                'Total Amount (₹)': '',
+                'Payment Method': '',
+                'Notes': ''
+            });
+            
+            salesSheet.push({
+                'Date': '',
+                'Customer': '',
+                'Category': '',
+                'Description': '🔷 TOTAL SALES AMOUNT',
+                'Total Amount (₹)': totalSalesAmount,
+                'Payment Method': '',
+                'Notes': `${salesForExport.length} transactions`
+            });
+            
             console.log('📊 Excel Sales Data Preview:', salesSheet.slice(0, 2));
+            console.log('💰 Total Sales Amount:', totalSalesAmount.toLocaleString('en-IN'));
+            
             const salesWS = XLSX.utils.json_to_sheet(salesSheet);
+            
+            // Style the total row (make it bold and colored)
+            const totalRowIndex = salesSheet.length; // 1-based indexing for Excel
+            if (salesWS[`D${totalRowIndex}`]) {
+                salesWS[`D${totalRowIndex}`].s = {
+                    font: { bold: true, color: { rgb: "FFFFFF" } },
+                    fill: { fgColor: { rgb: "4472C4" } }
+                };
+            }
+            if (salesWS[`E${totalRowIndex}`]) {
+                salesWS[`E${totalRowIndex}`].s = {
+                    font: { bold: true, color: { rgb: "FFFFFF" } },
+                    fill: { fgColor: { rgb: "4472C4" } }
+                };
+            }
+            
             XLSX.utils.book_append_sheet(wb, salesWS, "Sales");
         }
 
@@ -1413,10 +1456,79 @@ async function exportToExcel() {
                 'Notes': purchase.notes || 'N/A'
             }));
             
+
+            
+            // Add empty row and total row
+            purchasesSheet.push({
+                'Date': '',
+                'Supplier': '',
+                'Category': '',
+                'Description': '',
+                'Total Amount (₹)': '',
+                'Invoice Number': '',
+                'Notes': ''
+            });
+            
+            purchasesSheet.push({
+                'Date': '',
+                'Supplier': '',
+                'Category': '',
+                'Description': '🔶 TOTAL PURCHASES AMOUNT',
+                'Total Amount (₹)': totalPurchasesAmount,
+                'Invoice Number': '',
+                'Notes': `${purchasesForExport.length} transactions`
+            });
+            
             console.log('📊 Excel Purchases Data Preview:', purchasesSheet.slice(0, 2));
+            console.log('💰 Total Purchases Amount:', totalPurchasesAmount.toLocaleString('en-IN'));
+            
             const purchasesWS = XLSX.utils.json_to_sheet(purchasesSheet);
+            
+            // Style the total row (make it bold and colored)
+            const totalRowIndex = purchasesSheet.length; // 1-based indexing for Excel
+            if (purchasesWS[`D${totalRowIndex}`]) {
+                purchasesWS[`D${totalRowIndex}`].s = {
+                    font: { bold: true, color: { rgb: "FFFFFF" } },
+                    fill: { fgColor: { rgb: "E74C3C" } }
+                };
+            }
+            if (purchasesWS[`E${totalRowIndex}`]) {
+                purchasesWS[`E${totalRowIndex}`].s = {
+                    font: { bold: true, color: { rgb: "FFFFFF" } },
+                    fill: { fgColor: { rgb: "E74C3C" } }
+                };
+            }
+            
             XLSX.utils.book_append_sheet(wb, purchasesWS, "Purchases");
         }
+
+        // Add Summary Sheet with overall totals
+        const summaryData = [];
+        const netProfit = totalSalesAmount - totalPurchasesAmount;
+        
+        summaryData.push({ 'Metric': '📊 BUSINESS SUMMARY', 'Value (₹)': '', 'Details': '' });
+        summaryData.push({ 'Metric': '', 'Value (₹)': '', 'Details': '' });
+        summaryData.push({ 'Metric': '🔷 Total Sales', 'Value (₹)': totalSalesAmount, 'Details': `${salesForExport.length} transactions` });
+        summaryData.push({ 'Metric': '🔶 Total Purchases', 'Value (₹)': totalPurchasesAmount, 'Details': `${purchasesForExport.length} transactions` });
+        summaryData.push({ 'Metric': '', 'Value (₹)': '', 'Details': '' });
+        summaryData.push({ 
+            'Metric': '💰 Net Profit', 
+            'Value (₹)': netProfit, 
+            'Details': netProfit >= 0 ? '✅ Profitable' : '⚠️ Loss' 
+        });
+        summaryData.push({ 'Metric': '', 'Value (₹)': '', 'Details': '' });
+        summaryData.push({ 'Metric': '📅 Report Generated', 'Value (₹)': '', 'Details': new Date().toLocaleString('en-IN') });
+        summaryData.push({ 'Metric': '🏢 Business', 'Value (₹)': '', 'Details': 'Khan Automobiles' });
+        
+        const summaryWS = XLSX.utils.json_to_sheet(summaryData);
+        
+        // Style the summary sheet
+        summaryWS['A1'].s = { font: { bold: true, size: 14, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "2E86AB" } } };
+        if (summaryWS['A3']) summaryWS['A3'].s = { font: { bold: true, color: { rgb: "4472C4" } } };
+        if (summaryWS['A4']) summaryWS['A4'].s = { font: { bold: true, color: { rgb: "E74C3C" } } };
+        if (summaryWS['A6']) summaryWS['A6'].s = { font: { bold: true, color: { rgb: "27AE60" } } };
+        
+        XLSX.utils.book_append_sheet(wb, summaryWS, "Summary");
 
         // Generate filename
         let filename = 'Khan_Automobiles_Report';
@@ -1431,7 +1543,9 @@ async function exportToExcel() {
         setButtonState(exportBtn, 'success');
         
         console.log('✅ Excel export completed successfully');
-        showNotification(`Excel file "${filename}" downloaded successfully!`, 'success');
+        console.log('💰 Export totals - Sales: ₹' + totalSalesAmount.toLocaleString('en-IN') + ', Purchases: ₹' + totalPurchasesAmount.toLocaleString('en-IN'));
+        
+        showNotification(`Excel file "${filename}" downloaded successfully! 📊 Includes: ${salesForExport.length} sales (₹${totalSalesAmount.toLocaleString('en-IN')}), ${purchasesForExport.length} purchases (₹${totalPurchasesAmount.toLocaleString('en-IN')}) + Summary sheet with totals!`, 'success');
         
     } catch (error) {
         console.error('Export to Excel error:', error);
