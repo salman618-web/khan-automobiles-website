@@ -34,7 +34,7 @@
                         'orbitron': ['Orbitron', 'monospace'],
                     },
                     colors: {
-                        primary: '#ff6b35',
+                        primary: '#f76161',
                         secondary: '#1e3c72',
                         accent: '#FAFAFA',
                     },
@@ -51,8 +51,8 @@
                             '50%': { transform: 'translateY(-20px) rotate(5deg)' }
                         },
                         glow: {
-                            '0%': { boxShadow: '0 0 5px #ff6b35, 0 0 20px #ff6b35' },
-                            '100%': { boxShadow: '0 0 20px #ff6b35, 0 0 30px #ff6b35, 0 0 40px #ff6b35' }
+                            '0%': { boxShadow: '0 0 5px #f76161, 0 0 20px #f76161' },
+                            '100%': { boxShadow: '0 0 20px #f76161, 0 0 30px #f76161, 0 0 40px #f76161' }
                         }
                     },
                     perspective: {
@@ -76,7 +76,7 @@
         }
         
         .gradient-text {
-            background: linear-gradient(135deg, #ff6b35, #f7931e, #FAFAFA);
+            background: linear-gradient(135deg, #ff1e1e, #ff4040, #f76161);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -108,7 +108,7 @@
         }
 
         ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            background: linear-gradient(135deg, #f76161, #f7931e);
             border-radius: 10px;
         }
 
@@ -125,7 +125,7 @@
             align-items: center;
             justify-content: center;
             font-size: 1.5rem;
-            color: #ff6b35;
+            color: #ff4040;
             transition: all 0.3s ease;
         }
 
@@ -292,6 +292,73 @@
             }
         }
 
+        /* Modal responsive fixes */
+        .modal {
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-box {
+            position: relative;
+            margin: auto;
+            transform: none !important;
+            top: auto !important;
+            left: auto !important;
+            right: auto !important;
+            bottom: auto !important;
+        }
+
+        /* Ensure modals work on all screen sizes */
+        @media (max-width: 640px) {
+            .modal {
+                padding: 0.5rem;
+            }
+            
+            .modal-box {
+                width: 95% !important;
+                max-width: 95% !important;
+                margin: 0.5rem;
+            }
+        }
+
+        @media (min-width: 641px) {
+            .modal-box {
+                width: 90%;
+                max-width: 28rem;
+            }
+        }
+
+        /* Phone modal specific fixes */
+        .modal-box .btn {
+            white-space: normal;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        /* Prevent text overflow in phone numbers */
+        @media (max-width: 400px) {
+            .modal-box {
+                width: 98% !important;
+                max-width: 98% !important;
+                margin: 0.25rem;
+            }
+            
+            .modal-box .btn {
+                min-height: 4rem;
+                padding: 0.75rem 1rem;
+            }
+            
+            .modal-box .flex-col {
+                gap: 0.5rem;
+            }
+            
+            .modal-box .text-base {
+                font-size: 0.875rem;
+                line-height: 1.25rem;
+            }
+        }
 
     </style>
 </head>
@@ -1062,8 +1129,8 @@
     </footer>
 
     <!-- Admin Modal -->
-    <dialog id="adminModal" class="modal">
-        <div class="modal-box glass-effect border border-primary/20 w-11/12 max-w-md">
+    <dialog id="adminModal" class="modal modal-open:backdrop-blur-sm">
+        <div class="modal-box glass-effect border border-primary/20 w-11/12 max-w-md mx-auto my-auto relative">
             <form method="dialog">
                 <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2 text-white hover:text-primary transition-colors duration-300" id="closeAdminModal">✕</button>
             </form>
@@ -1096,8 +1163,8 @@
     </dialog>
 
     <!-- Phone Numbers Modal -->
-    <dialog id="phoneNumbersModal" class="modal">
-        <div class="modal-box glass-effect border border-primary/20 w-11/12 max-w-md">
+    <dialog id="phoneNumbersModal" class="modal modal-open:backdrop-blur-sm">
+        <div class="modal-box glass-effect border border-primary/20 w-11/12 max-w-md mx-auto my-auto relative">
             <form method="dialog">
                 <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2 text-white hover:text-primary transition-colors duration-300" id="closePhoneModal">✕</button>
             </form>
@@ -1107,31 +1174,39 @@
                         <i class="fas fa-phone text-lg sm:text-2xl text-white"></i>
                     </div>
                 </div>
-                <h3 class="text-xl sm:text-2xl font-bold text-white">Call Us Now</h3>
+                <h3 class="text-lg sm:text-xl lg:text-2xl font-bold text-white">Call Us Now</h3>
             </div>
             <div class="space-y-3 sm:space-y-4">
-                <a href="tel:9118819531" class="btn btn-outline w-full text-white border-white/20 hover:bg-primary hover:border-primary transition-all duration-300 group p-3 sm:p-4">
-                    <div class="flex items-center justify-between w-full">
-                        <div class="text-left">
-                            <div class="font-semibold text-sm sm:text-base">Mobile 1</div>
-                            <div class="text-xs sm:text-sm opacity-70">WhatsApp Available</div>
+                <a href="tel:9118819531" class="btn btn-outline w-full text-white border-white/20 hover:bg-primary hover:border-primary transition-all duration-300 group min-h-[3.5rem] sm:min-h-[4rem] h-auto">
+                    <div class="flex flex-col sm:flex-row items-center justify-between w-full gap-2 sm:gap-4 py-2">
+                        <div class="text-center sm:text-left flex-shrink-0">
+                            <div class="font-semibold text-sm sm:text-base whitespace-nowrap">Kamran</div>
+                            <div class="text-xs sm:text-sm opacity-70 whitespace-nowrap">WhatsApp Available</div>
                         </div>
-                        <div class="text-lg sm:text-xl font-bold group-hover:scale-110 transition-transform duration-300">9118819531</div>
+                        <div class="text-base sm:text-lg lg:text-xl font-bold group-hover:scale-110 transition-transform duration-300 break-all sm:break-normal">
+                            9118819531
+                        </div>
                     </div>
                 </a>
-                <a href="tel:8052594809" class="btn btn-outline w-full text-white border-white/20 hover:bg-primary hover:border-primary transition-all duration-300 group p-3 sm:p-4">
-                    <div class="flex items-center justify-between w-full">
-                        <div class="text-left">
-                            <div class="font-semibold text-sm sm:text-base">Mobile 2</div>
-                            <div class="text-xs sm:text-sm opacity-70">WhatsApp Available</div>
+                <a href="tel:8052594809" class="btn btn-outline w-full text-white border-white/20 hover:bg-primary hover:border-primary transition-all duration-300 group min-h-[3.5rem] sm:min-h-[4rem] h-auto">
+                    <div class="flex flex-col sm:flex-row items-center justify-between w-full gap-2 sm:gap-4 py-2">
+                        <div class="text-center sm:text-left flex-shrink-0">
+                            <div class="font-semibold text-sm sm:text-base whitespace-nowrap">Aamir</div>
+                            <div class="text-xs sm:text-sm opacity-70 whitespace-nowrap">WhatsApp Available</div>
                         </div>
-                        <div class="text-lg sm:text-xl font-bold group-hover:scale-110 transition-transform duration-300">8052594809</div>
+                        <div class="text-base sm:text-lg lg:text-xl font-bold group-hover:scale-110 transition-transform duration-300 break-all sm:break-normal">
+                            8052594809
+                        </div>
                     </div>
                 </a>
             </div>
-            <div class="text-center mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-white/20 text-gray-300 text-xs sm:text-sm">
-                <i class="fas fa-clock mr-2"></i>
-                Available: 9:00 AM - 7:00 PM (All Days)
+            <div class="text-center mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-white/20 text-gray-300">
+                <div class="flex items-center justify-center flex-wrap gap-1">
+                    <i class="fas fa-clock"></i>
+                    <span class="text-xs sm:text-sm">Available:</span>
+                    <span class="text-xs sm:text-sm font-medium">9:00 AM - 7:00 PM</span>
+                    <span class="text-xs sm:text-sm">(All Days)</span>
+                </div>
             </div>
         </div>
         <form method="dialog" class="modal-backdrop">
