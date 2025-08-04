@@ -152,6 +152,10 @@ async function loadFromFallback() {
 // Create default admin user
 async function createDefaultData() {
     const defaultAdminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    console.log('👤 Creating default admin user...');
+    console.log('🔧 Using ADMIN_PASSWORD from env:', !!process.env.ADMIN_PASSWORD);
+    console.log('🔐 Password length:', defaultAdminPassword.length);
+    
     users = [
         {
             id: '1',
@@ -161,6 +165,12 @@ async function createDefaultData() {
             created_at: new Date().toISOString()
         }
     ];
+    
+    console.log('✅ Default admin user created:', { 
+        username: users[0].username, 
+        role: users[0].role,
+        passwordLength: users[0].password.length 
+    });
     
     // Save to Firestore if available, otherwise to file
     if (firestoreService.isAvailable()) {
@@ -247,10 +257,24 @@ function saveUsers() {
 
 // API Routes
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+    res.json({ 
+        status: 'OK', 
+        timestamp: new Date().toISOString(),
+        service: 'Khan Automobiles API',
+        adminPasswordSet: !!process.env.ADMIN_PASSWORD
+    });
+});
+
 // Simple login endpoint
 app.post('/api/login', async (req, res) => {
     try {
         const { username, password } = req.body;
+        console.log('🔐 Login request received:', { username, passwordLength: password?.length });
+        console.log('🔧 ADMIN_PASSWORD env var set:', !!process.env.ADMIN_PASSWORD);
+        console.log('👥 Users array length:', users.length);
+        
         let user = null;
         
         if (firestoreService.isAvailable()) {
@@ -265,6 +289,20 @@ app.post('/api/login', async (req, res) => {
         // Fallback to local users array
         if (!user) {
             user = users.find(u => u.username === username);
+        }
+        
+        console.log('👤 User found:', !!user);
+        if (user) {
+            console.log('🔍 User details:', { 
+                id: user.id, 
+                username: user.username, 
+                role: user.role,
+                passwordLength: user.password?.length 
+            });
+            console.log('🔐 Password match:', user.password === password);
+        } else {
+            console.log('❌ No user found with username:', username);
+            console.log('📋 Available users:', users.map(u => ({ id: u.id, username: u.username })));
         }
         
         if (user && user.password === password) {
@@ -568,6 +606,8 @@ async function startServer() {
             console.log(`🌐 Port: ${PORT}`);
             console.log(`🔥 Firestore: ${firestoreService.isAvailable() ? 'CONNECTED' : 'DISABLED'}`);
             console.log(`📊 Data: ${sales.length} sales, ${purchases.length} purchases`);
+            console.log(`👥 Users: ${users.length} (${users.map(u => u.username).join(', ')})`);
+            console.log(`🔐 ADMIN_PASSWORD set: ${!!process.env.ADMIN_PASSWORD}`);
             console.log('🎉 =================================');
             console.log('');
         });

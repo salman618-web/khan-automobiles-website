@@ -1,1077 +1,1418 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Khan Automobiles - Premier Auto Service & Parts</title>
-    <link rel="stylesheet" href="style.css">
+    
+    <!-- TailwindCSS v3+ with DaisyUI -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    
+    <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <!-- VanillaTilt.js -->
+    <script src="https://cdn.jsdelivr.net/npm/vanilla-tilt@1.8.0/dist/vanilla-tilt.min.js"></script>
+    
+    <!-- GSAP with ScrollTrigger -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif'],
+                        'orbitron': ['Orbitron', 'monospace'],
+                    },
+                    colors: {
+                        primary: '#ff6b35',
+                        secondary: '#1e3c72',
+                        accent: '#FAFAFA',
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'glow': 'glow 2s ease-in-out infinite alternate',
+                        'spin-slow': 'spin 20s linear infinite',
+                        'bounce-slow': 'bounce 3s infinite',
+                        'pulse-slow': 'pulse 3s infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
+                            '50%': { transform: 'translateY(-20px) rotate(5deg)' }
+                        },
+                        glow: {
+                            '0%': { boxShadow: '0 0 5px #ff6b35, 0 0 20px #ff6b35' },
+                            '100%': { boxShadow: '0 0 20px #ff6b35, 0 0 30px #ff6b35, 0 0 40px #ff6b35' }
+                        }
+                    },
+                    perspective: {
+                        '1000': '1000px',
+                        '2000': '2000px',
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
-        /* Professional MotrParts-inspired styles */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        html {
+            scroll-behavior: smooth;
         }
         
-        body {
-            font-family: 'Inter', sans-serif;
-            line-height: 1.6;
-            color: #333;
-        }
-        
-        .hero-section {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: white;
-            padding: 8rem 2rem 4rem;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .hero-section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><polygon points="0,1000 1000,800 1000,1000" fill="rgba(255,255,255,0.05)"/><circle cx="200" cy="200" r="3" fill="rgba(255,255,255,0.1)"/><circle cx="800" cy="300" r="2" fill="rgba(255,255,255,0.1)"/></svg>');
-            z-index: 1;
-        }
-        
-        .hero-content {
-            position: relative;
-            z-index: 2;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        .hero-title {
-            font-family: 'Orbitron', monospace;
-            font-size: 4.5rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            color: #ffffff;
-            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
-            letter-spacing: 4px;
-            text-transform: uppercase;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 2rem;
-        }
-        
-        .title-logo {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            font-size: 3.5rem;
-            color: #ffd700;
-            text-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
-        }
-        
-        .title-text {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        
-        .title-main {
-            font-size: 4.5rem;
-            line-height: 1;
-            margin-bottom: 0.5rem;
-        }
-        
-        .title-sub {
-            font-size: 1.2rem;
-            font-weight: 400;
-            letter-spacing: 8px;
-            color: #ffd700;
-            opacity: 0.9;
-        }
-        
-        .auto-icons {
-            display: flex;
-            gap: 2rem;
-            margin-top: 2rem;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .auto-icon {
-            font-size: 2.5rem;
-            color: #ffffff;
-            opacity: 0.8;
-            transition: all 0.3s ease;
-            animation: floatIcon 3s ease-in-out infinite;
-        }
-        
-        .auto-icon:nth-child(1) { animation-delay: 0s; color: #ff6b35; }
-        .auto-icon:nth-child(2) { animation-delay: 0.5s; color: #ffd700; }
-        .auto-icon:nth-child(3) { animation-delay: 1s; color: #ffffff; }
-        .auto-icon:nth-child(4) { animation-delay: 1.5s; color: #ff6b35; }
-        .auto-icon:nth-child(5) { animation-delay: 2s; color: #ffd700; }
-        
-        .auto-icon:hover {
-            transform: scale(1.2);
-            opacity: 1;
-        }
-        
-        @keyframes floatIcon {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-        }
-        
-        .phone-link:hover {
-            background: #e3f2fd !important;
-            border-color: #ff6b35 !important;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.2);
-        }
-        
-        .hero-subtitle {
-            font-size: 1.4rem;
-            margin-bottom: 2rem;
-            opacity: 0.9;
-        }
-        
-        .hero-badges {
-            display: flex;
-            justify-content: center;
-            gap: 2rem;
-            margin: 3rem 0;
-            flex-wrap: wrap;
-        }
-        
-        .badge {
+        .glass-effect {
             background: rgba(255, 255, 255, 0.1);
-            padding: 1rem 2rem;
-            border-radius: 50px;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
-        }
-        
-        .cta-buttons {
-            display: flex;
-            gap: 1.5rem;
-            justify-content: center;
-            margin-top: 2rem;
-            flex-wrap: wrap;
-        }
-        
-        .btn {
-            padding: 1rem 2.5rem;
-            border: none;
-            border-radius: 50px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #ff6b35, #f7931e);
-            color: white;
-            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.4);
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(255, 107, 53, 0.6);
-        }
-        
-        .btn-secondary {
-            background: transparent;
-            color: white;
-            border: 2px solid white;
-        }
-        
-        .btn-secondary:hover {
-            background: white;
-            color: #1e3c72;
-        }
-        
-        .categories-section {
-            padding: 4rem 2rem;
-            background: #f8fafc;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        .section-title {
-            text-align: center;
-            font-size: 2.5rem;
-            margin-bottom: 3rem;
-            color: #2c3e50;
-            font-weight: 700;
-        }
-        
-        .categories-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 2rem;
-        }
-        
-        .category-card {
-            background: white;
-            padding: 2rem;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-            border: 3px solid transparent;
-            cursor: pointer;
-        }
-        
-        .category-card:hover {
-            transform: translateY(-10px);
-            border-color: #ff6b35;
-            box-shadow: 0 15px 30px rgba(255, 107, 53, 0.2);
-        }
-        
-        .category-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            color: #ff6b35;
-        }
-        
-        .category-title {
-            font-size: 1.4rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            color: #2c3e50;
-        }
-        
-        .category-items {
-            list-style: none;
-            font-size: 0.9rem;
-            line-height: 1.8;
-            color: #666;
-        }
-        
-        .category-items li:before {
-            content: "• ";
-            color: #ff6b35;
-            font-weight: bold;
-        }
-        
-        .brands-section {
-            padding: 4rem 2rem;
-            background: white;
-        }
-        
-        .brands-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 2rem;
-            margin-top: 3rem;
-        }
-        
-        .brand-card {
-            background: #f8fafc;
-            padding: 2rem;
-            border-radius: 15px;
-            text-align: center;
-            transition: all 0.3s ease;
-            border: 3px solid transparent;
-            cursor: pointer;
-        }
-        
-        .brand-card:hover {
-            transform: scale(1.05);
-            border-color: #ff6b35;
-            background: white;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-        
-        .brand-logo {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 1rem;
-            background: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.5rem;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        
-        .vehicle-showcase {
-            padding: 4rem 2rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        
-        .showcase-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-top: 3rem;
-        }
-        
-        .showcase-card {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 2rem;
-            border-radius: 15px;
-            text-align: center;
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: transform 0.3s ease;
         }
         
-        .showcase-card:hover {
-            transform: translateY(-10px);
+        .gradient-text {
+            background: linear-gradient(135deg, #ff6b35, #f7931e, #FAFAFA);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
-        
-        .showcase-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            color: #ffd700;
+
+        .hero-gradient-text {
+            background: linear-gradient(135deg, #ffffff, #FAFAFA, #ffffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
-        
-        .testimonials-section {
-            padding: 4rem 2rem;
-            background: #f8fafc;
+
+        .tilt-card {
+            transform-style: preserve-3d;
+            transition: all 0.3s ease;
         }
-        
-        .testimonials-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-top: 3rem;
+
+        .tilt-card:hover {
+            transform: translateY(-5px) scale(1.02);
         }
-        
-        .testimonial-card {
-            background: white;
-            padding: 2rem;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            position: relative;
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
         }
-        
-        .testimonial-card:before {
-            content: '"';
-            font-size: 4rem;
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #e55a2b, #e8851a);
+        }
+
+        /* Responsive Icon containers */
+        .icon-container {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
             color: #ff6b35;
-            position: absolute;
-            top: -10px;
-            left: 20px;
-            line-height: 1;
+            transition: all 0.3s ease;
         }
-        
-        .testimonial-text {
-            font-style: italic;
-            margin-bottom: 1rem;
-            color: #666;
-            line-height: 1.6;
+
+        .icon-large {
+            width: 60px;
+            height: 60px;
+            font-size: 2rem;
         }
-        
-        .testimonial-author {
-            font-weight: 600;
-            color: #2c3e50;
-        }
-        
-        .contact-section {
-            padding: 4rem 2rem;
-            background: #2c3e50;
-            color: white;
-        }
-        
-        .contact-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-            margin-top: 3rem;
-        }
-        
-        .contact-item {
-            text-align: center;
-            padding: 2rem;
+
+        /* Floating icons - fully responsive */
+        .floating-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 1.2rem;
+            color: #FAFAFA;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            transition: all 0.3s ease;
         }
-        
-        .contact-icon {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            color: #ff6b35;
-        }
-        
-        @media (max-width: 768px) {
-            .hero-title {
+
+        /* Responsive breakpoints for icons */
+        @media (min-width: 480px) {
+            .icon-container {
+                width: 60px;
+                height: 60px;
+                font-size: 1.8rem;
+            }
+            .icon-large {
+                width: 80px;
+                height: 80px;
                 font-size: 2.5rem;
-                flex-direction: column;
-                gap: 1rem;
-                text-align: center;
             }
-            
-            .title-main {
-                font-size: 2.2rem !important;
-                line-height: 1.2;
-                margin-bottom: 0.3rem;
-            }
-            
-            .title-logo {
-                font-size: 2rem !important;
-                gap: 0.5rem;
-            }
-            
-            .title-sub {
-                font-size: 0.9rem !important;
-                letter-spacing: 4px !important;
-                margin-top: 0.5rem;
-            }
-            
-            .hero-section {
-                padding: 6rem 1rem 3rem;
-            }
-            
-            .auto-icons {
-                gap: 1rem;
-                margin-top: 1.5rem;
-                flex-wrap: wrap;
-            }
-            
-            .auto-icon {
-                font-size: 1.8rem !important;
-            }
-            
-            .hero-subtitle {
-                font-size: 1rem !important;
-                padding: 0 1rem;
-                line-height: 1.4;
-                margin-top: 1.5rem;
-            }
-            
-            .hero-badges {
-                margin-top: 1.5rem;
-                gap: 1rem;
-            }
-            
-            .categories-grid {
-                grid-template-columns: 1fr;
-            }
-            .brands-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            .cta-buttons {
-                flex-direction: column;
-                align-items: center;
+            .floating-icon {
+                width: 50px;
+                height: 50px;
+                font-size: 1.5rem;
             }
         }
-        
-        @media (max-width: 480px) {
-            .title-main {
-                font-size: 1.8rem !important;
-                line-height: 1.1;
+
+        @media (min-width: 640px) {
+            .icon-container {
+                width: 70px;
+                height: 70px;
+                font-size: 2rem;
+            }
+            .icon-large {
+                width: 100px;
+                height: 100px;
+                font-size: 3rem;
+            }
+            .floating-icon {
+                width: 60px;
+                height: 60px;
+                font-size: 1.8rem;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .icon-container {
+                width: 80px;
+                height: 80px;
+                font-size: 2.5rem;
+            }
+            .icon-large {
+                width: 120px;
+                height: 120px;
+                font-size: 4rem;
+            }
+            .floating-icon {
+                width: 70px;
+                height: 70px;
+                font-size: 2rem;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .floating-icon {
+                width: 80px;
+                height: 80px;
+                font-size: 2.2rem;
+            }
+        }
+
+        /* Ensure all cards are visible */
+        .card {
+            opacity: 1;
+            transform: none;
+            display: block;
+        }
+
+        /* Animation classes */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive text adjustments */
+        .responsive-title {
+            font-size: 2rem;
+            line-height: 1.1;
+        }
+
+        @media (min-width: 480px) {
+            .responsive-title {
+                font-size: 2.5rem;
+            }
+        }
+
+        @media (min-width: 640px) {
+            .responsive-title {
+                font-size: 3.5rem;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .responsive-title {
+                font-size: 4.5rem;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .responsive-title {
+                font-size: 6rem;
+            }
+        }
+
+        @media (min-width: 1280px) {
+            .responsive-title {
+                font-size: 7rem;
+            }
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 479px) {
+            .hero-content {
+                padding: 1rem;
             }
             
-            .title-logo {
-                font-size: 1.5rem !important;
+            .card-body {
+                padding: 1rem;
             }
             
-            .title-sub {
-                font-size: 0.8rem !important;
-                letter-spacing: 2px !important;
+            .navbar {
+                padding: 0.5rem 1rem;
             }
-            
-            .hero-section {
-                padding: 5rem 0.5rem 2rem;
+
+            .floating-icon {
+                width: 35px;
+                height: 35px;
+                font-size: 1rem;
             }
-            
-            .auto-icons {
-                gap: 0.8rem;
-                margin-top: 1rem;
-            }
-            
-                         .auto-icon {
-                 font-size: 1.5rem !important;
-             }
-             
-             .hero-subtitle {
-                 font-size: 0.9rem !important;
-                 padding: 0 0.5rem;
-                 line-height: 1.3;
-                 margin-top: 1rem;
-             }
-             
-             .hero-badges {
-                 margin-top: 1rem;
-                 gap: 0.5rem;
-                 flex-wrap: wrap;
-             }
-         }
+        }
+
+
     </style>
 </head>
-<body>
-    <!-- Header -->
-    <header class="header" style="position: fixed; top: 0; width: 100%; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); z-index: 1000; padding: 1rem 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-        <nav class="navbar">
-            <div class="nav-container" style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; padding: 0 2rem;">
-                <div class="logo" style="display: flex; align-items: center; gap: 0.5rem; font-size: 1.5rem; font-weight: 700; color: #2c3e50;">
-                    <i class="fas fa-car" style="color: #ff6b35;"></i>
-                    <span>Khan Automobiles</span>
+<body class="font-inter bg-base-100">
+    <!-- Navbar -->
+    <div class="navbar bg-base-100/90 backdrop-blur-md fixed top-0 z-50 shadow-lg px-2 sm:px-4 lg:px-8">
+        <div class="navbar-start">
+            <div class="dropdown lg:hidden">
+                <div tabindex="0" role="button" class="btn btn-ghost btn-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16"></path>
+                    </svg>
                 </div>
-                <ul class="nav-menu">
-                    <li><a href="#home">Home</a></li>
-                    <li><a href="#categories">Categories</a></li>
-                    <li><a href="#brands">Brands</a></li>
-                    <li><a href="#vehicles">Vehicles</a></li>
-                    <li><a href="#contact">Contact</a></li>
-                    <li><a href="#" id="adminBtn" class="btn btn-primary admin-btn">Admin Portal</a></li>
+                <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
+                    <li><a href="#home" class="nav-link hover:text-primary py-2">Home</a></li>
+                    <li><a href="#categories" class="nav-link hover:text-primary py-2">Categories</a></li>
+                    <li><a href="#brands" class="nav-link hover:text-primary py-2">Brands</a></li>
+                    <li><a href="#vehicles" class="nav-link hover:text-primary py-2">Vehicles</a></li>
+                    <li><a href="#contact" class="nav-link hover:text-primary py-2">Contact</a></li>
                 </ul>
-                
-                <!-- Mobile Hamburger Menu -->
-                <div class="hamburger" style="display: none; flex-direction: column; cursor: pointer; z-index: 1001;">
-                    <span style="width: 25px; height: 3px; background: #333; margin: 3px 0; transition: 0.3s; border-radius: 3px;"></span>
-                    <span style="width: 25px; height: 3px; background: #333; margin: 3px 0; transition: 0.3s; border-radius: 3px;"></span>
-                    <span style="width: 25px; height: 3px; background: #333; margin: 3px 0; transition: 0.3s; border-radius: 3px;"></span>
-                </div>
             </div>
-        </nav>
-    </header>
+            <a href="#home" class="btn btn-ghost text-sm sm:text-lg lg:text-xl animate__animated animate__fadeInLeft">
+                <div class="icon-container" style="width: 30px; height: 30px; font-size: 1.2rem;">
+                    <i class="fas fa-car"></i>
+                </div>
+                <span class="gradient-text font-bold hidden sm:inline">Khan Automobiles</span>
+                <span class="gradient-text font-bold sm:hidden">Khan</span>
+            </a>
+        </div>
+        <div class="navbar-center hidden lg:flex">
+            <ul class="menu menu-horizontal px-1 space-x-2">
+                <li><a href="#home" class="nav-link btn btn-ghost hover:btn-primary transition-all duration-300">Home</a></li>
+                <li><a href="#categories" class="nav-link btn btn-ghost hover:btn-primary transition-all duration-300">Categories</a></li>
+                <li><a href="#brands" class="nav-link btn btn-ghost hover:btn-primary transition-all duration-300">Brands</a></li>
+                <li><a href="#vehicles" class="nav-link btn btn-ghost hover:btn-primary transition-all duration-300">Vehicles</a></li>
+                <li><a href="#contact" class="nav-link btn btn-ghost hover:btn-primary transition-all duration-300">Contact</a></li>
+            </ul>
+        </div>
+        <div class="navbar-end">
+            <button class="btn btn-primary btn-outline btn-sm sm:btn-md hover:btn-primary animate-glow" id="adminBtn">
+                <i class="fas fa-user-shield sm:mr-2"></i>
+                <span class="hidden sm:inline">Admin Portal</span>
+            </button>
+        </div>
+    </div>
 
     <!-- Hero Section -->
-    <section id="home" class="hero-section">
-        <div class="hero-content">
-            <div class="hero-title">
-                <div class="title-logo">
-                    <i class="fas fa-car"></i>
+    <section id="home" class="hero min-h-screen bg-gradient-to-br from-primary via-purple-600 to-secondary relative overflow-hidden pt-16 sm:pt-20">
+        <!-- Animated Background Elements -->
+        <div class="absolute inset-0">
+            <div class="absolute top-10 sm:top-20 left-10 sm:left-20 w-32 sm:w-64 lg:w-96 h-32 sm:h-64 lg:h-96 bg-accent/20 rounded-full blur-2xl sm:blur-3xl animate-float"></div>
+            <div class="absolute bottom-10 sm:bottom-20 right-10 sm:right-20 w-28 sm:w-56 lg:w-80 h-28 sm:h-56 lg:h-80 bg-white/10 rounded-full blur-2xl sm:blur-3xl animate-float" style="animation-delay: -2s;"></div>
+            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 sm:w-48 lg:w-64 h-24 sm:h-48 lg:h-64 bg-primary/20 rounded-full blur-xl sm:blur-2xl animate-spin-slow"></div>
+        </div>
+        
+        <div class="hero-content text-center text-white relative z-10 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-7xl animate__animated animate__fadeInUp">
+                <!-- Main Title with 3D Effect -->
+                <div class="perspective-1000 mb-6 sm:mb-8 lg:mb-12">
+                    <div class="preserve-3d tilt-card">
+                        <div class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6 lg:space-x-8 mb-6 flex-wrap">
+                            <div class="icon-container icon-large">
+                                <i class="fas fa-car"></i>
+                            </div>
+                            <div class="font-orbitron text-center">
+                                <h1 class="responsive-title font-black mb-2 tracking-wider hero-gradient-text">
+                                    KHAN AUTOMOBILES
+                                </h1>
+                                <p class="text-sm sm:text-lg lg:text-2xl text-accent tracking-[0.2em] sm:tracking-[0.3em] opacity-90 animate-pulse-slow font-bold">SINCE 1998</p>
+                            </div>
+                            <div class="icon-container icon-large">
+                                <i class="fas fa-wrench"></i>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="title-text">
-                    <div class="title-main">KHAN AUTOMOBILES</div>
-                    <div class="title-sub">SINCE 1998</div>
+                
+                <!-- Floating Icons - Fully Responsive -->
+                <div class="flex justify-center items-center space-x-3 sm:space-x-4 md:space-x-6 lg:space-x-8 mb-6 sm:mb-8 animate__animated animate__fadeInUp animate__delay-1s">
+                    <div class="floating-icon animate-float">
+                        <i class="fas fa-motorcycle"></i>
+                    </div>
+                    <div class="floating-icon animate-float" style="animation-delay: -1s;">
+                        <i class="fas fa-car"></i>
+                    </div>
+                    <div class="floating-icon animate-float" style="animation-delay: -2s;">
+                        <i class="fas fa-truck"></i>
+                    </div>
+                    <div class="floating-icon animate-float" style="animation-delay: -3s;">
+                        <i class="fas fa-tractor"></i>
+                    </div>
                 </div>
-                <div class="title-logo">
-                    <i class="fas fa-wrench"></i>
+                
+                <!-- Subtitle -->
+                <p class="text-sm sm:text-lg lg:text-2xl mb-6 sm:mb-8 opacity-90 max-w-5xl mx-auto animate__animated animate__fadeInUp animate__delay-2s px-4">
+                    Semriyawa's Most Trusted Auto Parts & Service Center | Serving Sant Kabir Nagar
+                </p>
+                
+                <!-- Stats Cards with 3D Effect -->
+                <div class="flex flex-wrap justify-center gap-3 sm:gap-4 lg:gap-6 mb-8 sm:mb-12 animate__animated animate__fadeInUp animate__delay-3s">
+                    <div class="card glass-effect tilt-card perspective-1000 w-full sm:w-auto">
+                        <div class="card-body text-center p-3 sm:p-4">
+                            <div class="text-accent text-lg sm:text-xl lg:text-2xl mb-2">
+                                <i class="fas fa-award"></i>
+                            </div>
+                            <h3 class="font-bold text-sm sm:text-base">25+ Years</h3>
+                            <p class="text-xs sm:text-sm opacity-80">Experience</p>
+                        </div>
+                    </div>
+                    <div class="card glass-effect tilt-card perspective-1000 w-full sm:w-auto">
+                        <div class="card-body text-center p-3 sm:p-4">
+                            <div class="text-accent text-lg sm:text-xl lg:text-2xl mb-2">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <h3 class="font-bold text-sm sm:text-base">5000+</h3>
+                            <p class="text-xs sm:text-sm opacity-80">Happy Customers</p>
+                        </div>
+                    </div>
+                    <div class="card glass-effect tilt-card perspective-1000 w-full sm:w-auto">
+                        <div class="card-body text-center p-3 sm:p-4">
+                            <div class="text-accent text-lg sm:text-xl lg:text-2xl mb-2">
+                                <i class="fas fa-tools"></i>
+                            </div>
+                            <h3 class="font-bold text-sm sm:text-base">Expert</h3>
+                            <p class="text-xs sm:text-sm opacity-80">Service</p>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="auto-icons">
-                <div class="auto-icon">
-                    <i class="fas fa-motorcycle"></i>
+                
+                <!-- CTA Buttons -->
+                <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center animate__animated animate__fadeInUp animate__delay-4s">
+                    <a href="https://maps.app.goo.gl/1BbVexYJgGJyZHmk7?g_st=ic" target="_blank" 
+                       class="btn btn-primary btn-sm sm:btn-md lg:btn-lg hover:scale-110 transform transition-all duration-300 animate-glow">
+                        <i class="fas fa-map-marker-alt mr-2"></i>
+                        <span class="text-xs sm:text-sm lg:text-base">Visit Our Location</span>
+                    </a>
+                    <button id="contactBtn" 
+                            class="btn btn-outline btn-sm sm:btn-md lg:btn-lg text-white border-white hover:bg-white hover:text-primary hover:scale-110 transform transition-all duration-300">
+                        <i class="fas fa-phone mr-2"></i>
+                        <span class="text-xs sm:text-sm lg:text-base">Call Now</span>
+                    </button>
                 </div>
-                <div class="auto-icon">
-                    <i class="fas fa-car"></i>
-                </div>
-                <div class="auto-icon">
-                    <i class="fas fa-truck"></i>
-                </div>
-                <div class="auto-icon">
-                    <i class="fas fa-tractor"></i>
-                </div>
-                <div class="auto-icon">
-                    <i class="fas fa-tools"></i>
-                </div>
-            </div>
-            
-            <p class="hero-subtitle">Semriyawa's Most Trusted Auto Parts & Service Center | Serving Sant Kabir Nagar</p>
-            
-            <div class="hero-badges">
-                <div class="badge">
-                    <i class="fas fa-award"></i>
-                    <span>25+ Years Experience</span>
-                </div>
-                <div class="badge">
-                    <i class="fas fa-users"></i>
-                    <span>5000+ Happy Customers</span>
-                </div>
-                <div class="badge">
-                    <i class="fas fa-tools"></i>
-                    <span>Expert Service</span>
-                </div>
-            </div>
-            
-            <div class="cta-buttons">
-                <a href="https://maps.app.goo.gl/1BbVexYJgGJyZHmk7?g_st=ic" target="_blank" class="btn btn-primary" id="exploreServicesBtn">
-                    <i class="fas fa-map-marker-alt"></i>
-                    Visit Our Location
-                </a>
-                <button class="btn btn-secondary" id="contactBtn">
-                    <i class="fas fa-phone"></i>
-                    Call Now
-                </button>
             </div>
         </div>
     </section>
 
     <!-- Categories Section -->
-    <section id="categories" class="categories-section">
-        <div class="container">
-            <h2 class="section-title">
-                <i class="fas fa-th-large"></i>
-                Our Product Categories
-            </h2>
-            <div class="categories-grid">
-                <div class="category-card">
-                    <div class="category-icon">
-                        <i class="fas fa-cogs"></i>
+    <section id="categories" class="py-10 sm:py-16 lg:py-20 bg-base-200">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-8 sm:mb-12 lg:mb-16">
+                <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-4">
+                    <span class="gradient-text">Our Product Categories</span>
+                </h2>
+                <div class="w-16 sm:w-20 lg:w-24 h-1 bg-gradient-to-r from-primary to-accent mx-auto"></div>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+                <!-- Engine Parts -->
+                <div class="card bg-base-100 shadow-2xl tilt-card hover:shadow-primary/20 transition-all duration-500">
+                    <div class="card-body p-4 sm:p-6">
+                        <div class="icon-container mb-4">
+                            <i class="fas fa-cogs"></i>
+                        </div>
+                        <h2 class="card-title text-lg sm:text-xl lg:text-2xl text-primary justify-center mb-3 sm:mb-4">Engine Parts</h2>
+                        <ul class="space-y-1.5 sm:space-y-2 text-sm sm:text-base text-base-content/80">
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>Pistons, Rings & Liners</span>
+                            </li>
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>Filters - Air, Oil, Fuel</span>
+                            </li>
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>Gaskets & Seals</span>
+                            </li>
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>Engine Belts & Timing Kits</span>
+                            </li>
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>Water Pumps & Thermostats</span>
+                            </li>
+                        </ul>
                     </div>
-                    <h3 class="category-title">Engine Parts</h3>
-                    <ul class="category-items">
-                        <li>Pistons, Rings & Liners</li>
-                        <li>Filters - Air, Oil, Fuel</li>
-                        <li>Gaskets & Seals</li>
-                        <li>Engine Belts & Timing Kits</li>
-                        <li>Water Pumps & Thermostats</li>
-                        <li>Turbo Chargers</li>
-                        <li>Fuel Injectors & Pumps</li>
-                    </ul>
                 </div>
                 
-                <div class="category-card">
-                    <div class="category-icon">
-                        <i class="fas fa-car-crash"></i>
+                <!-- Brake System -->
+                <div class="card bg-base-100 shadow-2xl tilt-card hover:shadow-primary/20 transition-all duration-500">
+                    <div class="card-body p-4 sm:p-6">
+                        <div class="icon-container mb-4">
+                            <i class="fas fa-car-crash"></i>
+                        </div>
+                        <h2 class="card-title text-lg sm:text-xl lg:text-2xl text-primary justify-center mb-3 sm:mb-4">Brake System</h2>
+                        <ul class="space-y-1.5 sm:space-y-2 text-sm sm:text-base text-base-content/80">
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>Brake Pads & Shoes</span>
+                            </li>
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>Disc Rotors & Drums</span>
+                            </li>
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>Brake Master Cylinder</span>
+                            </li>
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>Wheel Cylinders</span>
+                            </li>
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>ABS System Parts</span>
+                            </li>
+                        </ul>
                     </div>
-                    <h3 class="category-title">Brake System</h3>
-                    <ul class="category-items">
-                        <li>Brake Pads & Shoes</li>
-                        <li>Disc Rotors & Drums</li>
-                        <li>Brake Master Cylinder</li>
-                        <li>Wheel Cylinders</li>
-                        <li>Brake Boosters</li>
-                        <li>Brake Oils & Fluids</li>
-                        <li>ABS System Parts</li>
-                    </ul>
                 </div>
                 
-                <div class="category-card">
-                    <div class="category-icon">
-                        <i class="fas fa-compress-arrows-alt"></i>
+                <!-- Suspension & Steering -->
+                <div class="card bg-base-100 shadow-2xl tilt-card hover:shadow-primary/20 transition-all duration-500">
+                    <div class="card-body p-4 sm:p-6">
+                        <div class="icon-container mb-4">
+                            <i class="fas fa-compress-arrows-alt"></i>
+                        </div>
+                        <h2 class="card-title text-lg sm:text-xl lg:text-2xl text-primary justify-center mb-3 sm:mb-4">Suspension & Steering</h2>
+                        <ul class="space-y-1.5 sm:space-y-2 text-sm sm:text-base text-base-content/80">
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>Shock Absorbers & Struts</span>
+                            </li>
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>Coil Springs & Bushes</span>
+                            </li>
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>Control Arms & Ball Joints</span>
+                            </li>
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>Power Steering Pumps</span>
+                            </li>
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>Stabilizer Links</span>
+                            </li>
+                        </ul>
                     </div>
-                    <h3 class="category-title">Suspension & Steering</h3>
-                    <ul class="category-items">
-                        <li>Shock Absorbers & Struts</li>
-                        <li>Coil Springs & Bushes</li>
-                        <li>Control Arms & Ball Joints</li>
-                        <li>Tie Rod Ends & Rack Ends</li>
-                        <li>Power Steering Pumps</li>
-                        <li>Steering Boxes & Racks</li>
-                        <li>Stabilizer Links</li>
-                    </ul>
                 </div>
                 
-                <div class="category-card">
-                    <div class="category-icon">
-                        <i class="fas fa-bolt"></i>
+                <!-- Electrical Parts -->
+                <div class="card bg-base-100 shadow-2xl tilt-card hover:shadow-primary/20 transition-all duration-500">
+                    <div class="card-body p-4 sm:p-6">
+                        <div class="icon-container mb-4">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <h2 class="card-title text-lg sm:text-xl lg:text-2xl text-primary justify-center mb-3 sm:mb-4">Electrical Parts</h2>
+                        <ul class="space-y-1.5 sm:space-y-2 text-sm sm:text-base text-base-content/80">
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>Alternators & Starters</span>
+                            </li>
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>Spark Plugs & Ignition Coils</span>
+                            </li>
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>Batteries & Horns</span>
+                            </li>
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>Bulbs & LED Lights</span>
+                            </li>
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>ECU & Control Modules</span>
+                            </li>
+                        </ul>
                     </div>
-                    <h3 class="category-title">Electrical Parts</h3>
-                    <ul class="category-items">
-                        <li>Alternators & Starters</li>
-                        <li>Spark Plugs & Ignition Coils</li>
-                        <li>Batteries & Horns</li>
-                        <li>Bulbs & LED Lights</li>
-                        <li>Switches & Sensors</li>
-                        <li>Wiring Harnesses</li>
-                        <li>ECU & Control Modules</li>
-                    </ul>
                 </div>
                 
-                <div class="category-card">
-                    <div class="category-icon">
-                <i class="fas fa-car-side"></i>
+                <!-- Body Parts -->
+                <div class="card bg-base-100 shadow-2xl tilt-card hover:shadow-primary/20 transition-all duration-500">
+                    <div class="card-body p-4 sm:p-6">
+                        <div class="icon-container mb-4">
+                            <i class="fas fa-car-side"></i>
+                        </div>
+                        <h2 class="card-title text-lg sm:text-xl lg:text-2xl text-primary justify-center mb-3 sm:mb-4">Body Parts</h2>
+                        <ul class="space-y-1.5 sm:space-y-2 text-sm sm:text-base text-base-content/80">
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>Headlights & Tail Lights</span>
+                            </li>
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>Bumpers & Grills</span>
+                            </li>
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>Mirrors & Door Handles</span>
+                            </li>
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>Windshields & Glass</span>
+                            </li>
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>Body Panels</span>
+                            </li>
+                        </ul>
                     </div>
-                    <h3 class="category-title">Body Parts</h3>
-                    <ul class="category-items">
-                        <li>Headlights & Tail Lights</li>
-                        <li>Bumpers & Grills</li>
-                        <li>Mirrors & Door Handles</li>
-                        <li>Fenders & Bonnets</li>
-                        <li>Windshields & Glass</li>
-                        <li>Body Panels</li>
-                        <li>Exterior Accessories</li>
-                    </ul>
                 </div>
                 
-                <div class="category-card">
-                    <div class="category-icon">
-                        <i class="fas fa-snowflake"></i>
+                <!-- HVAC & Cooling -->
+                <div class="card bg-base-100 shadow-2xl tilt-card hover:shadow-primary/20 transition-all duration-500">
+                    <div class="card-body p-4 sm:p-6">
+                        <div class="icon-container mb-4">
+                            <i class="fas fa-snowflake"></i>
+                        </div>
+                        <h2 class="card-title text-lg sm:text-xl lg:text-2xl text-primary justify-center mb-3 sm:mb-4">HVAC & Cooling</h2>
+                        <ul class="space-y-1.5 sm:space-y-2 text-sm sm:text-base text-base-content/80">
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>AC Compressors & Condensers</span>
+                            </li>
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>Radiators & Cooling Fans</span>
+                            </li>
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>Evaporators & Cabin Filters</span>
+                            </li>
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>Coolant & AC Gas</span>
+                            </li>
+                            <li class="flex items-center">
+                                <div class="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-primary rounded-full mr-2 sm:mr-3 flex-shrink-0"></div>
+                                <span>Heater Cores</span>
+                            </li>
+                        </ul>
                     </div>
-                    <h3 class="category-title">HVAC & Cooling</h3>
-                    <ul class="category-items">
-                        <li>AC Compressors & Condensers</li>
-                        <li>Radiators & Cooling Fans</li>
-                        <li>Evaporators & Cabin Filters</li>
-                        <li>Coolant & AC Gas</li>
-                        <li>Radiator Hoses</li>
-                        <li>Intercoolers</li>
-                        <li>Heater Cores</li>
-                    </ul>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Top Brands Section -->
-    <section id="brands" class="brands-section">
-        <div class="container">
-            <h2 class="section-title">
-                <i class="fas fa-award"></i>
-                Genuine Spare Parts & Service Partner
-            </h2>
-            <p style="text-align: center; font-size: 1.1rem; color: #666; max-width: 800px; margin: 0 auto;">
-                Your vehicle's performance and value are our priority. We exclusively use genuine parts sourced directly from trusted automotive brands, ensuring every repair maintains your vehicle's original integrity.    
-            </p>
+    <!-- Brands Section -->
+    <section id="brands" class="py-10 sm:py-16 lg:py-20 bg-base-100">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-8 sm:mb-12 lg:mb-16">
+                <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-4">
+                    <span class="gradient-text">Trusted Brand Partners</span>
+                </h2>
+                <p class="text-sm sm:text-base lg:text-lg text-base-content/70 max-w-4xl mx-auto mb-4 sm:mb-6 px-4">
+                    Your vehicle's performance and value are our priority. We exclusively use genuine parts sourced directly from trusted automotive brands.
+                </p>
+                <div class="w-16 sm:w-20 lg:w-24 h-1 bg-gradient-to-r from-primary to-accent mx-auto"></div>
+            </div>
             
-            <div class="brands-grid">
-                <!-- Vehicle Brands -->
-                <div class="brand-card">
-                    <div class="brand-logo" style="color: #dc3545;">
-                        <i class="fas fa-motorcycle"></i>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-6">
+                <!-- Hero MotoCorp -->
+                <div class="card bg-gradient-to-br from-red-50 to-red-100 shadow-lg tilt-card hover:shadow-red-200 transition-all duration-300">
+                    <div class="card-body text-center p-3 sm:p-4 lg:p-6">
+                        <div class="avatar">
+                            <div class="w-12 sm:w-14 lg:w-16 rounded-full bg-white shadow-lg mx-auto mb-2 sm:mb-3 lg:mb-4 flex items-center justify-center">
+                                <i class="fas fa-motorcycle text-lg sm:text-xl lg:text-2xl text-red-500"></i>
+                            </div>
+                        </div>
+                        <h4 class="font-bold text-xs sm:text-sm lg:text-base text-gray-800">Hero MotoCorp</h4>
+                        <p class="text-xs sm:text-sm text-gray-600">India's Largest Two-Wheeler</p>
                     </div>
-                    <h4>Hero MotoCorp</h4>
-                    <p style="color: #666; font-size: 0.9rem;">India's Largest Two-Wheeler</p>
                 </div>
                 
-                <div class="brand-card">
-                    <div class="brand-logo" style="color: #ff0000;">
-                        <i class="fas fa-car-side"></i>
+                <!-- Honda -->
+                <div class="card bg-gradient-to-br from-red-50 to-red-100 shadow-lg tilt-card hover:shadow-red-200 transition-all duration-300">
+                    <div class="card-body text-center p-3 sm:p-4 lg:p-6">
+                        <div class="avatar">
+                            <div class="w-12 sm:w-14 lg:w-16 rounded-full bg-white shadow-lg mx-auto mb-2 sm:mb-3 lg:mb-4 flex items-center justify-center">
+                                <i class="fas fa-car-side text-lg sm:text-xl lg:text-2xl text-red-600"></i>
+                            </div>
+                        </div>
+                        <h4 class="font-bold text-xs sm:text-sm lg:text-base text-gray-800">Honda</h4>
+                        <p class="text-xs sm:text-sm text-gray-600">Bikes & Cars</p>
                     </div>
-                    <h4>Honda</h4>
-                    <p style="color: #666; font-size: 0.9rem;">Bikes & Cars</p>
                 </div>
                 
-                <div class="brand-card">
-                    <div class="brand-logo" style="color: #0066cc;">
-                        <i class="fas fa-bolt"></i>
+                <!-- TVS Motor -->
+                <div class="card bg-gradient-to-br from-blue-50 to-blue-100 shadow-lg tilt-card hover:shadow-blue-200 transition-all duration-300">
+                    <div class="card-body text-center p-3 sm:p-4 lg:p-6">
+                        <div class="avatar">
+                            <div class="w-12 sm:w-14 lg:w-16 rounded-full bg-white shadow-lg mx-auto mb-2 sm:mb-3 lg:mb-4 flex items-center justify-center">
+                                <i class="fas fa-bolt text-lg sm:text-xl lg:text-2xl text-blue-600"></i>
+                            </div>
+                        </div>
+                        <h4 class="font-bold text-xs sm:text-sm lg:text-base text-gray-800">TVS Motor</h4>
+                        <p class="text-xs sm:text-sm text-gray-600">Premium Motorcycles</p>
                     </div>
-                    <h4>TVS Motor</h4>
-                    <p style="color: #666; font-size: 0.9rem;">Premium Motorcycles</p>
                 </div>
                 
-                <div class="brand-card">
-                    <div class="brand-logo" style="color: #ff6600;">
-                        <i class="fas fa-fire"></i>
+                <!-- Bajaj Auto -->
+                <div class="card bg-gradient-to-br from-orange-50 to-orange-100 shadow-lg tilt-card hover:shadow-orange-200 transition-all duration-300">
+                    <div class="card-body text-center p-3 sm:p-4 lg:p-6">
+                        <div class="avatar">
+                            <div class="w-12 sm:w-14 lg:w-16 rounded-full bg-white shadow-lg mx-auto mb-2 sm:mb-3 lg:mb-4 flex items-center justify-center">
+                                <i class="fas fa-fire text-lg sm:text-xl lg:text-2xl text-orange-600"></i>
+                            </div>
+                        </div>
+                        <h4 class="font-bold text-xs sm:text-sm lg:text-base text-gray-800">Bajaj Auto</h4>
+                        <p class="text-xs sm:text-sm text-gray-600">Sports & Commuter</p>
                     </div>
-                    <h4>Bajaj Auto</h4>
-                    <p style="color: #666; font-size: 0.9rem;">Sports & Commuter</p>
                 </div>
                 
-                <div class="brand-card">
-                    <div class="brand-logo" style="color: #2c1810;">
-                        <i class="fas fa-crown"></i>
+                <!-- Royal Enfield -->
+                <div class="card bg-gradient-to-br from-yellow-50 to-yellow-100 shadow-lg tilt-card hover:shadow-yellow-200 transition-all duration-300">
+                    <div class="card-body text-center p-3 sm:p-4 lg:p-6">
+                        <div class="avatar">
+                            <div class="w-12 sm:w-14 lg:w-16 rounded-full bg-white shadow-lg mx-auto mb-2 sm:mb-3 lg:mb-4 flex items-center justify-center">
+                                <i class="fas fa-crown text-lg sm:text-xl lg:text-2xl text-yellow-600"></i>
+                            </div>
+                        </div>
+                        <h4 class="font-bold text-xs sm:text-sm lg:text-base text-gray-800">Royal Enfield</h4>
+                        <p class="text-xs sm:text-sm text-gray-600">Classic Motorcycles</p>
                     </div>
-                    <h4>Royal Enfield</h4>
-                    <p style="color: #666; font-size: 0.9rem;">Classic Motorcycles</p>
                 </div>
                 
-                <div class="brand-card">
-                    <div class="brand-logo" style="color: #c41e3a;">
-                        <i class="fas fa-tractor"></i>
+                <!-- Mahindra -->
+                <div class="card bg-gradient-to-br from-red-50 to-red-100 shadow-lg tilt-card hover:shadow-red-200 transition-all duration-300">
+                    <div class="card-body text-center p-3 sm:p-4 lg:p-6">
+                        <div class="avatar">
+                            <div class="w-12 sm:w-14 lg:w-16 rounded-full bg-white shadow-lg mx-auto mb-2 sm:mb-3 lg:mb-4 flex items-center justify-center">
+                                <i class="fas fa-tractor text-lg sm:text-xl lg:text-2xl text-red-700"></i>
+                            </div>
+                        </div>
+                        <h4 class="font-bold text-xs sm:text-sm lg:text-base text-gray-800">Mahindra</h4>
+                        <p class="text-xs sm:text-sm text-gray-600">SUVs & Tractors</p>
                     </div>
-                    <h4>Mahindra</h4>
-                    <p style="color: #666; font-size: 0.9rem;">SUVs & Tractors</p>
                 </div>
                 
-                <div class="brand-card">
-                    <div class="brand-logo" style="color: #ff9900;">
-                        <i class="fas fa-car"></i>
+                <!-- Maruti Suzuki -->
+                <div class="card bg-gradient-to-br from-orange-50 to-orange-100 shadow-lg tilt-card hover:shadow-orange-200 transition-all duration-300">
+                    <div class="card-body text-center p-3 sm:p-4 lg:p-6">
+                        <div class="avatar">
+                            <div class="w-12 sm:w-14 lg:w-16 rounded-full bg-white shadow-lg mx-auto mb-2 sm:mb-3 lg:mb-4 flex items-center justify-center">
+                                <i class="fas fa-car text-lg sm:text-xl lg:text-2xl text-orange-500"></i>
+                            </div>
+                        </div>
+                        <h4 class="font-bold text-xs sm:text-sm lg:text-base text-gray-800">Maruti Suzuki</h4>
+                        <p class="text-xs sm:text-sm text-gray-600">India's Favorite Car</p>
                     </div>
-                    <h4>Maruti Suzuki</h4>
-                    <p style="color: #666; font-size: 0.9rem;">India's Favorite Car</p>
                 </div>
                 
-                <div class="brand-card">
-                    <div class="brand-logo" style="color: #003d82;">
-                        <i class="fas fa-car-side"></i>
+                <!-- Hyundai -->
+                <div class="card bg-gradient-to-br from-blue-50 to-blue-100 shadow-lg tilt-card hover:shadow-blue-200 transition-all duration-300">
+                    <div class="card-body text-center p-3 sm:p-4 lg:p-6">
+                        <div class="avatar">
+                            <div class="w-12 sm:w-14 lg:w-16 rounded-full bg-white shadow-lg mx-auto mb-2 sm:mb-3 lg:mb-4 flex items-center justify-center">
+                                <i class="fas fa-car-side text-lg sm:text-xl lg:text-2xl text-blue-700"></i>
+                            </div>
+                        </div>
+                        <h4 class="font-bold text-xs sm:text-sm lg:text-base text-gray-800">Hyundai</h4>
+                        <p class="text-xs sm:text-sm text-gray-600">Modern Premium Cars</p>
                     </div>
-                    <h4>Hyundai</h4>
-                    <p style="color: #666; font-size: 0.9rem;">Modern Premium Cars</p>
                 </div>
                 
-                <div class="brand-card">
-                    <div class="brand-logo" style="color: #1a5f7a;">
-                        <i class="fas fa-circle"></i>
+                <!-- CEAT Tyres -->
+                <div class="card bg-gradient-to-br from-teal-50 to-teal-100 shadow-lg tilt-card hover:shadow-teal-200 transition-all duration-300">
+                    <div class="card-body text-center p-3 sm:p-4 lg:p-6">
+                        <div class="avatar">
+                            <div class="w-12 sm:w-14 lg:w-16 rounded-full bg-white shadow-lg mx-auto mb-2 sm:mb-3 lg:mb-4 flex items-center justify-center">
+                                <i class="fas fa-circle text-lg sm:text-xl lg:text-2xl text-teal-700"></i>
+                            </div>
+                        </div>
+                        <h4 class="font-bold text-xs sm:text-sm lg:text-base text-gray-800">CEAT Tyres</h4>
+                        <p class="text-xs sm:text-sm text-gray-600">Premium Tyres</p>
                     </div>
-                    <h4>CEAT Tyres</h4>
-                    <p style="color: #666; font-size: 0.9rem;">Premium Tyres</p>
                 </div>
                 
-                <div class="brand-card">
-                    <div class="brand-logo" style="color: #ffcc00;">
-                        <i class="fas fa-circle"></i>
+                <!-- MRF Tyres -->
+                <div class="card bg-gradient-to-br from-yellow-50 to-yellow-100 shadow-lg tilt-card hover:shadow-yellow-200 transition-all duration-300">
+                    <div class="card-body text-center p-3 sm:p-4 lg:p-6">
+                        <div class="avatar">
+                            <div class="w-12 sm:w-14 lg:w-16 rounded-full bg-white shadow-lg mx-auto mb-2 sm:mb-3 lg:mb-4 flex items-center justify-center">
+                                <i class="fas fa-circle text-lg sm:text-xl lg:text-2xl text-yellow-600"></i>
+                            </div>
+                        </div>
+                        <h4 class="font-bold text-xs sm:text-sm lg:text-base text-gray-800">MRF Tyres</h4>
+                        <p class="text-xs sm:text-sm text-gray-600">Racing Heritage</p>
                     </div>
-                    <h4>MRF Tyres</h4>
-                    <p style="color: #666; font-size: 0.9rem;">Racing Heritage</p>
                 </div>
                 
-                <div class="brand-card">
-                    <div class="brand-logo" style="color: #e31e25;">
-                        <i class="fas fa-cogs"></i>
+                <!-- Bosch -->
+                <div class="card bg-gradient-to-br from-red-50 to-red-100 shadow-lg tilt-card hover:shadow-red-200 transition-all duration-300">
+                    <div class="card-body text-center p-3 sm:p-4 lg:p-6">
+                        <div class="avatar">
+                            <div class="w-12 sm:w-14 lg:w-16 rounded-full bg-white shadow-lg mx-auto mb-2 sm:mb-3 lg:mb-4 flex items-center justify-center">
+                                <i class="fas fa-cogs text-lg sm:text-xl lg:text-2xl text-red-600"></i>
+                            </div>
+                        </div>
+                        <h4 class="font-bold text-xs sm:text-sm lg:text-base text-gray-800">Bosch</h4>
+                        <p class="text-xs sm:text-sm text-gray-600">Auto Components</p>
                     </div>
-                    <h4>Bosch</h4>
-                    <p style="color: #666; font-size: 0.9rem;">Auto Components</p>
                 </div>
                 
-                <div class="brand-card">
-                    <div class="brand-logo" style="color: #0066b2;">
-                        <i class="fas fa-car-battery"></i>
+                <!-- Minda/Exide -->
+                <div class="card bg-gradient-to-br from-blue-50 to-blue-100 shadow-lg tilt-card hover:shadow-blue-200 transition-all duration-300">
+                    <div class="card-body text-center p-3 sm:p-4 lg:p-6">
+                        <div class="avatar">
+                            <div class="w-12 sm:w-14 lg:w-16 rounded-full bg-white shadow-lg mx-auto mb-2 sm:mb-3 lg:mb-4 flex items-center justify-center">
+                                <i class="fas fa-car-battery text-lg sm:text-xl lg:text-2xl text-blue-600"></i>
+                            </div>
+                        </div>
+                        <h4 class="font-bold text-xs sm:text-sm lg:text-base text-gray-800">Minda/Exide</h4>
+                        <p class="text-xs sm:text-sm text-gray-600">Batteries & Power</p>
                     </div>
-                    <h4>Minda/Exide</h4>
-                    <p style="color: #666; font-size: 0.9rem;">Batteries & Power</p>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Vehicle Showcase -->
-    <section id="vehicles" class="vehicle-showcase">
-        <div class="container">
-            <h2 class="section-title" style="color: white;">
-                <i class="fas fa-star"></i>
-                Vehicles We Service
-            </h2>
+    <section id="vehicles" class="py-10 sm:py-16 lg:py-20 bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 relative overflow-hidden">
+        <!-- Animated Background -->
+        <div class="absolute inset-0">
+            <div class="absolute top-5 sm:top-10 left-5 sm:left-10 w-32 sm:w-48 lg:w-64 h-32 sm:h-48 lg:h-64 bg-white/5 rounded-full blur-2xl sm:blur-3xl animate-float"></div>
+            <div class="absolute bottom-5 sm:bottom-10 right-5 sm:right-10 w-40 sm:w-60 lg:w-80 h-40 sm:h-60 lg:h-80 bg-accent/10 rounded-full blur-2xl sm:blur-3xl animate-float" style="animation-delay: -3s;"></div>
+        </div>
+        
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center mb-8 sm:mb-12 lg:mb-16">
+                <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-4">
+                    <span class="bg-gradient-to-r from-white via-accent to-white bg-clip-text text-transparent">Vehicles We Service</span>
+                </h2>
+                <div class="w-16 sm:w-20 lg:w-24 h-1 bg-gradient-to-r from-accent to-cyan-400 mx-auto"></div>
+            </div>
             
-            <div class="showcase-grid">
-                <div class="showcase-card">
-                    <div class="showcase-icon">
-                        <i class="fas fa-motorcycle"></i>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+                <!-- Motorcycles -->
+                <div class="card glass-effect tilt-card text-white hover:scale-105 transition-all duration-500">
+                    <div class="card-body text-center p-4 sm:p-6">
+                        <div class="icon-container icon-large mb-4 sm:mb-6 text-accent">
+                            <i class="fas fa-motorcycle"></i>
+                        </div>
+                        <h3 class="text-lg sm:text-xl lg:text-2xl font-bold mb-3 sm:mb-4 text-accent">Motorcycles & Scooters</h3>
+                        <p class="text-sm sm:text-base text-gray-200 leading-relaxed">Complete service for all two-wheelers including sports bikes, commuter motorcycles, and scooters from all major brands.</p>
                     </div>
-                    <h3>Motorcycles & Scooters</h3>
-                    <p>Complete service for all two-wheelers including sports bikes, commuter motorcycles, and scooters from all major brands.</p>
-                        </div>
-                
-                <div class="showcase-card">
-                    <div class="showcase-icon">
-                        <i class="fas fa-car"></i>
-                        </div>
-                    <h3>Cars & Hatchbacks</h3>
-                    <p>Professional car servicing for hatchbacks, sedans, and compact cars with genuine spare parts and expert mechanics.</p>
-                        </div>
-                
-                <div class="showcase-card">
-                    <div class="showcase-icon">
-                        <i class="fas fa-truck"></i>
-                    </div>
-                    <h3>SUVs & Commercial</h3>
-                    <p>Specialized service for SUVs, MUVs, and light commercial vehicles with heavy-duty parts and equipment.</p>
                 </div>
                 
-                <div class="showcase-card">
-                    <div class="showcase-icon">
-                        <i class="fas fa-tractor"></i>
+                <!-- Cars -->
+                <div class="card glass-effect tilt-card text-white hover:scale-105 transition-all duration-500">
+                    <div class="card-body text-center p-4 sm:p-6">
+                        <div class="icon-container icon-large mb-4 sm:mb-6 text-accent">
+                            <i class="fas fa-car"></i>
+                        </div>
+                        <h3 class="text-lg sm:text-xl lg:text-2xl font-bold mb-3 sm:mb-4 text-accent">Cars & Hatchbacks</h3>
+                        <p class="text-sm sm:text-base text-gray-200 leading-relaxed">Professional car servicing for hatchbacks, sedans, and compact cars with genuine spare parts and expert mechanics.</p>
                     </div>
-                    <h3>Tractors & Farm Equipment</h3>
-                    <p>Agricultural vehicle service and parts supply for tractors, harvesters, and other farm machinery.</p>
+                </div>
+                
+                <!-- SUVs -->
+                <div class="card glass-effect tilt-card text-white hover:scale-105 transition-all duration-500">
+                    <div class="card-body text-center p-4 sm:p-6">
+                        <div class="icon-container icon-large mb-4 sm:mb-6 text-accent">
+                            <i class="fas fa-truck"></i>
+                        </div>
+                        <h3 class="text-lg sm:text-xl lg:text-2xl font-bold mb-3 sm:mb-4 text-accent">SUVs & Commercial</h3>
+                        <p class="text-sm sm:text-base text-gray-200 leading-relaxed">Specialized service for SUVs, MUVs, and light commercial vehicles with heavy-duty parts and equipment.</p>
+                    </div>
+                </div>
+                
+                <!-- Tractors -->
+                <div class="card glass-effect tilt-card text-white hover:scale-105 transition-all duration-500">
+                    <div class="card-body text-center p-4 sm:p-6">
+                        <div class="icon-container icon-large mb-4 sm:mb-6 text-accent">
+                            <i class="fas fa-tractor"></i>
+                        </div>
+                        <h3 class="text-lg sm:text-xl lg:text-2xl font-bold mb-3 sm:mb-4 text-accent">Tractors & Farm Equipment</h3>
+                        <p class="text-sm sm:text-base text-gray-200 leading-relaxed">Agricultural vehicle service and parts supply for tractors, harvesters, and other farm machinery.</p>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Testimonials -->
-    <section class="testimonials-section">
-        <div class="container">
-            <h2 class="section-title">
-                <i class="fas fa-comments"></i>
-                What Our Customers Say
-            </h2>
+    <section class="py-10 sm:py-16 lg:py-20 bg-base-200">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-8 sm:mb-12 lg:mb-16">
+                <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-4">
+                    <span class="gradient-text">What Our Customers Say</span>
+                </h2>
+                <div class="w-16 sm:w-20 lg:w-24 h-1 bg-gradient-to-r from-primary to-accent mx-auto"></div>
+            </div>
             
-            <div class="testimonials-grid">
-                <div class="testimonial-card">
-                    <p class="testimonial-text">
-                        Excellent service! Khan Automobiles provided genuine Hero parts for my bike at very reasonable prices. 
-                        The mechanic was very knowledgeable and fixed my bike perfectly. Highly recommended!
-                    </p>
-                    <p class="testimonial-author">- Saeed Akhtar/Jitendar, Semriyawa</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+                <!-- Testimonial 1 -->
+                <div class="card bg-base-100 shadow-2xl tilt-card hover:shadow-primary/20 transition-all duration-500">
+                    <div class="card-body p-4 sm:p-6">
+                        <div class="text-4xl sm:text-5xl lg:text-6xl text-primary/20 mb-3 sm:mb-4">
+                            <i class="fas fa-quote-left"></i>
+                        </div>
+                        <p class="text-sm sm:text-base text-base-content/80 italic mb-4 sm:mb-6 leading-relaxed">
+                            Excellent service! Khan Automobiles provided genuine Hero parts for my bike at very reasonable prices. 
+                            The mechanic was very knowledgeable and fixed my bike perfectly. Highly recommended!
+                        </p>
+                        <div class="flex items-center">
+                            <div class="avatar">
+                                <div class="w-10 sm:w-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white">
+                                    <i class="fas fa-user text-sm sm:text-base"></i>
+                                </div>
+                            </div>
+                            <div class="ml-3 sm:ml-4">
+                                <p class="font-bold text-sm sm:text-base text-base-content">Saeed Akhtar/Jitendar</p>
+                                <p class="text-xs sm:text-sm text-base-content/60">Semriyawa</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="testimonial-card">
-                    <p class="testimonial-text">
-                        Best place for Spare parts in Sant Kabir Nagar. They have all genuine parts in stock and 
-                        the service is very professional. My bike runs like new after their service.
-                    </p>
-                    <p class="testimonial-author">- Khursheed Ahmad/Harish, Semriyawa</p>
+                <!-- Testimonial 2 -->
+                <div class="card bg-base-100 shadow-2xl tilt-card hover:shadow-primary/20 transition-all duration-500">
+                    <div class="card-body p-4 sm:p-6">
+                        <div class="text-4xl sm:text-5xl lg:text-6xl text-primary/20 mb-3 sm:mb-4">
+                            <i class="fas fa-quote-left"></i>
+                        </div>
+                        <p class="text-sm sm:text-base text-base-content/80 italic mb-4 sm:mb-6 leading-relaxed">
+                            Best place for Spare parts in Sant Kabir Nagar. They have all genuine parts in stock and 
+                            the service is very professional. My bike runs like new after their service.
+                        </p>
+                        <div class="flex items-center">
+                            <div class="avatar">
+                                <div class="w-10 sm:w-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white">
+                                    <i class="fas fa-user text-sm sm:text-base"></i>
+                                </div>
+                            </div>
+                            <div class="ml-3 sm:ml-4">
+                                <p class="font-bold text-sm sm:text-base text-base-content">Khursheed Ahmad/Harish</p>
+                                <p class="text-xs sm:text-sm text-base-content/60">Semriyawa</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="testimonial-card">
-                    <p class="testimonial-text">
-                        Amazing experience! Quick delivery of Bajaj bike parts and expert repair service. 
-                        The staff is very helpful and prices are fair. Will definitely come back!
-                    </p>
-                    <p class="testimonial-author">- Santosh, Baghnagar</p>
+                <!-- Testimonial 3 -->
+                <div class="card bg-base-100 shadow-2xl tilt-card hover:shadow-primary/20 transition-all duration-500 md:col-span-2 lg:col-span-1">
+                    <div class="card-body p-4 sm:p-6">
+                        <div class="text-4xl sm:text-5xl lg:text-6xl text-primary/20 mb-3 sm:mb-4">
+                            <i class="fas fa-quote-left"></i>
+                        </div>
+                        <p class="text-sm sm:text-base text-base-content/80 italic mb-4 sm:mb-6 leading-relaxed">
+                            Amazing experience! Quick delivery of Bajaj bike parts and expert repair service. 
+                            The staff is very helpful and prices are fair. Will definitely come back!
+                        </p>
+                        <div class="flex items-center">
+                            <div class="avatar">
+                                <div class="w-10 sm:w-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white">
+                                    <i class="fas fa-user text-sm sm:text-base"></i>
+                                </div>
+                            </div>
+                            <div class="ml-3 sm:ml-4">
+                                <p class="font-bold text-sm sm:text-base text-base-content">Santosh</p>
+                                <p class="text-xs sm:text-sm text-base-content/60">Baghnagar</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Contact Section -->
-    <section id="contact" class="contact-section">
-        <div class="container">
-            <h2 class="section-title" style="color: white;">
-                <i class="fas fa-map-marker-alt"></i>
-                Visit Our Service Center
-            </h2>
+    <section id="contact" class="py-10 sm:py-16 lg:py-20 bg-gradient-to-br from-gray-900 to-black">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-8 sm:mb-12 lg:mb-16">
+                <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-4">
+                    <span class="bg-gradient-to-r from-white via-accent to-white bg-clip-text text-transparent">Visit Our Service Center</span>
+                </h2>
+                <div class="w-16 sm:w-20 lg:w-24 h-1 bg-gradient-to-r from-accent to-cyan-400 mx-auto"></div>
+            </div>
             
-            <div class="contact-grid">
-                <div class="contact-item">
-                    <div class="contact-icon">
-                    <i class="fas fa-map-marker-alt"></i>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+                <!-- Address -->
+                <div class="card glass-effect tilt-card text-white hover:scale-105 transition-all duration-500">
+                    <div class="card-body text-center p-4 sm:p-6">
+                        <div class="text-2xl sm:text-3xl lg:text-4xl text-accent mb-4 sm:mb-6">
+                            <i class="fas fa-map-marker-alt animate-bounce"></i>
+                        </div>
+                        <h3 class="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Address</h3>
+                        <p class="text-xs sm:text-sm lg:text-base text-gray-300 leading-relaxed">
+                            Khan Automobiles<br>
+                            Near ZiyaUr Rehman Building Materials,<br>
+                            100 Meters from State Bank,<br>
+                            Semriyawa, Sant Kabir Nagar<br>
+                            Uttar Pradesh - 272126
+                        </p>
                     </div>
-                    <h3>Address</h3>
-                    <p>Khan Automobiles<br>
-                    Near ZiyaUr Rehman Building Materials,<br>
-                    100 Meters from State Bank,<br>
-                    Semriyawa, Sant Kabir Nagar<br>
-                    Uttar Pradesh - 272126</p>
                 </div>
                 
-                <div class="contact-item">
-                    <div class="contact-icon">
-                    <i class="fas fa-phone"></i>
+                <!-- Phone -->
+                <div class="card glass-effect tilt-card text-white hover:scale-105 transition-all duration-500">
+                    <div class="card-body text-center p-4 sm:p-6">
+                        <div class="text-2xl sm:text-3xl lg:text-4xl text-accent mb-4 sm:mb-6">
+                            <i class="fas fa-phone animate-bounce"></i>
+                        </div>
+                        <h3 class="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Phone Numbers</h3>
+                        <p class="text-xs sm:text-sm lg:text-base text-gray-300 leading-relaxed">
+                            <strong>Mobile:</strong> +91 8052594809<br>
+                            <strong>Mobile:</strong> +91 9118819531<br>
+                            <strong>WhatsApp:</strong> Available
+                        </p>
                     </div>
-                    <h3>Phone Numbers</h3>
-                    <p><strong>Mobile:</strong> +91 8052594809<br>
-                    <strong>Mobile:</strong> +91 9118819531<br>
-                    <strong>WhatsApp:</strong> Available</p>
                 </div>
                 
-                <div class="contact-item">
-                    <div class="contact-icon">
-                    <i class="fas fa-clock"></i>
+                <!-- Hours -->
+                <div class="card glass-effect tilt-card text-white hover:scale-105 transition-all duration-500">
+                    <div class="card-body text-center p-4 sm:p-6">
+                        <div class="text-2xl sm:text-3xl lg:text-4xl text-accent mb-4 sm:mb-6">
+                            <i class="fas fa-clock animate-bounce"></i>
+                        </div>
+                        <h3 class="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Business Hours</h3>
+                        <p class="text-xs sm:text-sm lg:text-base text-gray-300 leading-relaxed">
+                            <strong>Mon - Sun:</strong> 9:00 AM - 7:00 PM<br>
+                            <strong>Open:</strong> All Days<br>
+                            <strong>Emergency:</strong> Call Anytime
+                        </p>
                     </div>
-                    <h3>Business Hours</h3>
-                    <p><strong>Mon - Sun:</strong> 9:00 AM - 7:00 PM<br>
-                    <strong>Open:</strong> All Days<br>
-                    <strong>Emergency:</strong> Call Anytime</p>
                 </div>
                 
-                <div class="contact-item">
-                    <div class="contact-icon">
-                    <i class="fas fa-envelope"></i>
+                <!-- Services -->
+                <div class="card glass-effect tilt-card text-white hover:scale-105 transition-all duration-500">
+                    <div class="card-body text-center p-4 sm:p-6">
+                        <div class="text-2xl sm:text-3xl lg:text-4xl text-accent mb-4 sm:mb-6">
+                            <i class="fas fa-envelope animate-bounce"></i>
+                        </div>
+                        <h3 class="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Email & Services</h3>
+                        <p class="text-xs sm:text-sm lg:text-base text-gray-300 leading-relaxed">
+                            <strong>Email:</strong> <a href="mailto:khanautomobiles1998@gmail.com" class="text-accent hover:text-cyan-400 transition-colors duration-300 break-all">khanautomobiles1998</a><br>
+                            <strong>Services:</strong> Repairs, Parts, Consultation
+                        </p>
                     </div>
-                    <h3>Email & Services</h3>
-                    <p><strong>Email:</strong> <a href="mailto:khanautomobiles1998@gmail.com" style="color: white;">khanautomobiles1998</a><br>
-                    <strong>Services:</strong> Repairs, Parts, Consultation<br>
-                    </p>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Footer -->
-    <footer style="background: #1a1a1a; color: white; padding: 3rem 2rem 1rem; text-align: center;">
-        <div class="container">
-            <div style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-bottom: 2rem;">
-                <i class="fas fa-car" style="font-size: 2rem; color: #ff6b35;"></i>
-                <span style="font-size: 1.5rem; font-weight: 700;">Khan Automobiles</span>
+    <footer class="footer footer-center p-6 sm:p-8 lg:p-10 bg-black text-white">
+        <aside>
+            <div class="flex items-center justify-center space-x-3 sm:space-x-4 mb-4 sm:mb-6">
+                <div class="icon-container" style="width: 40px; height: 40px; font-size: 1.8rem;">
+                    <i class="fas fa-car text-primary animate-pulse"></i>
+                </div>
+                <span class="text-xl sm:text-2xl lg:text-3xl font-bold gradient-text">Khan Automobiles</span>
             </div>
-            <p style="margin-bottom: 1rem; opacity: 0.8;">
+            <p class="text-sm sm:text-base text-gray-400 mb-3 sm:mb-4 max-w-2xl px-4">
                 Your Trusted Partner for Genuine Auto Parts & Professional Service Since 1998
             </p>
-            <p style="font-size: 0.9rem; opacity: 0.6;">
-                &copy; 2024 Khan Automobiles. All rights reserved. | 
-                Spare Parts Shop & More
+            <div class="w-24 sm:w-28 lg:w-32 h-px bg-gradient-to-r from-transparent via-primary to-transparent mb-4 sm:mb-6"></div>
+            <p class="text-xs sm:text-sm text-gray-500">
+                &copy; 2024 Khan Automobiles. All rights reserved. | Spare Parts Shop & More
             </p>
-        </div>
+        </aside>
     </footer>
 
     <!-- Admin Modal -->
-    <div id="adminModal" class="modal" style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);">
-        <div class="modal-content" style="background: white; margin: 5% auto; padding: 2rem; border-radius: 15px; width: 90%; max-width: 400px; position: relative;">
-            <span class="close" style="position: absolute; top: 1rem; right: 1.5rem; font-size: 2rem; cursor: pointer; color: #999;">&times;</span>
-            <h2 style="margin-bottom: 2rem; color: #2c3e50; text-align: center;">Admin Login</h2>
-            <form id="adminForm">
-                <div style="margin-bottom: 1.5rem;">
+    <dialog id="adminModal" class="modal">
+        <div class="modal-box glass-effect border border-primary/20 w-11/12 max-w-md">
+            <form method="dialog">
+                <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2 text-white hover:text-primary transition-colors duration-300" id="closeAdminModal">✕</button>
+            </form>
+            <div class="text-center mb-4 sm:mb-6">
+                <div class="avatar">
+                    <div class="w-12 sm:w-16 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                        <i class="fas fa-user-shield text-lg sm:text-2xl text-white"></i>
+                    </div>
+                </div>
+                <h3 class="text-xl sm:text-2xl font-bold text-white">Admin Login</h3>
+            </div>
+            
+            <form id="adminForm" class="space-y-4 sm:space-y-6">
+                <div class="form-control">
                     <input type="text" id="username" placeholder="Username" required 
-                           style="width: 100%; padding: 1rem; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem;">
+                           class="input input-bordered w-full bg-white/10 text-white placeholder-gray-300 border-white/20 focus:border-primary text-sm sm:text-base">
                 </div>
-                <div style="margin-bottom: 2rem;">
+                <div class="form-control">
                     <input type="password" id="password" placeholder="Password" required 
-                           style="width: 100%; padding: 1rem; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem;">
+                           class="input input-bordered w-full bg-white/10 text-white placeholder-gray-300 border-white/20 focus:border-primary text-sm sm:text-base">
                 </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1.1rem;">
-                    <i class="fas fa-sign-in-alt"></i> Login
+                <button type="submit" class="btn btn-primary w-full hover:scale-105 transition-all duration-300 text-sm sm:text-base">
+                    <i class="fas fa-sign-in-alt mr-2"></i> Login
                 </button>
             </form>
         </div>
-    </div>
+        <form method="dialog" class="modal-backdrop">
+            <button>close</button>
+        </form>
+    </dialog>
 
     <!-- Phone Numbers Modal -->
-    <div id="phoneNumbersModal" class="modal" style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);">
-        <div class="modal-content" style="background: white; margin: 5% auto; padding: 1.5rem; border-radius: 15px; width: 95%; max-width: 400px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto;">
-            <span class="close-phone" style="position: absolute; top: 1rem; right: 1.5rem; font-size: 2rem; cursor: pointer; color: #999; z-index: 1;">&times;</span>
-            <h2 style="margin-bottom: 2rem; color: #2c3e50; text-align: center; font-size: 1.5rem; padding-right: 2rem;">
-                <i class="fas fa-phone" style="color: #ff6b35; margin-right: 0.5rem;"></i>
-                Click To Call Us
-            </h2>
-            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-                <a href="tel:9118819531" class="phone-link" style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: #f8fafc; border-radius: 10px; text-decoration: none; color: #2c3e50; border: 2px solid transparent; transition: all 0.3s ease; flex-wrap: wrap; gap: 0.5rem;">
-                    <div style="flex: 1; min-width: 120px;">
-                        <div style="font-weight: 600; font-size: 1.1rem;">Mobile 1</div>
-                        <div style="color: #666; font-size: 0.9rem;">WhatsApp Available</div>
+    <dialog id="phoneNumbersModal" class="modal">
+        <div class="modal-box glass-effect border border-primary/20 w-11/12 max-w-md">
+            <form method="dialog">
+                <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2 text-white hover:text-primary transition-colors duration-300" id="closePhoneModal">✕</button>
+            </form>
+            <div class="text-center mb-4 sm:mb-6">
+                <div class="avatar">
+                    <div class="w-12 sm:w-16 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                        <i class="fas fa-phone text-lg sm:text-2xl text-white"></i>
                     </div>
-                    <div style="font-size: 1.2rem; font-weight: 700; color: #ff6b35; word-break: break-all;">9118819531</div>
+                </div>
+                <h3 class="text-xl sm:text-2xl font-bold text-white">Call Us Now</h3>
+            </div>
+            <div class="space-y-3 sm:space-y-4">
+                <a href="tel:9118819531" class="btn btn-outline w-full text-white border-white/20 hover:bg-primary hover:border-primary transition-all duration-300 group p-3 sm:p-4">
+                    <div class="flex items-center justify-between w-full">
+                        <div class="text-left">
+                            <div class="font-semibold text-sm sm:text-base">Mobile 1</div>
+                            <div class="text-xs sm:text-sm opacity-70">WhatsApp Available</div>
+                        </div>
+                        <div class="text-lg sm:text-xl font-bold group-hover:scale-110 transition-transform duration-300">9118819531</div>
+                    </div>
                 </a>
-                <a href="tel:8052594809" class="phone-link" style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: #f8fafc; border-radius: 10px; text-decoration: none; color: #2c3e50; border: 2px solid transparent; transition: all 0.3s ease; flex-wrap: wrap; gap: 0.5rem;">
-                    <div style="flex: 1; min-width: 120px;">
-                        <div style="font-weight: 600; font-size: 1.1rem;">Mobile 2</div>
-                        <div style="color: #666; font-size: 0.9rem;">WhatsApp Available</div>
+                <a href="tel:8052594809" class="btn btn-outline w-full text-white border-white/20 hover:bg-primary hover:border-primary transition-all duration-300 group p-3 sm:p-4">
+                    <div class="flex items-center justify-between w-full">
+                        <div class="text-left">
+                            <div class="font-semibold text-sm sm:text-base">Mobile 2</div>
+                            <div class="text-xs sm:text-sm opacity-70">WhatsApp Available</div>
+                        </div>
+                        <div class="text-lg sm:text-xl font-bold group-hover:scale-110 transition-transform duration-300">8052594809</div>
                     </div>
-                    <div style="font-size: 1.2rem; font-weight: 700; color: #ff6b35; word-break: break-all;">8052594809</div>
                 </a>
             </div>
-            <div style="text-align: center; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; color: #666; font-size: 0.9rem;">
-                <i class="fas fa-clock" style="margin-right: 0.5rem;"></i>
+            <div class="text-center mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-white/20 text-gray-300 text-xs sm:text-sm">
+                <i class="fas fa-clock mr-2"></i>
                 Available: 9:00 AM - 7:00 PM (All Days)
             </div>
         </div>
-    </div>
-
-    <style>
-    /* Additional responsive styles for Call Now modal */
-    @media (max-width: 768px) {
-        #phoneNumbersModal .modal-content {
-            margin: 10% auto !important;
-            padding: 1rem !important;
-            width: 95% !important;
-        }
-        
-        #phoneNumbersModal .phone-link {
-            flex-direction: column !important;
-            text-align: center !important;
-            gap: 1rem !important;
-        }
-        
-        #phoneNumbersModal h2 {
-            font-size: 1.3rem !important;
-            margin-bottom: 1.5rem !important;
-        }
-        
-        #phoneNumbersModal .close-phone {
-            top: 0.5rem !important;
-            right: 1rem !important;
-            font-size: 1.8rem !important;
-        }
-    }
-    
-    @media (max-width: 480px) {
-        #phoneNumbersModal .modal-content {
-            margin: 15% auto !important;
-            padding: 0.8rem !important;
-            width: 98% !important;
-        }
-        
-        #phoneNumbersModal .phone-link div {
-            font-size: 1rem !important;
-        }
-        
-        #phoneNumbersModal .phone-link div:last-child {
-            font-size: 1.1rem !important;
-        }
-    }
-    </style>
+        <form method="dialog" class="modal-backdrop">
+            <button>close</button>
+        </form>
+    </dialog>
 
     <script src="script.js"></script>
+    
+    <script>
+        // Native smooth scrolling navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get all navigation links
+            const navLinks = document.querySelectorAll('.nav-link');
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    
+                    if (targetElement) {
+                        // Close mobile menu if open
+                        const dropdown = document.querySelector('.dropdown');
+                        if (dropdown) {
+                            dropdown.blur();
+                        }
+                        
+                        // Smooth scroll to target
+                        targetElement.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+
+            // Initialize VanillaTilt for all tilt cards (only on non-mobile devices)
+            if (typeof VanillaTilt !== 'undefined' && window.innerWidth > 768) {
+                VanillaTilt.init(document.querySelectorAll(".tilt-card"), {
+                    max: 12,
+                    speed: 300,
+                    glare: true,
+                    "max-glare": 0.2,
+                    perspective: 800,
+                    scale: 1.01
+                });
+            }
+
+            // Simple scroll animations for cards
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach((entry, index) => {
+                    if (entry.isIntersecting) {
+                        setTimeout(() => {
+                            entry.target.classList.add('fade-in');
+                        }, index * 50);
+                    }
+                });
+            }, observerOptions);
+
+            // Observe all cards
+            document.querySelectorAll('.card').forEach(card => {
+                observer.observe(card);
+            });
+        });
+
+        // Modal functionality
+        const adminBtn = document.getElementById('adminBtn');
+        const adminModal = document.getElementById('adminModal');
+        const closeAdminModal = document.getElementById('closeAdminModal');
+        const adminForm = document.getElementById('adminForm');
+
+        const contactBtn = document.getElementById('contactBtn');
+        const phoneModal = document.getElementById('phoneNumbersModal');
+        const closePhoneModal = document.getElementById('closePhoneModal');
+
+        // Admin Modal
+        if (adminBtn && adminModal) {
+            adminBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                adminModal.showModal();
+            });
+
+            if (closeAdminModal) {
+                closeAdminModal.addEventListener('click', () => {
+                    adminModal.close();
+                });
+            }
+
+            if (adminForm) {
+                adminForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    
+                    const username = document.getElementById('username').value.trim();
+                    const password = document.getElementById('password').value.trim();
+                    
+                    console.log('🔐 Login attempt for username:', username);
+                    
+                    if (!username || !password) {
+                        alert('Please enter both username and password.');
+                        return;
+                    }
+                    
+                    // Determine API endpoint - handle both local and production
+                    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                    const apiUrl = isLocalhost ? '/api/login' : `${window.location.origin}/api/login`;
+                    
+                    console.log('📡 Making request to:', apiUrl);
+                    
+                    // Show loading state
+                    const submitBtn = e.target.querySelector('button[type="submit"]');
+                    const originalText = submitBtn.innerHTML;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Logging in...';
+                    submitBtn.disabled = true;
+                    
+                    // Send login request to server
+                    fetch(apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ username, password })
+                    })
+                    .then(response => {
+                        console.log('📡 Server response status:', response.status);
+                        console.log('📡 Server response headers:', [...response.headers.entries()]);
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                        
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('📊 Server response data:', data);
+                        
+                        if (data.success) {
+                            console.log('✅ Login successful');
+                            
+                            // Save both authentication flag and username
+                            localStorage.setItem('isAdminLoggedIn', 'true');
+                            localStorage.setItem('adminUsername', username);
+                            sessionStorage.setItem('isAdminLoggedIn', 'true');
+                            sessionStorage.setItem('adminUsername', username);
+                            
+                            console.log('💾 Saved authentication data:', {
+                                isAdminLoggedIn: localStorage.getItem('isAdminLoggedIn'),
+                                adminUsername: localStorage.getItem('adminUsername')
+                            });
+                            
+                            // Close the modal
+                            adminModal.close();
+                            
+                            // Reset form
+                            document.getElementById('username').value = '';
+                            document.getElementById('password').value = '';
+                            
+                            // Direct redirect to admin panel
+                            window.location.href = 'admin.html';
+                            
+                        } else {
+                            console.log('❌ Login failed:', data.message || data.error);
+                            alert(`Login failed: ${data.error || data.message || 'Invalid credentials'}`);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('🚨 Login error:', error);
+                        console.error('🚨 Full error details:', {
+                            message: error.message,
+                            stack: error.stack
+                        });
+                        
+                        // More specific error messages
+                        if (error.message.includes('Failed to fetch')) {
+                            alert('Connection failed. Please check if the server is running and try again.');
+                        } else if (error.message.includes('404')) {
+                            alert('Login service not found. Please contact support.');
+                        } else if (error.message.includes('500')) {
+                            alert('Server error. Please try again later.');
+                        } else {
+                            alert(`Login failed: ${error.message}`);
+                        }
+                    })
+                    .finally(() => {
+                        // Reset button state
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                    });
+                });
+            }
+        }
+
+        // Phone Modal
+        if (contactBtn && phoneModal) {
+            contactBtn.addEventListener('click', () => {
+                phoneModal.showModal();
+            });
+
+            if (closePhoneModal) {
+                closePhoneModal.addEventListener('click', () => {
+                    phoneModal.close();
+                });
+            }
+        }
+
+        // Close modals when clicking backdrop
+        if (adminModal) {
+            adminModal.addEventListener('click', (e) => {
+                if (e.target === adminModal) {
+                    adminModal.close();
+                }
+            });
+        }
+
+        if (phoneModal) {
+            phoneModal.addEventListener('click', (e) => {
+                if (e.target === phoneModal) {
+                    phoneModal.close();
+                }
+            });
+        }
+
+        // Navbar scroll effect
+        window.addEventListener('scroll', () => {
+            const navbar = document.querySelector('.navbar');
+            if (navbar) {
+                if (window.scrollY > 50) {
+                    navbar.classList.add('shadow-2xl');
+                    navbar.style.background = 'rgba(255, 255, 255, 0.95)';
+                } else {
+                    navbar.classList.remove('shadow-2xl');
+                    navbar.style.background = 'rgba(255, 255, 255, 0.9)';
+                }
+            }
+        });
+
+        // Disable tilt effects on mobile for better performance
+        window.addEventListener('resize', () => {
+            if (window.innerWidth <= 768) {
+                document.querySelectorAll('.tilt-card').forEach(card => {
+                    if (card.vanillaTilt) {
+                        card.vanillaTilt.destroy();
+                    }
+                });
+            }
+        });
+
+        // Diagnostic function to check server connectivity
+        async function checkServerStatus() {
+            try {
+                const response = await fetch('/api/health', { method: 'GET' });
+                console.log('🏥 Server health check:', response.status);
+                return response.ok;
+            } catch (error) {
+                console.error('🏥 Server health check failed:', error);
+                return false;
+            }
+        }
+
+        // Check server status on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🔍 Running diagnostics...');
+            console.log('🌐 Current URL:', window.location.href);
+            console.log('🖥️ Hostname:', window.location.hostname);
+            console.log('🔌 Protocol:', window.location.protocol);
+            console.log('🚪 Port:', window.location.port);
+            
+            const serverOk = await checkServerStatus();
+            console.log('🏥 Server accessible:', serverOk);
+            
+            if (!serverOk) {
+                console.warn('⚠️ Server might not be running or accessible');
+            }
+        });
+
+    </script>
 </body>
 </html>
