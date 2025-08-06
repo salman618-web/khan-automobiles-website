@@ -75,70 +75,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Handle login form
-    const adminForm = document.getElementById('adminForm');
-    if (adminForm) {
-        adminForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value.trim();
-            
-            console.log('🔐 Login attempt for username:', username);
-            
-            if (!username || !password) {
-                alert('Please enter both username and password.');
-                return;
-            }
-            
-            // Send login request to server
-            fetch('/api/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ username, password })
-            })
-            .then(response => {
-                console.log('📡 Server response status:', response.status);
-                return response.json();
-            })
-            .then(data => {
-                console.log('📊 Server response data:', data);
-                
-                if (data.success) {
-                    console.log('✅ Login successful');
-                    
-                    // Save both authentication flag and username
-                    localStorage.setItem('isAdminLoggedIn', 'true');
-                    localStorage.setItem('adminUsername', username);
-                    sessionStorage.setItem('isAdminLoggedIn', 'true');
-                    sessionStorage.setItem('adminUsername', username);
-                    
-                    console.log('💾 Saved authentication data:', {
-                        isAdminLoggedIn: localStorage.getItem('isAdminLoggedIn'),
-                        adminUsername: localStorage.getItem('adminUsername')
-                    });
-                    
-                    // Close the modal
-                    if (adminModal) {
-                        adminModal.style.display = 'none';
-                    }
-                    
-                    // Direct redirect without popup
-                    window.location.href = 'admin.html';
-                    
-                } else {
-                    console.log('❌ Login failed:', data.message || data.error);
-                    alert('Incorrect username or password. Please try again.');
-                }
-            })
-            .catch(error => {
-                console.error('🚨 Login error:', error);
-                alert('Login failed. Please try again.');
-            });
-        });
-    }
+    // Note: Login form is handled by inline JavaScript in index.html
+    // This prevents duplicate event listeners that cause double submission issues
 
     // Smooth scrolling for navigation links
     const navLinks = document.querySelectorAll('a[href^="#"]');
