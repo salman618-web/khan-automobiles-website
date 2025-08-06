@@ -1530,8 +1530,11 @@ async function exportToExcel() {
         
         XLSX.utils.book_append_sheet(wb, summaryWS, "Summary");
 
-        // Generate filename
-        let filename = 'Khan_Automobiles_Report';
+        // Generate filename with current date and time
+        const now = new Date();
+        const dateTime = now.toISOString().slice(0, 19).replace(/T/g, '_').replace(/:/g, '-');
+        
+        let filename = `Khan_Automobiles_Report_${dateTime}`;
         if (reportMonth) filename += `_${getMonthName(reportMonth)}`;
         if (reportYear) filename += `_${reportYear}`;
         filename += '.xlsx';
