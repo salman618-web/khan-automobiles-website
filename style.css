@@ -2341,6 +2341,15 @@ a:focus {
     box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
 }
 
+.export-buttons .btn-secondary:active,
+.export-buttons .btn-secondary.pressed {
+    background: linear-gradient(135deg, #dc3545, #c82333) !important;
+    border: 2px solid #dc3545 !important;
+    transform: translateY(0px) scale(0.98);
+    box-shadow: 0 2px 6px rgba(220, 53, 69, 0.4);
+    transition: all 0.1s ease;
+}
+
 /* Mobile Report Button Adjustments */
 @media (max-width: 767px) {
     .filter-container .btn-primary,
