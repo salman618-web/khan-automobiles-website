@@ -2179,6 +2179,7 @@ function printInvoice() {
             th { background: #e6e6f5 !important; text-align: left; }
             .total-row td { background: #ededed !important; }
             .words-header { background: #ededed; font-weight: 700; text-align: left; padding: 10px; }
+            .words-header-TC { background: #ffffff; font-weight: 700; text-align: left; padding: 10px; }
             .words-text { padding: 8px; font-size: 12px; }
             .right { text-align: right; }
             .summary { width: 280px; margin-left: auto; margin-top: 10px; }
@@ -2246,14 +2247,14 @@ function printInvoice() {
             <tr>
                 <td style="border:1px solid #000; padding:6px; vertical-align:top; width:70%;">
                     <div><strong>Company/Seller Name:</strong> ${shopName || ''}</div>
-                    <div><strong>Address :</strong> ${shopAddress || ''}${shopState ? ', ' + shopState : ''}</div>
+                    <div><strong>Address :</strong> ${shopAddress || ''}</div>
                     <div><strong>Phone No.:</strong> ${shopPhone || ''}</div>
                     <div><strong>Email ID:</strong> ${shopEmail || ''}</div>
                     <div><strong>GSTIN:</strong> ${shopGstin || ''}</div>
                     <div><strong>State:</strong> ${shopState || ''}</div>
                 </td>
                 <td style="border:1px solid #000; padding:6px; vertical-align:top; width:30%;">
-                <img src="assets/khan-automobiles-logo.jpg" alt="logo” style="max-width:100%; height:auto; margin: 10px 0;">
+                <img src="assets/khan-automobiles-logo.jpg" alt="logo pic" style="width:100%; max-width:180px;">
                 
                 </td>
             </tr>
@@ -2267,7 +2268,6 @@ function printInvoice() {
                     <div><strong>Address:</strong> ${billToAddress || ''}</div>
                     <div><strong>Contact No.:</strong> ${billToContact || ''}</div>
                     <div><strong>GSTIN No.:</strong> ${billToGstin || ''}</div>
-                    <div><strong>State:</strong> ${billToState || ''}</div>
                 </td>
                 <td style="border:1px solid #000; padding:6px; vertical-align:top;">
                     <div><strong>Invoice No.:</strong> ${invNo}</div>
@@ -2314,12 +2314,12 @@ function printInvoice() {
                 <td style="width:70%; border:1px solid #000; vertical-align: top;">
                     <div class="words-header">Amount in words:</div>
                     <div class="words-text">${amountInWords}</div>
-                     <div class="words-header">Terms & Conditions:</div> 
+                     <div class="words-header-TC">Terms & Conditions:</div> 
                      <div class="words-text">*Thanks for doing business with us.<br>*We look forward to serving you again in the future.</div>
                      </td>
                 <td style="width:30%; border:1px solid #000; vertical-align: top;">
                 <div class="words-header">For Khan Automobiles</div>
-               <img src="assets/khan_sign.jpg" alt="Signature" style="max-width:100%; height:auto; margin: 10px 0;">
+              <img src="assets/khan_sign.jpg" alt="logo pic" style="width:100%; max-width:180px;">
                     <div class="words-text">Authorized Signatory</div>
 
                 
