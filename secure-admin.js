@@ -2145,7 +2145,7 @@ function printInvoice() {
                     <div><strong>State:</strong> ${shopState || ''}</div>
                 </td>
                 <td style="border:1px solid #000; padding:6px; vertical-align:top; width:30%;">
-            <img src="assets/khan-automobiles-logo.png" alt="Khan Automobiles" style="width:100%; max-width:200px;">
+            <img src="assets/khan-automobiles-logo.jpg" alt="Khan Automobiles" style="width:100%; max-width:200px;">
                 </td>
             </tr>
             <tr>
