@@ -2107,21 +2107,24 @@ function printInvoice() {
     document.querySelectorAll('#invoiceItemsBody tr').forEach((tr, idx) => {
         const desc = tr.querySelector('.desc')?.value || '';
         const hsn = tr.querySelector('.hsn')?.value || '';
-        const qty = tr.querySelector('.qty')?.value || '0';
+        const gst = tr.querySelector('.gst')?.value || '0';
         const unit = tr.querySelector('.unit')?.value || 'pcs';
+        const qty = tr.querySelector('.qty')?.value || '0';
+        
         const rate = tr.querySelector('.rate')?.value || '0';
         const discPct = tr.querySelector('.disc')?.value || '0';
-        const gst = tr.querySelector('.gst')?.value || '0';
+       
         const amount = tr.querySelector('.amount')?.textContent || '';
         rowsHtml += `<tr>
             <td>${idx + 1}</td>
             <td>${desc}</td>
             <td>${hsn}</td>
-            <td class="right">${qty}</td>
+            <td class="right">${parseFloat(gst).toFixed(2)}%</td>
             <td class="right">${unit}</td>
+            <td class="right">${qty}</td>
             <td class="right">${parseFloat(rate).toFixed(2)}</td>
             <td class="right">${parseFloat(discPct).toFixed(2)}%</td>
-            <td class="right">${parseFloat(gst).toFixed(2)}%</td>
+            
             <td class="right">${amount.replace('₹','')}</td>
         </tr>`;
     });
