@@ -2331,33 +2331,15 @@ function printInvoice() {
         </div>
     `;
 
-    // ===== html2pdf generation (no browser header/footer) =====
+    // System print dialog (restored)
     const fname = `${(billToName||'Invoice')}_${billToContact}_${invoiceDate}_${invNo}`.replace(/\s+/g,'_');
-
-    // Build a container element for html2pdf
-    const container = document.createElement('div');
-    container.innerHTML = `<style>${printStyles.replace(/<\/?style>/g,'')}</style>` + printable;
-
-    if (window.html2pdf) {
-        const opt = {
-            margin: 12, // mm
-            filename: fname + '.pdf',
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, logging: false },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak: { mode: ['css','avoid-all'], avoid: ['.avoid-break'] }
-        };
-        window.html2pdf().set(opt).from(container).save();
-    } else {
-        // Fallback to original print flow if library not loaded
-        const w = window.open('', 'PRINT', 'height=800,width=800');
-        if (!w) return;
-        w.document.write('<html><head><title>'+fname+'</title>' + printStyles + '</head><body>' + printable + '</body></html>');
-        w.document.close();
-        w.focus();
-        w.print();
-        w.close();
-    }
+    const w = window.open('', 'PRINT', 'height=800,width=800');
+    if (!w) return;
+    w.document.write('<!doctype html><html><head><title>'+fname+'</title>' + printStyles + '</head><body>' + printable + '</body></html>');
+    w.document.close();
+    w.focus();
+    w.print();
+    w.close();
 }
 
 function bindInvoiceUi() {
