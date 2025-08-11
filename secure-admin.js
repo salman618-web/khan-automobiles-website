@@ -1961,6 +1961,31 @@ function resetInvoiceForm() {
     } catch (_) {}
 }
 
+// Format YYYY-MM-DD to 20-August-2025
+function formatFriendlyDate(isoString) {
+    try {
+        if (!isoString) return '';
+        const parts = isoString.split('-');
+        const monthNames = [
+            'January','February','March','April','May','June',
+            'July','August','September','October','November','December'
+        ];
+        if (parts.length === 3) {
+            const year = parts[0];
+            const monthIndex = Math.max(0, Math.min(11, parseInt(parts[1], 10) - 1));
+            const day = String(parseInt(parts[2], 10));
+            return `${day}-${monthNames[monthIndex]}-${year}`;
+        }
+        const d = new Date(isoString);
+        if (!isNaN(d.getTime())) {
+            return `${d.getDate()}-${monthNames[d.getMonth()]}-${d.getFullYear()}`;
+        }
+        return isoString;
+    } catch (_) {
+        return isoString || '';
+    }
+}
+
 // Basic validation for invoice before printing
 function validateInvoiceForm() {
     const errors = [];
@@ -2137,8 +2162,8 @@ function printInvoice() {
         <table style="width:100%; border:1px solid #000; border-collapse:collapse;">
             <tr>
                 <td style="border:1px solid #000; padding:6px; vertical-align:top; width:70%;">
-                    <div><strong>Company/Seller Name:</strong> ${shopName || ''}</div>
-                    <div><strong>Address :</strong> ${shopAddress || ''}${shopState ? ', ' + shopState : ''}</div>
+                    <div><strong>Company Name:</strong> ${shopName || ''}</div>
+                    <div><strong>Address :</strong> ${shopAddress || ''}</div>
                     <div><strong>Phone No.:</strong> ${shopPhone || ''}</div>
                     <div><strong>Email ID:</strong> ${shopEmail || ''}</div>
                     <div><strong>GSTIN:</strong> ${shopGstin || ''}</div>
@@ -2155,14 +2180,15 @@ function printInvoice() {
                 <td style="border:1px solid #000; padding:6px; vertical-align:top;">
                     <div><h3>Buyer (Bill To)</h3></div>
                     <div><strong>Name:</strong> ${billToName || ''}</div>
+                    <div><strong>Mobile No.:</strong> ${billToContact || ''}</div>
                     <div><strong>Address:</strong> ${billToAddress || ''}</div>
-                    <div><strong>Contact No.:</strong> ${billToContact || ''}</div>
+                    
                     <div><strong>GSTIN No.:</strong> ${billToGstin || ''}</div>
                     <div><strong>State:</strong> ${billToState || ''}</div>
                 </td>
                 <td style="border:1px solid #000; padding:6px; vertical-align:top;">
                     <div><strong>Invoice No.:</strong> ${invNo}</div>
-                    <div><strong>Date:</strong> ${invDate}</div>
+                    <div><strong>Date:</strong> ${formatFriendlyDate(invDate)}</div>
                     ${veh ? `<div><strong>Vehicle:</strong> ${veh}</div>` : ''}
                 </td>
             </tr>
