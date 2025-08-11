@@ -445,7 +445,14 @@
                     <input type="text" id="shopPhone" placeholder="Mobile Number" value="+91 9118819531" required>
                 </div>
                 <div class="form-row">
+                    <input type="email" id="shopEmail" placeholder="Email ID" value="" >
+                    <input type="text" id="shopGstin" placeholder="GSTIN No." value="">
+                </div>
+                <div class="form-row">
                     <input type="text" id="shopAddress" placeholder="Shop Address" style="grid-column: 1/-1;" value="Your full address here">
+                </div>
+                <div class="form-row">
+                    <input type="text" id="shopState" placeholder="State" value="">
                 </div>
                 <div class="form-row">
                     <input type="text" id="invoiceNumber" placeholder="Invoice/PO Number" required>
@@ -453,11 +460,15 @@
                     <input type="text" id="vehicleNumber" placeholder="Vehicle No. (optional)">
                 </div>
                 <div class="form-row">
-                    <input type="text" id="customerNameInv" placeholder="Customer Name" required>
-                    <input type="text" id="customerGstin" placeholder="Customer GSTIN (optional)">
+                    <input type="text" id="billToName" placeholder="Bill To: Name" required>
+                    <input type="text" id="shipToName" placeholder="Shipping To: Name">
                 </div>
                 <div class="form-row">
-                    <input type="text" id="customerAddress" placeholder="Customer Address" style="grid-column: 1/-1;">
+                    <input type="text" id="billToAddress" placeholder="Billing Address" style="grid-column: 1/-1;">
+                </div>
+                <div class="form-row">
+                    <input type="text" id="billToContact" placeholder="Contact No.">
+                    <input type="text" id="billToGstin" placeholder="GSTIN No.">
                 </div>
 
                 <div class="chart-container" style="padding: 1rem;">
@@ -471,12 +482,15 @@
                         <table class="invoice-table" style="width:100%; border-collapse: collapse;">
                             <thead>
                                 <tr>
-                                    <th style="text-align:left; padding:8px; border-bottom:1px solid #e5e7eb;">Description</th>
+                                    <th style="text-align:left; padding:8px; border-bottom:1px solid #e5e7eb;">#</th>
+                                    <th style="text-align:left; padding:8px; border-bottom:1px solid #e5e7eb;">Item name</th>
                                     <th style="text-align:left; padding:8px; border-bottom:1px solid #e5e7eb;">HSN/SAC</th>
-                                    <th style="text-align:right; padding:8px; border-bottom:1px solid #e5e7eb;">Qty</th>
-                                    <th style="text-align:right; padding:8px; border-bottom:1px solid #e5e7eb;">Rate (₹)</th>
-                                    <th style="text-align:right; padding:8px; border-bottom:1px solid #e5e7eb;">GST %</th>
-                                    <th style="text-align:right; padding:8px; border-bottom:1px solid #e5e7eb;">Amount (₹)</th>
+                                    <th style="text-align:right; padding:8px; border-bottom:1px solid #e5e7eb;">Quantity</th>
+                                    <th style="text-align:right; padding:8px; border-bottom:1px solid #e5e7eb;">Unit</th>
+                                    <th style="text-align:right; padding:8px; border-bottom:1px solid #e5e7eb;">Rate</th>
+                                    <th style="text-align:right; padding:8px; border-bottom:1px solid #e5e7eb;">Discount</th>
+                                    <th style="text-align:right; padding:8px; border-bottom:1px solid #e5e7eb;">GST</th>
+                                    <th style="text-align:right; padding:8px; border-bottom:1px solid #e5e7eb;">Amount</th>
                                     <th style="width:40px;"></th>
                                 </tr>
                             </thead>

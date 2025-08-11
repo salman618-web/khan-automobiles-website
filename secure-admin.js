@@ -1943,11 +1943,15 @@ function addInvoiceItemRow() {
     const tbody = document.getElementById('invoiceItemsBody');
     if (!tbody) return;
     const tr = document.createElement('tr');
+    const index = (tbody.querySelectorAll('tr').length || 0) + 1;
     tr.innerHTML = `
-        <td><input type="text" class="desc" placeholder="Item description" required></td>
+        <td class="num">${index}</td>
+        <td><input type="text" class="desc" placeholder="Item name" required></td>
         <td><input type="text" class="hsn" placeholder="HSN/SAC"></td>
         <td><input type="number" class="qty num" min="0" step="1" value="1"></td>
+        <td><input type="text" class="unit" placeholder="pcs"></td>
         <td><input type="number" class="rate num" min="0" step="0.01" value="0"></td>
+        <td><input type="number" class="disc num" min="0" step="0.01" value="0"></td>
         <td><input type="number" class="gst num" min="0" step="0.01" value="18"></td>
         <td class="amount num">₹0.00</td>
         <td><button type="button" class="btn-secondary remove-row" title="Remove" style="padding: 6px 10px; border-radius: 6px;">✕</button></td>
@@ -1966,8 +1970,9 @@ function recalcInvoiceTotals() {
     [...tbody.querySelectorAll('tr')].forEach(tr => {
         const qty = parseFloat(tr.querySelector('.qty')?.value || '0');
         const rate = parseFloat(tr.querySelector('.rate')?.value || '0');
+        const disc = parseFloat(tr.querySelector('.disc')?.value || '0');
         const gst = parseFloat(tr.querySelector('.gst')?.value || '0');
-        const lineBase = qty * rate;
+        const lineBase = Math.max(qty * rate - disc, 0);
         const lineTax = lineBase * (gst / 100);
         const lineAmount = lineBase + lineTax;
         subtotal += lineBase;
@@ -1988,13 +1993,14 @@ function recalcInvoiceTotals() {
 function printInvoice() {
     const printStyles = `
         <style>
-            body { font-family: Inter, Arial, sans-serif; margin: 16px; }
+            @page { size: A4; margin: 12mm; }
+            body { font-family: Inter, Arial, sans-serif; margin: 0; }
             .inv-header { display:flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
             .inv-h1 { font-size: 20px; margin: 0 0 4px 0; }
             .inv-meta { font-size: 12px; color: #444; }
             table { width: 100%; border-collapse: collapse; margin-top: 10px; }
             th, td { border: 1px solid #ddd; padding: 6px 8px; font-size: 12px; }
-            th { background: #f3f4f6; text-align: left; }
+            th { background: #e6e6f5; text-align: left; }
             .right { text-align: right; }
             .summary { width: 280px; margin-left: auto; margin-top: 10px; }
             .summary td { border: none; }
@@ -2007,12 +2013,17 @@ function printInvoice() {
     const invNo = document.getElementById('invoiceNumber')?.value || '';
     const invDate = document.getElementById('invoiceDate')?.value || '';
     const veh = document.getElementById('vehicleNumber')?.value || '';
-    const cust = document.getElementById('customerNameInv')?.value || '';
-    const gstin = document.getElementById('customerGstin')?.value || '';
-    const addr = document.getElementById('customerAddress')?.value || '';
+    const billToName = document.getElementById('billToName')?.value || '';
+    const shipToName = document.getElementById('shipToName')?.value || '';
+    const billToAddress = document.getElementById('billToAddress')?.value || '';
+    const billToContact = document.getElementById('billToContact')?.value || '';
+    const billToGstin = document.getElementById('billToGstin')?.value || '';
     const shopName = document.getElementById('shopName')?.value || 'Khan Automobiles';
     const shopPhone = document.getElementById('shopPhone')?.value || '';
+    const shopEmail = document.getElementById('shopEmail')?.value || '';
+    const shopGstin = document.getElementById('shopGstin')?.value || '';
     const shopAddress = document.getElementById('shopAddress')?.value || '';
+    const shopState = document.getElementById('shopState')?.value || '';
 
     let rowsHtml = '';
     document.querySelectorAll('#invoiceItemsBody tr').forEach((tr, idx) => {
@@ -2041,18 +2052,25 @@ function printInvoice() {
         <div class="inv-header">
             <div>
                 <div class="inv-h1">${shopName}</div>
-                <div class="inv-meta">${shopPhone}${shopAddress ? ' • ' + shopAddress : ''}</div>
+                <div class="inv-meta">${shopAddress}${shopState ? ', ' + shopState : ''}</div>
+                <div class="inv-meta">${shopPhone}${shopEmail ? ' • ' + shopEmail : ''}${shopGstin ? ' • GSTIN: ' + shopGstin : ''}</div>
             </div>
             <div class="inv-meta">
-                <div><strong>No:</strong> ${invNo}</div>
+                <div><strong>Invoice No.:</strong> ${invNo}</div>
                 <div><strong>Date:</strong> ${invDate}</div>
                 ${veh ? `<div><strong>Vehicle:</strong> ${veh}</div>` : ''}
             </div>
         </div>
-        <div class="inv-meta" style="margin-bottom:8px;">
-            <div><strong>Billed To:</strong> ${cust}</div>
-            ${gstin ? `<div><strong>GSTIN:</strong> ${gstin}</div>` : ''}
-            ${addr ? `<div>${addr}</div>` : ''}
+        <div class="inv-meta" style="display:flex; justify-content: space-between; gap: 24px; margin-bottom:8px;">
+            <div style="flex:1;">
+                <div><strong>Bill To:</strong> ${billToName}</div>
+                ${billToAddress ? `<div>${billToAddress}</div>` : ''}
+                ${billToContact ? `<div>Contact No.: ${billToContact}</div>` : ''}
+                ${billToGstin ? `<div>GSTIN No.: ${billToGstin}</div>` : ''}
+            </div>
+            <div style="flex:1;">
+                ${shipToName ? `<div><strong>Shipping To:</strong> ${shipToName}</div>` : ''}
+            </div>
         </div>
         <table>
             <thead>
