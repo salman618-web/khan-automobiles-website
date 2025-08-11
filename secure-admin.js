@@ -2252,7 +2252,7 @@ function printInvoice() {
             <tbody>${rowsHtml}</tbody>
             <tfoot>
                 <tr style="background:#ededed;">
-                    <td colspan="5" style="font-weight:700; background:#e6e6f5;"><b>Total</b></td>
+                    <td colspan="5" style="font-weight:700; background:#ededed;"><b>Total</b></td>
                     <td class="right"><b>${Number.isInteger(qtyTotalPrint) ? qtyTotalPrint : qtyTotalPrint}</b></td>
                     <td></td>
                     <td></td>
