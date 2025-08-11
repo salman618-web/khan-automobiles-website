@@ -2168,6 +2168,8 @@ function printInvoice() {
     const shopState = document.getElementById('shopState')?.value || '';
 
     let rowsHtml = '';
+    let qtyTotalPrint = 0;
+    let amountTotalPrint = 0;
     document.querySelectorAll('#invoiceItemsBody tr').forEach((tr, idx) => {
         const desc = tr.querySelector('.desc')?.value || '';
         const hsn = tr.querySelector('.hsn')?.value || '';
@@ -2191,6 +2193,8 @@ function printInvoice() {
             
             <td class="right">${amount.replace('₹','')}</td>
         </tr>`;
+        qtyTotalPrint += parseFloat(qty || '0');
+        amountTotalPrint += parseFloat((amount || '0').toString().replace('₹','')) || 0;
     });
 
     const subtotal = document.getElementById('invoiceSubtotal')?.textContent || '₹0.00';
@@ -2249,6 +2253,15 @@ function printInvoice() {
                 </tr>
             </thead>
             <tbody>${rowsHtml}</tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="5" style="font-weight:700; background:#e6e6f5;">Total</td>
+                    <td class="right">${Number.isInteger(qtyTotalPrint) ? qtyTotalPrint : qtyTotalPrint}</td>
+                    <td></td>
+                    <td></td>
+                    <td class="right">₹${amountTotalPrint.toFixed(2)}</td>
+                </tr>
+            </tfoot>
         </table>
         <table class="summary">
             <tr><td>Subtotal</td><td>${subtotal}</td></tr>
