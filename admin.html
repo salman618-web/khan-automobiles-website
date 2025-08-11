@@ -40,6 +40,9 @@
             <button class="nav-btn" onclick="showSection('reports')">
                 <i class="fas fa-chart-line"></i> Reports
             </button>
+            <button id="openInvoiceBtn" class="nav-btn">
+                <i class="fas fa-file-invoice"></i> Create Tax Invoice / PO
+            </button>
         </div>
 
         <!-- Dashboard Section -->
@@ -428,6 +431,100 @@
         
         #entriesTableBody::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
+        }
+        </style>
+
+    <!-- Create Invoice / PO Modal -->
+    <div id="invoiceModal" class="modal">
+        <div class="modal-content" style="max-width: 960px;">
+            <span class="close" id="invoiceModalClose">&times;</span>
+            <h2><i class="fas fa-file-invoice"></i> Create Tax Invoice / Purchase Order</h2>
+            <form id="invoiceForm">
+                <div class="form-row">
+                    <input type="text" id="invoiceNumber" placeholder="Invoice/PO Number" required>
+                    <input type="date" id="invoiceDate" required>
+                    <input type="text" id="vehicleNumber" placeholder="Vehicle No. (optional)">
+                </div>
+                <div class="form-row">
+                    <input type="text" id="customerNameInv" placeholder="Customer Name" required>
+                    <input type="text" id="customerGstin" placeholder="Customer GSTIN (optional)">
+                </div>
+                <div class="form-row">
+                    <input type="text" id="customerAddress" placeholder="Customer Address" style="grid-column: 1/-1;">
+                </div>
+
+                <div class="chart-container" style="padding: 1rem;">
+                    <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <h3 style="margin:0;">Items</h3>
+                        <button type="button" id="addInvoiceItemBtn" class="btn-primary" style="padding: 0.5rem 1rem; border-radius: 8px;">
+                            <i class="fas fa-plus"></i> Add Item
+                        </button>
+                    </div>
+                    <div class="table-responsive" style="overflow-x:auto;">
+                        <table class="invoice-table" style="width:100%; border-collapse: collapse;">
+                            <thead>
+                                <tr>
+                                    <th style="text-align:left; padding:8px; border-bottom:1px solid #e5e7eb;">Description</th>
+                                    <th style="text-align:left; padding:8px; border-bottom:1px solid #e5e7eb;">HSN/SAC</th>
+                                    <th style="text-align:right; padding:8px; border-bottom:1px solid #e5e7eb;">Qty</th>
+                                    <th style="text-align:right; padding:8px; border-bottom:1px solid #e5e7eb;">Rate (₹)</th>
+                                    <th style="text-align:right; padding:8px; border-bottom:1px solid #e5e7eb;">GST %</th>
+                                    <th style="text-align:right; padding:8px; border-bottom:1px solid #e5e7eb;">Amount (₹)</th>
+                                    <th style="width:40px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="invoiceItemsBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="form-row" style="margin-top: 0.75rem;">
+                        <div style="grid-column: 1/-1; display:flex; gap:1rem; justify-content:flex-end;">
+                            <div class="invoice-summary">
+                                <div style="display:flex; justify-content: space-between; gap: 2rem; margin-bottom: 4px;">
+                                    <span>Subtotal</span>
+                                    <strong id="invoiceSubtotal">₹0.00</strong>
+                                </div>
+                                <div style="display:flex; justify-content: space-between; gap: 2rem; margin-bottom: 4px;">
+                                    <span>Total GST</span>
+                                    <strong id="invoiceTaxTotal">₹0.00</strong>
+                                </div>
+                                <div style="display:flex; justify-content: space-between; gap: 2rem; font-size: 1.1rem; border-top: 1px dashed #e5e7eb; padding-top: 6px;">
+                                    <span>Grand Total</span>
+                                    <strong id="invoiceGrandTotal">₹0.00</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; justify-content:flex-end; gap: 0.75rem; margin-top: 1rem;">
+                        <button type="button" id="printInvoiceBtn" class="btn-primary">
+                            <i class="fas fa-print"></i> Print / Save PDF
+                        </button>
+                        <button type="button" class="btn-secondary" id="invoiceCancelBtn">Cancel</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        /* Minimal invoice styles */
+        .invoice-table th, .invoice-table td { font-size: 14px; }
+        .invoice-table input { width: 100%; padding: 6px 8px; border: 1px solid #e5e7eb; border-radius: 6px; }
+        .invoice-table td { padding: 6px 8px; vertical-align: middle; }
+        .invoice-table .num { text-align: right; }
+        .invoice-summary { min-width: 260px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 12px; }
+        /* Responsive adjustments for invoice modal */
+        @media (max-width: 768px) {
+            #invoiceModal .modal-content { width: 95%; padding: 1rem; }
+            .invoice-table th, .invoice-table td { font-size: 12px; }
+            .invoice-table input { padding: 6px; }
+            .invoice-summary { width: 100%; min-width: auto; }
+            #invoiceModal .chart-container { padding: 0.75rem !important; }
+        }
+        @media (max-width: 480px) {
+            .invoice-table th:nth-child(2), .invoice-table td:nth-child(2) { display: none; } /* hide HSN on very small screens */
+            .invoice-table th:nth-child(7), .invoice-table td:nth-child(7) { width: 60px; }
         }
     </style>
 

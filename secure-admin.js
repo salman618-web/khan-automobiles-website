@@ -1916,4 +1916,223 @@ window.searchAndFilterEntries = searchAndFilterEntries;
 window.previousPage = previousPage;
 window.nextPage = nextPage;
 window.editEntry = editEntry;
-window.deleteEntry = deleteEntry; 
+window.deleteEntry = deleteEntry;
+
+// Invoice / PO Modal Helpers
+function openInvoiceModal() {
+    const modal = document.getElementById('invoiceModal');
+    if (!modal) return;
+    const dateInput = document.getElementById('invoiceDate');
+    if (dateInput && !dateInput.value) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+    }
+    const tbody = document.getElementById('invoiceItemsBody');
+    if (tbody && tbody.children.length === 0) {
+        addInvoiceItemRow();
+    }
+    modal.style.display = 'block';
+}
+
+function closeInvoiceModal() {
+    const modal = document.getElementById('invoiceModal');
+    if (!modal) return;
+    modal.style.display = 'none';
+}
+
+function addInvoiceItemRow() {
+    const tbody = document.getElementById('invoiceItemsBody');
+    if (!tbody) return;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+        <td><input type="text" class="desc" placeholder="Item description" required></td>
+        <td><input type="text" class="hsn" placeholder="HSN/SAC"></td>
+        <td><input type="number" class="qty num" min="0" step="1" value="1"></td>
+        <td><input type="number" class="rate num" min="0" step="0.01" value="0"></td>
+        <td><input type="number" class="gst num" min="0" step="0.01" value="18"></td>
+        <td class="amount num">₹0.00</td>
+        <td><button type="button" class="btn-secondary remove-row" title="Remove" style="padding: 6px 10px; border-radius: 6px;">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+    tr.querySelectorAll('input').forEach(inp => inp.addEventListener('input', recalcInvoiceTotals));
+    tr.querySelector('.remove-row').addEventListener('click', () => { tr.remove(); recalcInvoiceTotals(); });
+    recalcInvoiceTotals();
+}
+
+function recalcInvoiceTotals() {
+    const tbody = document.getElementById('invoiceItemsBody');
+    if (!tbody) return;
+    let subtotal = 0;
+    let taxTotal = 0;
+    [...tbody.querySelectorAll('tr')].forEach(tr => {
+        const qty = parseFloat(tr.querySelector('.qty')?.value || '0');
+        const rate = parseFloat(tr.querySelector('.rate')?.value || '0');
+        const gst = parseFloat(tr.querySelector('.gst')?.value || '0');
+        const lineBase = qty * rate;
+        const lineTax = lineBase * (gst / 100);
+        const lineAmount = lineBase + lineTax;
+        subtotal += lineBase;
+        taxTotal += lineTax;
+        const amountCell = tr.querySelector('.amount');
+        if (amountCell) amountCell.textContent = `₹${lineAmount.toFixed(2)}`;
+    });
+    const grand = subtotal + taxTotal;
+    const fmt = (n) => `₹${n.toFixed(2)}`;
+    const subEl = document.getElementById('invoiceSubtotal');
+    const taxEl = document.getElementById('invoiceTaxTotal');
+    const grandEl = document.getElementById('invoiceGrandTotal');
+    if (subEl) subEl.textContent = fmt(subtotal);
+    if (taxEl) taxEl.textContent = fmt(taxTotal);
+    if (grandEl) grandEl.textContent = fmt(grand);
+}
+
+function printInvoice() {
+    const printStyles = `
+        <style>
+            body { font-family: Inter, Arial, sans-serif; margin: 16px; }
+            .inv-header { display:flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+            .inv-h1 { font-size: 20px; margin: 0 0 4px 0; }
+            .inv-meta { font-size: 12px; color: #444; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th, td { border: 1px solid #ddd; padding: 6px 8px; font-size: 12px; }
+            th { background: #f3f4f6; text-align: left; }
+            .right { text-align: right; }
+            .summary { width: 280px; margin-left: auto; margin-top: 10px; }
+            .summary td { border: none; }
+            .summary tr td:first-child { text-align: left; }
+            .summary tr td:last-child { text-align: right; font-weight: 600; }
+        </style>
+    `;
+
+    // Build printable content
+    const invNo = document.getElementById('invoiceNumber')?.value || '';
+    const invDate = document.getElementById('invoiceDate')?.value || '';
+    const veh = document.getElementById('vehicleNumber')?.value || '';
+    const cust = document.getElementById('customerNameInv')?.value || '';
+    const gstin = document.getElementById('customerGstin')?.value || '';
+    const addr = document.getElementById('customerAddress')?.value || '';
+
+    let rowsHtml = '';
+    document.querySelectorAll('#invoiceItemsBody tr').forEach((tr, idx) => {
+        const desc = tr.querySelector('.desc')?.value || '';
+        const hsn = tr.querySelector('.hsn')?.value || '';
+        const qty = tr.querySelector('.qty')?.value || '0';
+        const rate = tr.querySelector('.rate')?.value || '0';
+        const gst = tr.querySelector('.gst')?.value || '0';
+        const amount = tr.querySelector('.amount')?.textContent || '';
+        rowsHtml += `<tr>
+            <td>${idx + 1}</td>
+            <td>${desc}</td>
+            <td>${hsn}</td>
+            <td class="right">${qty}</td>
+            <td class="right">${parseFloat(rate).toFixed(2)}</td>
+            <td class="right">${parseFloat(gst).toFixed(2)}%</td>
+            <td class="right">${amount.replace('₹','')}</td>
+        </tr>`;
+    });
+
+    const subtotal = document.getElementById('invoiceSubtotal')?.textContent || '₹0.00';
+    const taxTotal = document.getElementById('invoiceTaxTotal')?.textContent || '₹0.00';
+    const grand = document.getElementById('invoiceGrandTotal')?.textContent || '₹0.00';
+
+    const printable = `
+        <div class="inv-header">
+            <div>
+                <div class="inv-h1">Khan Automobiles</div>
+                <div class="inv-meta">Tax Invoice / Purchase Order</div>
+            </div>
+            <div class="inv-meta">
+                <div><strong>No:</strong> ${invNo}</div>
+                <div><strong>Date:</strong> ${invDate}</div>
+                ${veh ? `<div><strong>Vehicle:</strong> ${veh}</div>` : ''}
+            </div>
+        </div>
+        <div class="inv-meta" style="margin-bottom:8px;">
+            <div><strong>Billed To:</strong> ${cust}</div>
+            ${gstin ? `<div><strong>GSTIN:</strong> ${gstin}</div>` : ''}
+            ${addr ? `<div>${addr}</div>` : ''}
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:40px;">#</th>
+                    <th>Description</th>
+                    <th>HSN/SAC</th>
+                    <th class="right">Qty</th>
+                    <th class="right">Rate (₹)</th>
+                    <th class="right">GST %</th>
+                    <th class="right">Amount (₹)</th>
+                </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+        </table>
+        <table class="summary">
+            <tr><td>Subtotal</td><td>${subtotal}</td></tr>
+            <tr><td>Total GST</td><td>${taxTotal}</td></tr>
+            <tr><td><strong>Grand Total</strong></td><td><strong>${grand}</strong></td></tr>
+        </table>
+    `;
+
+    const w = window.open('', 'PRINT', 'height=800,width=800');
+    if (!w) return;
+    w.document.write('<html><head><title>Invoice</title>' + printStyles + '</head><body>' + printable + '</body></html>');
+    w.document.close();
+    w.focus();
+    w.print();
+    w.close();
+}
+
+function bindInvoiceUi() {
+    const openBtn = document.getElementById('openInvoiceBtn');
+    if (openBtn && !openBtn.dataset.bound) {
+        openBtn.addEventListener('click', openInvoiceModal);
+        openBtn.dataset.bound = '1';
+    }
+    const closeBtn = document.getElementById('invoiceModalClose');
+    if (closeBtn && !closeBtn.dataset.bound) {
+        closeBtn.addEventListener('click', closeInvoiceModal);
+        closeBtn.dataset.bound = '1';
+    }
+    // Close on outside click
+    const invoiceModal = document.getElementById('invoiceModal');
+    if (invoiceModal && !invoiceModal.dataset.bound) {
+        invoiceModal.addEventListener('click', (e) => {
+            if (e.target === invoiceModal) closeInvoiceModal();
+        });
+        invoiceModal.dataset.bound = '1';
+    }
+    const cancelBtn = document.getElementById('invoiceCancelBtn');
+    if (cancelBtn && !cancelBtn.dataset.bound) {
+        cancelBtn.addEventListener('click', closeInvoiceModal);
+        cancelBtn.dataset.bound = '1';
+    }
+    const addItemBtn = document.getElementById('addInvoiceItemBtn');
+    if (addItemBtn && !addItemBtn.dataset.bound) {
+        addItemBtn.addEventListener('click', addInvoiceItemRow);
+        addItemBtn.dataset.bound = '1';
+    }
+    const printBtn = document.getElementById('printInvoiceBtn');
+    if (printBtn && !printBtn.dataset.bound) {
+        printBtn.addEventListener('click', printInvoice);
+        printBtn.dataset.bound = '1';
+    }
+}
+
+// Ensure invoice UI is bound after dashboard loads
+const _origShowDashboardForInvoice = showDashboard;
+showDashboard = async function() {
+    await _origShowDashboardForInvoice.apply(this, arguments);
+    bindInvoiceUi();
+};
+
+// Also bind on DOM ready in case dashboard is already visible
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindInvoiceUi);
+} else {
+    bindInvoiceUi();
+}
+
+// Export for potential future use
+window.openInvoiceModal = openInvoiceModal;
+window.closeInvoiceModal = closeInvoiceModal;
+window.addInvoiceItemRow = addInvoiceItemRow;
+window.printInvoice = printInvoice; 
