@@ -2093,6 +2093,8 @@ function recalcInvoiceTotals() {
     let subtotal = 0;
     let taxTotal = 0;
     let discountTotal = 0;
+    let qtyTotal = 0;
+    let amountTotal = 0;
     [...tbody.querySelectorAll('tr')].forEach(tr => {
         const qty = parseFloat(tr.querySelector('.qty')?.value || '0');
         const rate = parseFloat(tr.querySelector('.rate')?.value || '0');
@@ -2106,6 +2108,8 @@ function recalcInvoiceTotals() {
         subtotal += lineBase;
         taxTotal += lineTax;
         discountTotal += discountValue;
+        qtyTotal += qty || 0;
+        amountTotal += lineAmount || 0;
         const amountCell = tr.querySelector('.amount');
         if (amountCell) amountCell.textContent = `₹${lineAmount.toFixed(2)}`;
     });
@@ -2119,6 +2123,10 @@ function recalcInvoiceTotals() {
     if (discEl) discEl.textContent = fmt(discountTotal);
     if (taxEl) taxEl.textContent = fmt(taxTotal);
     if (grandEl) grandEl.textContent = fmt(grand);
+    const qtyEl = document.getElementById('invoiceQtyTotal');
+    const amtEl = document.getElementById('invoiceAmtTotal');
+    if (qtyEl) qtyEl.textContent = (Number.isInteger(qtyTotal) ? qtyTotal : qtyTotal.toString());
+    if (amtEl) amtEl.textContent = fmt(amountTotal);
 }
 
 function printInvoice() {
