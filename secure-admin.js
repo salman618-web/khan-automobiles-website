@@ -2178,7 +2178,7 @@ function printInvoice() {
             th, td { border: 1px solid #ddd; padding: 6px 8px; font-size: 12px; }
             th { background: #e6e6f5 !important; text-align: left; }
             .total-row td { background: #ededed !important; }
-            .words-header { background: #ededed; font-weight: 700; text-align: center; padding: 6px; }
+            .words-header { background: #ededed; font-weight: 700; text-align: left; padding: 10px; }
             .words-text { padding: 8px; font-size: 12px; }
             .right { text-align: right; }
             .summary { width: 280px; margin-left: auto; margin-top: 10px; }
@@ -2253,7 +2253,7 @@ function printInvoice() {
                     <div><strong>State:</strong> ${shopState || ''}</div>
                 </td>
                 <td style="border:1px solid #000; padding:6px; vertical-align:top; width:30%;">
-                <img src="assets/khan-automobiles-logo.jpg" alt="logo pic" style="width:100%; max-width:200px;">
+                <img src="assets/khan-automobiles-logo.jpg" alt="logo” style="max-width:100%; height:auto; margin: 10px 0;">
                 
                 </td>
             </tr>
@@ -2271,8 +2271,8 @@ function printInvoice() {
                 </td>
                 <td style="border:1px solid #000; padding:6px; vertical-align:top;">
                     <div><strong>Invoice No.:</strong> ${invNo}</div>
-                    <div><strong>Date:</strong> ${formatFriendlyDate(invDate)}</div>
-                    ${veh ? `<div><strong>Vehicle:</strong> ${veh}</div>` : ''}
+                   <div><strong>Date:</strong> <strong> ${formatFriendlyDate(invDate)} </strong> </div>
+                
                 </td>
             </tr>
         </table>
@@ -2315,8 +2315,8 @@ function printInvoice() {
                     <div class="words-header">Amount in words:</div>
                     <div class="words-text">${amountInWords}</div>
                      <div class="words-header">Terms & Conditions:</div> 
-                      <div class="words-text">Thanks for doing business with us.<br> We look forward to serving you again in the future.</div>
-                </td>
+                     <div class="words-text">*Thanks for doing business with us.<br>*We look forward to serving you again in the future.</div>
+                     </td>
                 <td style="width:30%; border:1px solid #000; vertical-align: top;">
                 <div class="words-header">For Khan Automobiles</div>
                <img src="assets/khan_sign.jpg" alt="Signature" style="max-width:100%; height:auto; margin: 10px 0;">
