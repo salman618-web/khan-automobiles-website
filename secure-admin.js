@@ -2331,15 +2331,48 @@ function printInvoice() {
         </div>
     `;
 
-    // System print dialog (restored)
+    // System print dialog (restored) using hidden iframe for reliability
     const fname = `${(billToName||'Invoice')}_${billToContact}_${invoiceDate}_${invNo}`.replace(/\s+/g,'_');
-    const w = window.open('', 'PRINT', 'height=800,width=800');
-    if (!w) return;
-    w.document.write('<!doctype html><html><head><title>'+fname+'</title>' + printStyles + '</head><body>' + printable + '</body></html>');
-    w.document.close();
-    w.focus();
-    w.print();
-    w.close();
+
+    try {
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = '0';
+        document.body.appendChild(iframe);
+
+        const doc = iframe.contentWindow || iframe.contentDocument;
+        const docEl = doc.document || doc;
+        docEl.open();
+        docEl.write('<!doctype html><html><head><title>'+fname+'</title>' + printStyles + '</head><body>' + printable + '</body></html>');
+        docEl.close();
+
+        iframe.onload = () => {
+            // Give the browser a moment to render before printing
+            setTimeout(() => {
+                try {
+                    iframe.contentWindow.focus();
+                    iframe.contentWindow.print();
+                } catch (e) {}
+                // Remove after a delay to avoid closing too early on some browsers
+                setTimeout(() => {
+                    try { document.body.removeChild(iframe); } catch (_) {}
+                }, 1500);
+            }, 250);
+        };
+    } catch (err) {
+        // Fallback window.open path
+        const w = window.open('', 'PRINT', 'height=800,width=800');
+        if (!w) return;
+        w.document.write('<!doctype html><html><head><title>'+fname+'</title>' + printStyles + '</head><body>' + printable + '</body></html>');
+        w.document.close();
+        w.focus();
+        setTimeout(() => { try { w.print(); } catch (e) {} }, 250);
+        // Do not auto-close immediately; let the user close after saving
+    }
 }
 
 function bindInvoiceUi() {
