@@ -2119,11 +2119,11 @@ function printInvoice() {
             <td>${idx + 1}</td>
             <td>${desc}</td>
             <td>${hsn}</td>
-            <td class="right">${parseFloat(gst).toFixed(2)}%</td>
+            <td class="right">${parseFloat(gst).toFixed(1)}%</td>
             <td class="right">${unit}</td>
             <td class="right">${qty}</td>
             <td class="right">${parseFloat(rate).toFixed(2)}</td>
-            <td class="right">${parseFloat(discPct).toFixed(2)}%</td>
+            <td class="right">${parseFloat(discPct).toFixed(1)}%</td>
             
             <td class="right">${amount.replace('₹','')}</td>
         </tr>`;
@@ -2186,6 +2186,7 @@ function printInvoice() {
         </table>
         <table class="summary">
             <tr><td>Subtotal</td><td>${subtotal}</td></tr>
+            <tr><td>Discount</td><td>${document.getElementById('invoiceDiscountTotal')?.textContent || '₹0.00'}</td></tr>
             <tr><td>Total GST</td><td>${taxTotal}</td></tr>
             <tr><td><strong>Grand Total</strong></td><td><strong>${grand}</strong></td></tr>
         </table>
@@ -2253,6 +2254,12 @@ function bindInvoiceUi() {
         invoiceModal.addEventListener('click', (e) => {
             if (e.target === invoiceModal) closeInvoiceModal();
         });
+        // Also wire the top-right X close icon if present
+        const xBtn = document.getElementById('invoiceModalClose');
+        if (xBtn && !xBtn.dataset.bound) {
+            xBtn.addEventListener('click', closeInvoiceModal);
+            xBtn.dataset.bound = '1';
+        }
         invoiceModal.dataset.bound = '1';
     }
     const cancelBtn = document.getElementById('invoiceCancelBtn');
