@@ -1961,6 +1961,44 @@ function resetInvoiceForm() {
     } catch (_) {}
 }
 
+// Basic validation for invoice before printing
+function validateInvoiceForm() {
+    const errors = [];
+    const getVal = (id) => (document.getElementById(id)?.value || '').toString().trim();
+
+    const billToName = getVal('billToName');
+    const billToContact = getVal('billToContact');
+    const invoiceDate = getVal('invoiceDate');
+    const invoiceNumber = getVal('invoiceNumber');
+
+    if (!billToName) errors.push('Buyer Name is required');
+    if (!billToContact) errors.push('Contact No. is required');
+    if (!invoiceDate) errors.push('Invoice Date is required');
+    if (!invoiceNumber) errors.push('Invoice Number is required');
+
+    const tbody = document.getElementById('invoiceItemsBody');
+    if (!tbody || tbody.children.length === 0) {
+        errors.push('Add at least one item');
+    } else {
+        [...tbody.querySelectorAll('tr')].forEach((tr, idx) => {
+            const qty = parseFloat(tr.querySelector('.qty')?.value || '0');
+            const rate = parseFloat(tr.querySelector('.rate')?.value || '0');
+            if (!(qty > 0)) errors.push(`Row ${idx + 1}: Quantity must be greater than 0`);
+            if (!(rate > 0)) errors.push(`Row ${idx + 1}: Rate must be greater than 0`);
+        });
+    }
+
+    if (errors.length > 0) {
+        if (typeof showNotification === 'function') {
+            showNotification(errors.join('\n'), 'error');
+        } else {
+            alert(errors.join('\n'));
+        }
+        return false;
+    }
+    return true;
+}
+
 function closeInvoiceModal() {
     const modal = document.getElementById('invoiceModal');
     if (!modal) return;
@@ -1977,7 +2015,7 @@ function addInvoiceItemRow() {
         <td class="num">${index}</td>
         <td><input type="text" class="desc" placeholder="Item name" required></td>
         <td><input type="text" class="hsn" placeholder="HSN/SAC"></td>
-         <td><input type="number" class="gst num" min="0" step="0.01" value="0"></td>
+         <td><input type="number" class="gst num" min="0" step="0.01" placeholder="0" value="0"></td>
           <td><input type="text" class="unit" placeholder="pcs" value="pcs"></td>
         <td><input type="number" class="qty num" min="0" step="1" value=""></td>
        
@@ -2028,6 +2066,8 @@ function recalcInvoiceTotals() {
 }
 
 function printInvoice() {
+    // Validate required fields before attempting to print
+    if (!validateInvoiceForm()) return;
     const printStyles = `
         <style>
             @page { size: A4; margin: 12mm; }
