@@ -2018,6 +2018,7 @@ function printInvoice() {
     const billToAddress = document.getElementById('billToAddress')?.value || '';
     const billToContact = document.getElementById('billToContact')?.value || '';
     const billToGstin = document.getElementById('billToGstin')?.value || '';
+    const billToState = document.getElementById('billToState')?.value || '';
     const shopName = document.getElementById('shopName')?.value || 'Khan Automobiles';
     const shopPhone = document.getElementById('shopPhone')?.value || '';
     const shopEmail = document.getElementById('shopEmail')?.value || '';
@@ -2049,29 +2050,38 @@ function printInvoice() {
     const grand = document.getElementById('invoiceGrandTotal')?.textContent || '₹0.00';
 
     const printable = `
-        <div class="inv-header">
-            <div>
-                <div class="inv-h1">${shopName}</div>
-                <div class="inv-meta">${shopAddress}${shopState ? ', ' + shopState : ''}</div>
-                <div class="inv-meta">${shopPhone}${shopEmail ? ' • ' + shopEmail : ''}${shopGstin ? ' • GSTIN: ' + shopGstin : ''}</div>
-            </div>
-            <div class="inv-meta">
-                <div><strong>Invoice No.:</strong> ${invNo}</div>
-                <div><strong>Date:</strong> ${invDate}</div>
-                ${veh ? `<div><strong>Vehicle:</strong> ${veh}</div>` : ''}
-            </div>
-        </div>
-        <div class="inv-meta" style="display:flex; justify-content: space-between; gap: 24px; margin-bottom:8px;">
-            <div style="flex:1;">
-                <div><strong>Bill To:</strong> ${billToName}</div>
-                ${billToAddress ? `<div>${billToAddress}</div>` : ''}
-                ${billToContact ? `<div>Contact No.: ${billToContact}</div>` : ''}
-                ${billToGstin ? `<div>GSTIN No.: ${billToGstin}</div>` : ''}
-            </div>
-            <div style="flex:1;">
-                ${shipToName ? `<div><strong>Shipping To:</strong> ${shipToName}</div>` : ''}
-            </div>
-        </div>
+        <table style="width:100%; border:1px solid #000; border-collapse:collapse;">
+            <tr>
+                <td style="border:1px solid #000; padding:6px; vertical-align:top; width:70%;">
+                    <div><strong>Company/Seller Name:</strong> ${shopName || ''}</div>
+                    <div><strong>Address :</strong> ${shopAddress || ''}${shopState ? ', ' + shopState : ''}</div>
+                    <div><strong>Phone No.:</strong> ${shopPhone || ''}</div>
+                    <div><strong>Email ID:</strong> ${shopEmail || ''}</div>
+                    <div><strong>GSTIN:</strong> ${shopGstin || ''}</div>
+                    <div><strong>State:</strong> ${shopState || ''}</div>
+                </td>
+                <td style="border:1px solid #000; padding:6px; vertical-align:top; width:30%;"></td>
+            </tr>
+            <tr>
+                <td colspan="2" style="border:1px solid #000; background:#cdd6eb; text-align:center; font-weight:700; font-size:22px; padding:6px;">Tax Invoice</td>
+            </tr>
+            <tr>
+                <td style="border:1px solid #000; padding:6px; vertical-align:top;">
+                    <div><strong>Bill To:</strong></div>
+                    <div><strong>Name:</strong> ${billToName || ''}</div>
+                    <div><strong>Address:</strong> ${billToAddress || ''}</div>
+                    <div><strong>Contact No.:</strong> ${billToContact || ''}</div>
+                    <div><strong>GSTIN No.:</strong> ${billToGstin || ''}</div>
+                    <div><strong>State:</strong> ${billToState || ''}</div>
+                </td>
+                <td style="border:1px solid #000; padding:6px; vertical-align:top;">
+                    <div><strong>Shipping To:</strong> ${shipToName || ''}</div>
+                    <div><strong>Invoice No.:</strong> ${invNo}</div>
+                    <div><strong>Date:</strong> ${invDate}</div>
+                    ${veh ? `<div><strong>Vehicle:</strong> ${veh}</div>` : ''}
+                </td>
+            </tr>
+        </table>
         <table>
             <thead>
                 <tr>
