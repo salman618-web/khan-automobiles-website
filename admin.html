@@ -442,22 +442,25 @@
             <form id="invoiceForm">
                 <div class="form-row">
                     <input type="text" id="shopName" placeholder="Shop Name" value="Khan Automobiles" required>
-                    <input type="text" id="shopPhone" placeholder="Mobile Number" value="+91 9118819531" required>
+                    <input type="text" id="shopPhone" placeholder="Mobile Number" value="9118819531 , 8052594809" required>
                 </div>
                 <div class="form-row">
                     <input type="email" id="shopEmail" placeholder="Email ID" value="" >
                     <input type="text" id="shopGstin" placeholder="GSTIN No." value="">
                 </div>
                 <div class="form-row">
-                    <input type="text" id="shopAddress" placeholder="Shop Address" style="grid-column: 1/-1;" value="Your full address here">
+                    <input type="text" id="shopAddress" placeholder="Shop Address" style="grid-column: 1/-1;" value="Khan Automobiles,
+                    Near ZiyaUr Rehman Building Materials,
+                    100 Meters from State Bank,
+                    Semriyawa, Sant Kabir Nagar
+                    Uttar Pradesh - 272126">
                 </div>
                 <div class="form-row">
-                    <input type="text" id="shopState" placeholder="State" value="">
+                    <input type="text" id="shopState" placeholder="State" value="Uttar Pradesh">
                 </div>
                 <div class="form-row">
                     <input type="text" id="invoiceNumber" placeholder="Invoice/PO Number" required disabled>
                     <input type="date" id="invoiceDate" required>
-                    <input type="text" id="vehicleNumber" placeholder="Vehicle No. (optional)">
                 </div>
                 <h4><i class="fas fa-file-invoice"></i> Buyer Details (Bill TO)</h4>
                 <div class="form-row">
@@ -468,11 +471,11 @@
                     <input type="text" id="billToAddress" placeholder="Billing Address" style="grid-column: 1/-1;">
                 </div>
                 <div class="form-row">
-                    <input type="text" id="billToContact" placeholder="Contact No.">
+                    <input type="number" id="billToContact" placeholder="Contact No." required inputmode="numeric" pattern="[0-9]*">
                     <input type="text" id="billToGstin" placeholder="GSTIN No.">
                 </div>
                 <div class="form-row">
-                    <input type="text" id="billToState" placeholder="State">
+                    <input type="text" id="billToState" placeholder="State" value="Uttar Pradesh">
                 </div>
 
                 <div class="chart-container" style="padding: 1rem;">
@@ -489,11 +492,13 @@
                                     <th style="text-align:left; padding:8px; border-bottom:1px solid #e5e7eb;">#</th>
                                     <th style="text-align:left; padding:8px; border-bottom:1px solid #e5e7eb;">Item name</th>
                                     <th style="text-align:left; padding:8px; border-bottom:1px solid #e5e7eb;">HSN/SAC</th>
-                                    <th style="text-align:right; padding:8px; border-bottom:1px solid #e5e7eb;">Quantity</th>
+                                    <th style="text-align:right; padding:8px; border-bottom:1px solid #e5e7eb;">GST %</th>
                                     <th style="text-align:right; padding:8px; border-bottom:1px solid #e5e7eb;">Unit</th>
+                                    <th style="text-align:right; padding:8px; border-bottom:1px solid #e5e7eb;">Quantity</th>
+                                    
                                     <th style="text-align:right; padding:8px; border-bottom:1px solid #e5e7eb;">Rate</th>
                                     <th style="text-align:right; padding:8px; border-bottom:1px solid #e5e7eb;">Discount %</th>
-                                    <th style="text-align:right; padding:8px; border-bottom:1px solid #e5e7eb;">GST</th>
+                                    
                                     <th style="text-align:right; padding:8px; border-bottom:1px solid #e5e7eb;">Amount</th>
                                     <th style="width:40px;"></th>
                                 </tr>
@@ -508,6 +513,10 @@
                                 <div style="display:flex; justify-content: space-between; gap: 2rem; margin-bottom: 4px;">
                                     <span>Subtotal</span>
                                     <strong id="invoiceSubtotal">₹0.00</strong>
+                                </div>
+                                <div style="display:flex; justify-content: space-between; gap: 2rem; margin-bottom: 4px;">
+                                    <span>Discount</span>
+                                    <strong id="invoiceDiscountTotal">₹0.00</strong>
                                 </div>
                                 <div style="display:flex; justify-content: space-between; gap: 2rem; margin-bottom: 4px;">
                                     <span>Total GST</span>

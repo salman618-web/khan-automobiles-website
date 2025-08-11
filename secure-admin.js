@@ -1965,7 +1965,7 @@ function addInvoiceItemRow() {
         <td><input type="text" class="unit" placeholder="pcs" value="pcs"></td>
         <td><input type="number" class="rate num" min="0" step="0.01" value=""></td>
         <td><input type="number" class="disc num" min="0" step="0.01" value="" placeholder="%"></td>
-        <td><input type="number" class="gst num" min="0" step="0.01" value=""></td>
+        <td><input type="number" class="gst num" min="0" step="0.01" value="0"></td>
         <td class="amount num">₹0.00</td>
         <td><button type="button" class="btn-secondary remove-row" title="Remove" style="padding: 6px 10px; border-radius: 6px;">✕</button></td>
     `;
@@ -1980,6 +1980,7 @@ function recalcInvoiceTotals() {
     if (!tbody) return;
     let subtotal = 0;
     let taxTotal = 0;
+    let discountTotal = 0;
     [...tbody.querySelectorAll('tr')].forEach(tr => {
         const qty = parseFloat(tr.querySelector('.qty')?.value || '0');
         const rate = parseFloat(tr.querySelector('.rate')?.value || '0');
@@ -1992,15 +1993,18 @@ function recalcInvoiceTotals() {
         const lineAmount = lineBase + lineTax;
         subtotal += lineBase;
         taxTotal += lineTax;
+        discountTotal += discountValue;
         const amountCell = tr.querySelector('.amount');
         if (amountCell) amountCell.textContent = `₹${lineAmount.toFixed(2)}`;
     });
     const grand = subtotal + taxTotal;
     const fmt = (n) => `₹${n.toFixed(2)}`;
     const subEl = document.getElementById('invoiceSubtotal');
+    const discEl = document.getElementById('invoiceDiscountTotal');
     const taxEl = document.getElementById('invoiceTaxTotal');
     const grandEl = document.getElementById('invoiceGrandTotal');
     if (subEl) subEl.textContent = fmt(subtotal);
+    if (discEl) discEl.textContent = fmt(discountTotal);
     if (taxEl) taxEl.textContent = fmt(taxTotal);
     if (grandEl) grandEl.textContent = fmt(grand);
 }
