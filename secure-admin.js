@@ -2009,6 +2009,43 @@ function formatFriendlyDate(isoString) {
     }
 }
 
+// Convert amount to words (Indian numbering)
+function amountToWordsIndian(amountNumber) {
+    try {
+        const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+        const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+        function twoDigits(n) {
+            if (n < 20) return ones[n];
+            const t = Math.floor(n / 10), o = n % 10;
+            return `${tens[t]}${o ? ' ' + ones[o] : ''}`.trim();
+        }
+        function threeDigits(n) {
+            const h = Math.floor(n / 100), r = n % 100;
+            return `${h ? ones[h] + ' Hundred' + (r ? ' ' : '') : ''}${twoDigits(r)}`.trim();
+        }
+        function sectionToWords(num) {
+            if (num === 0) return 'Zero';
+            let result = '';
+            const crore = Math.floor(num / 10000000); num %= 10000000;
+            const lakh = Math.floor(num / 100000); num %= 100000;
+            const thousand = Math.floor(num / 1000); num %= 1000;
+            const hundred = num; // up to 999
+            if (crore) result += `${twoDigits(crore)} Crore `;
+            if (lakh) result += `${twoDigits(lakh)} Lakh `;
+            if (thousand) result += `${twoDigits(thousand)} Thousand `;
+            if (hundred) result += `${threeDigits(hundred)} `;
+            return result.trim();
+        }
+        const n = Math.floor(Math.abs(amountNumber));
+        const fraction = Math.round((Math.abs(amountNumber) - n) * 100); // paise
+        let words = sectionToWords(n) + ' Rupees';
+        if (fraction > 0) words += ` and ${twoDigits(fraction)} Paise`;
+        return words + ' only';
+    } catch (e) {
+        return 'Rupees only';
+    }
+}
+
 // Basic validation for invoice before printing
 function validateInvoiceForm() {
     const errors = [];
@@ -2141,6 +2178,8 @@ function printInvoice() {
             th, td { border: 1px solid #ddd; padding: 6px 8px; font-size: 12px; }
             th { background: #e6e6f5 !important; text-align: left; }
             .total-row td { background: #ededed !important; }
+            .words-header { background: #e6f0f5; font-weight: 700; text-align: center; padding: 6px; }
+            .words-text { padding: 8px; font-size: 12px; }
             .right { text-align: right; }
             .summary { width: 280px; margin-left: auto; margin-top: 10px; }
             .summary td { border: none; }
@@ -2199,21 +2238,21 @@ function printInvoice() {
     const subtotal = document.getElementById('invoiceSubtotal')?.textContent || '₹0.00';
     const taxTotal = document.getElementById('invoiceTaxTotal')?.textContent || '₹0.00';
     const grand = document.getElementById('invoiceGrandTotal')?.textContent || '₹0.00';
+    const grandNumeric = parseFloat((grand || '0').toString().replace(/[^0-9.]/g,'')) || 0;
+    const amountInWords = amountToWordsIndian(grandNumeric);
 
     const printable = `
         <table style="width:100%; border:1px solid #000; border-collapse:collapse;">
             <tr>
                 <td style="border:1px solid #000; padding:6px; vertical-align:top; width:70%;">
-                    <div><strong>Company Name:</strong> ${shopName || ''}</div>
-                    <div><strong>Address :</strong> ${shopAddress || ''}</div>
+                    <div><strong>Company/Seller Name:</strong> ${shopName || ''}</div>
+                    <div><strong>Address :</strong> ${shopAddress || ''}${shopState ? ', ' + shopState : ''}</div>
                     <div><strong>Phone No.:</strong> ${shopPhone || ''}</div>
                     <div><strong>Email ID:</strong> ${shopEmail || ''}</div>
                     <div><strong>GSTIN:</strong> ${shopGstin || ''}</div>
                     <div><strong>State:</strong> ${shopState || ''}</div>
                 </td>
-                <td style="border:1px solid #000; padding:6px; vertical-align:top; width:30%;">
-            <img src="assets/khan-automobiles-logo.jpg" alt="Khan Automobiles" style="width:100%; max-width:200px;">
-                </td>
+                <td style="border:1px solid #000; padding:6px; vertical-align:top; width:30%;"></td>
             </tr>
             <tr>
                 <td colspan="2" style="border:1px solid #000; background:#cdd6eb; text-align:center; font-weight:700; font-size:22px; padding:6px;">Tax Invoice</td>
@@ -2222,9 +2261,8 @@ function printInvoice() {
                 <td style="border:1px solid #000; padding:6px; vertical-align:top;">
                     <div><h3>Buyer (Bill To)</h3></div>
                     <div><strong>Name:</strong> ${billToName || ''}</div>
-                    <div><strong>Mobile No.:</strong> ${billToContact || ''}</div>
                     <div><strong>Address:</strong> ${billToAddress || ''}</div>
-                    
+                    <div><strong>Contact No.:</strong> ${billToContact || ''}</div>
                     <div><strong>GSTIN No.:</strong> ${billToGstin || ''}</div>
                     <div><strong>State:</strong> ${billToState || ''}</div>
                 </td>
@@ -2252,7 +2290,7 @@ function printInvoice() {
                 </tr>
             </thead>
             <tbody>${rowsHtml}</tbody>
-                        <tfoot>
+            <tfoot>
                 <tr class="total-row">
                     <td colspan="5" style="font-weight:700;"><b>Total</b></td>
                     <td class="right"><b>${Number.isInteger(qtyTotalPrint) ? qtyTotalPrint : qtyTotalPrint}</b></td>
@@ -2267,6 +2305,15 @@ function printInvoice() {
             <tr><td>Discount</td><td>${document.getElementById('invoiceDiscountTotal')?.textContent || '₹0.00'}</td></tr>
             <tr><td>Total GST</td><td>${taxTotal}</td></tr>
             <tr><td><strong>Grand Total</strong></td><td><strong>${grand}</strong></td></tr>
+        </table>
+        <table style="width:100%; border-collapse: collapse; margin-top: 10px;">
+            <tr>
+                <td style="width:70%; border:1px solid #ddd; vertical-align: top;">
+                    <div class="words-header">Amount in words:</div>
+                    <div class="words-text">${amountInWords}</div>
+                </td>
+                <td style="width:30%; border:1px solid #ddd; vertical-align: top;"></td>
+            </tr>
         </table>
     `;
 
