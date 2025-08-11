@@ -1923,13 +1923,26 @@ function openInvoiceModal() {
     const modal = document.getElementById('invoiceModal');
     if (!modal) return;
     const dateInput = document.getElementById('invoiceDate');
-    if (dateInput && !dateInput.value) {
+    if (dateInput) {
         dateInput.value = new Date().toISOString().split('T')[0];
     }
+    // Autopopulate incremental invoice number
+    try {
+        const key = 'lastInvoiceNumber';
+        let last = parseInt(localStorage.getItem(key) || '0', 10);
+        if (isNaN(last) || last < 0) last = 0;
+        const next = last + 1;
+        const invEl = document.getElementById('invoiceNumber');
+        if (invEl) invEl.value = String(next);
+        localStorage.setItem(key, String(next));
+    } catch (e) {}
     const tbody = document.getElementById('invoiceItemsBody');
     if (tbody && tbody.children.length === 0) {
         addInvoiceItemRow();
     }
+    // Clear numeric fields by default; set unit to pcs
+    tbody?.querySelectorAll('.qty, .rate, .disc, .gst').forEach(inp => inp.value = '');
+    tbody?.querySelectorAll('.unit').forEach(inp => { if (!inp.value) inp.value = 'pcs'; });
     modal.style.display = 'block';
 }
 
@@ -1948,11 +1961,11 @@ function addInvoiceItemRow() {
         <td class="num">${index}</td>
         <td><input type="text" class="desc" placeholder="Item name" required></td>
         <td><input type="text" class="hsn" placeholder="HSN/SAC"></td>
-        <td><input type="number" class="qty num" min="0" step="1" value="1"></td>
-        <td><input type="text" class="unit" placeholder="pcs"></td>
-        <td><input type="number" class="rate num" min="0" step="0.01" value="0"></td>
-        <td><input type="number" class="disc num" min="0" step="0.01" value="0"></td>
-        <td><input type="number" class="gst num" min="0" step="0.01" value="18"></td>
+        <td><input type="number" class="qty num" min="0" step="1" value=""></td>
+        <td><input type="text" class="unit" placeholder="pcs" value="pcs"></td>
+        <td><input type="number" class="rate num" min="0" step="0.01" value=""></td>
+        <td><input type="number" class="disc num" min="0" step="0.01" value="" placeholder="%"></td>
+        <td><input type="number" class="gst num" min="0" step="0.01" value=""></td>
         <td class="amount num">₹0.00</td>
         <td><button type="button" class="btn-secondary remove-row" title="Remove" style="padding: 6px 10px; border-radius: 6px;">✕</button></td>
     `;
@@ -1970,9 +1983,11 @@ function recalcInvoiceTotals() {
     [...tbody.querySelectorAll('tr')].forEach(tr => {
         const qty = parseFloat(tr.querySelector('.qty')?.value || '0');
         const rate = parseFloat(tr.querySelector('.rate')?.value || '0');
-        const disc = parseFloat(tr.querySelector('.disc')?.value || '0');
+        const discPct = parseFloat(tr.querySelector('.disc')?.value || '0');
         const gst = parseFloat(tr.querySelector('.gst')?.value || '0');
-        const lineBase = Math.max(qty * rate - disc, 0);
+        const gross = qty * rate;
+        const discountValue = gross * (discPct / 100);
+        const lineBase = Math.max(gross - discountValue, 0);
         const lineTax = lineBase * (gst / 100);
         const lineAmount = lineBase + lineTax;
         subtotal += lineBase;
@@ -2031,7 +2046,9 @@ function printInvoice() {
         const desc = tr.querySelector('.desc')?.value || '';
         const hsn = tr.querySelector('.hsn')?.value || '';
         const qty = tr.querySelector('.qty')?.value || '0';
+        const unit = tr.querySelector('.unit')?.value || 'pcs';
         const rate = tr.querySelector('.rate')?.value || '0';
+        const discPct = tr.querySelector('.disc')?.value || '0';
         const gst = tr.querySelector('.gst')?.value || '0';
         const amount = tr.querySelector('.amount')?.textContent || '';
         rowsHtml += `<tr>
@@ -2039,7 +2056,9 @@ function printInvoice() {
             <td>${desc}</td>
             <td>${hsn}</td>
             <td class="right">${qty}</td>
+            <td class="right">${unit}</td>
             <td class="right">${parseFloat(rate).toFixed(2)}</td>
+            <td class="right">${parseFloat(discPct).toFixed(2)}%</td>
             <td class="right">${parseFloat(gst).toFixed(2)}%</td>
             <td class="right">${amount.replace('₹','')}</td>
         </tr>`;
@@ -2086,12 +2105,14 @@ function printInvoice() {
             <thead>
                 <tr>
                     <th style="width:40px;">#</th>
-                    <th>Description</th>
+                    <th>Item name</th>
                     <th>HSN/SAC</th>
-                    <th class="right">Qty</th>
-                    <th class="right">Rate (₹)</th>
-                    <th class="right">GST %</th>
-                    <th class="right">Amount (₹)</th>
+                    <th class="right">Quantity</th>
+                    <th class="right">Unit</th>
+                    <th class="right">Rate</th>
+                    <th class="right">Discount %</th>
+                    <th class="right">GST</th>
+                    <th class="right">Amount</th>
                 </tr>
             </thead>
             <tbody>${rowsHtml}</tbody>
