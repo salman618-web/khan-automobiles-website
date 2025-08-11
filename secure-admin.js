@@ -2133,12 +2133,14 @@ function printInvoice() {
         <style>
             @page { size: A4; margin: 12mm; }
             body { font-family: Inter, Arial, sans-serif; margin: 0; }
+            * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .inv-header { display:flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
             .inv-h1 { font-size: 20px; margin: 0 0 4px 0; }
             .inv-meta { font-size: 12px; color: #444; }
             table { width: 100%; border-collapse: collapse; margin-top: 10px; }
             th, td { border: 1px solid #ddd; padding: 6px 8px; font-size: 12px; }
-            th { background: #e6e6f5; text-align: left; }
+            th { background: #e6e6f5 !important; text-align: left; }
+            .total-row td { background: #ededed !important; }
             .right { text-align: right; }
             .summary { width: 280px; margin-left: auto; margin-top: 10px; }
             .summary td { border: none; }
@@ -2250,13 +2252,13 @@ function printInvoice() {
                 </tr>
             </thead>
             <tbody>${rowsHtml}</tbody>
-            <tfoot>
-                <tr style="background:#ededed;">
-                    <td colspan="5" style="font-weight:700; background:#ededed;"><b>Total</b></td>
+                        <tfoot>
+                <tr class="total-row">
+                    <td colspan="5" style="font-weight:700;"><b>Total</b></td>
                     <td class="right"><b>${Number.isInteger(qtyTotalPrint) ? qtyTotalPrint : qtyTotalPrint}</b></td>
                     <td></td>
                     <td></td>
-                   <td class="right"><b>₹${amountTotalPrint.toFixed(2)}</b></td>
+                    <td class="right"><b>₹${amountTotalPrint.toFixed(2)}</b></td>
                 </tr>
             </tfoot>
         </table>
