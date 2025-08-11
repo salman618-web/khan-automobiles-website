@@ -1940,6 +1940,11 @@ function openInvoiceModal() {
     if (tbody && tbody.children.length === 0) {
         addInvoiceItemRow();
     }
+    // Ensure a clean slate each time modal opens
+    ['billToName','billToContact','billToAddress','billToGstin','billToState'].forEach(id=>{
+        const el = document.getElementById(id);
+        if (el && !el.value) el.value = '';
+    });
     // Clear numeric fields by default; set unit to pcs
     tbody?.querySelectorAll('.qty, .rate, .disc, .gst').forEach(inp => inp.value = '');
     tbody?.querySelectorAll('.unit').forEach(inp => { if (!inp.value) inp.value = 'pcs'; });
@@ -2036,6 +2041,14 @@ function closeInvoiceModal() {
     const modal = document.getElementById('invoiceModal');
     if (!modal) return;
     resetInvoiceForm();
+    // Force clear through form reset event and microtask flush
+    const form = document.getElementById('invoiceForm');
+    if (form) {
+        form.reset();
+        ['billToName','billToContact','billToAddress','billToGstin','billToState','invoiceDate','invoiceNumber'].forEach(id=>{
+            const el = document.getElementById(id); if (el) el.value='';
+        });
+    }
     modal.style.display = 'none';
 }
 
