@@ -2123,10 +2123,7 @@ function recalcInvoiceTotals() {
     if (discEl) discEl.textContent = fmt(discountTotal);
     if (taxEl) taxEl.textContent = fmt(taxTotal);
     if (grandEl) grandEl.textContent = fmt(grand);
-    const qtyEl = document.getElementById('invoiceQtyTotal');
-    const amtEl = document.getElementById('invoiceAmtTotal');
-    if (qtyEl) qtyEl.textContent = (Number.isInteger(qtyTotal) ? qtyTotal : qtyTotal.toString());
-    if (amtEl) amtEl.textContent = fmt(amountTotal);
+
 }
 
 function printInvoice() {
