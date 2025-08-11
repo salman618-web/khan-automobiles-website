@@ -2135,7 +2135,7 @@ function printInvoice() {
             body { font-family: Inter, Arial, sans-serif; margin: 0; }
             * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .inv-header { display:flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-            .inv-h1 { font-size: 20px; margin: 0 0 4px 0; }
+            .inv-h1 { font-size: 24px; margin: 0 0 4px 0; }
             .inv-meta { font-size: 12px; color: #444; }
             table { width: 100%; border-collapse: collapse; margin-top: 10px; }
             th, td { border: 1px solid #ddd; padding: 6px 8px; font-size: 12px; }
