@@ -2171,6 +2171,8 @@ function printInvoice() {
             @page { size: A4; margin: 12mm; }
             body { font-family: Inter, Arial, sans-serif; margin: 0; }
             * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .pdf-root { width: 190mm; margin: 0 auto; }
+            .avoid-break { break-inside: avoid; page-break-inside: avoid; }
             .inv-header { display:flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
             .inv-h1 { font-size: 24px; margin: 0 0 4px 0; }
             .inv-meta { font-size: 12px; color: #444; }
@@ -2178,14 +2180,15 @@ function printInvoice() {
             th, td { border: 1px solid #ddd; padding: 6px 8px; font-size: 12px; }
             th { background: #e6e6f5 !important; text-align: left; }
             .total-row td { background: #ededed !important; }
-            .words-header { background: #ededed; font-weight: 700; text-align: left; padding: 10px; }
-            .words-header-TC { background: #ffffff; font-weight: 700; text-align: left; padding: 10px; }
+            .words-header { background: #ededed; font-weight: 700; text-align: center; padding: 6px; }
             .words-text { padding: 8px; font-size: 12px; }
             .right { text-align: right; }
             .summary { width: 280px; margin-left: auto; margin-top: 10px; }
             .summary td { border: none; }
             .summary tr td:first-child { text-align: left; }
             .summary tr td:last-child { text-align: right; font-weight: 600; }
+            img.logo { max-width: 180px; width: 100%; height: auto; }
+            img.sign { max-width: 160px; width: 100%; height: auto; margin: 10px 0; }
         </style>
     `;
 
@@ -2243,7 +2246,8 @@ function printInvoice() {
     const amountInWords = amountToWordsIndian(grandNumeric);
 
     const printable = `
-        <table style="width:100%; border:1px solid #000; border-collapse:collapse;">
+        <div class="pdf-root">
+        <table style="border:1px solid #000; border-collapse:collapse;">
             <tr>
                 <td style="border:1px solid #000; padding:6px; vertical-align:top; width:70%;">
                     <div><strong>Company/Seller Name:</strong> ${shopName || ''}</div>
@@ -2253,13 +2257,15 @@ function printInvoice() {
                     <div><strong>GSTIN:</strong> ${shopGstin || ''}</div>
                     <div><strong>State:</strong> ${shopState || ''}</div>
                 </td>
-                <td style="border:1px solid #000; padding:6px; vertical-align:top; width:30%;"></td>
+                <td style="border:1px solid #000; padding:6px; vertical-align:top; width:30%; text-align:right;">
+                    <img class="logo" src="assets/khan-automobiles-logo.jpg" alt="Company Logo">
+                </td>
             </tr>
             <tr>
                 <td colspan="2" style="border:1px solid #000; background:#ededed; text-align:center; font-weight:700; font-size:22px; padding:6px;">Tax Invoice</td>
             </tr>
             <tr>
-                <td style="border:1px solid #000; padding:6px; vertical-align:top;">
+                <td class="avoid-break" style="border:1px solid #000; padding:6px; vertical-align:top;">
                     <div><h3>Buyer (Bill To)</h3></div>
                     <div><strong>Name:</strong> ${billToName || ''}</div>
                     <div><strong>Address:</strong> ${billToAddress || ''}</div>
@@ -2274,7 +2280,7 @@ function printInvoice() {
                 </td>
             </tr>
         </table>
-        <table>
+        <table class="avoid-break">
             <thead>
                 <tr>
                     <th style="width:40px;">#</th>
@@ -2301,13 +2307,13 @@ function printInvoice() {
                 </tr>
             </tfoot>
         </table>
-        <table class="summary">
+        <table class="summary avoid-break">
             <tr><td>Subtotal</td><td>${subtotal}</td></tr>
             <tr><td>Discount</td><td>${document.getElementById('invoiceDiscountTotal')?.textContent || '₹0.00'}</td></tr>
             <tr><td>Total GST</td><td>${taxTotal}</td></tr>
             <tr><td><strong>Grand Total</strong></td><td><strong>${grand}</strong></td></tr>
         </table>
-        <table style="width:100%; border-collapse: collapse; margin-top: 10px;">
+        <table class="avoid-break" style="border-collapse: collapse; margin-top: 10px;">
             <tr>
                 <td style="width:70%; border:1px solid #000; vertical-align: top;">
                     <div class="words-header">Amount in words:</div>
@@ -2315,12 +2321,14 @@ function printInvoice() {
                     <div class="words-header">Terms & Conditions:</div>
                     <div class="words-text">Thanks for doing business with us.<br>We look forward to serving you again in the future.</div>
                 </td>
-                <td style="width:30%; border:1px solid #000; vertical-align: top;">
+                <td style="width:30%; border:1px solid #000; vertical-align: top; text-align:center;">
                     <div class="words-header">For Khan Automobiles</div>
+                    <img class="sign" src="assets/khan_sign.jpg" alt="Signature">
                     <div class="words-text">Authorized Signatory</div>
                 </td>
             </tr>
         </table>
+        </div>
     `;
 
     // ===== html2pdf generation (no browser header/footer) =====
@@ -2332,11 +2340,12 @@ function printInvoice() {
 
     if (window.html2pdf) {
         const opt = {
-            margin: [12/25.4 * 72, 12/25.4 * 72], // approx 12mm margins in points
+            margin: 12, // mm
             filename: fname + '.pdf',
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true },
-            jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' }
+            html2canvas: { scale: 2, useCORS: true, logging: false },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['css','avoid-all'], avoid: ['.avoid-break'] }
         };
         window.html2pdf().set(opt).from(container).save();
     } else {
