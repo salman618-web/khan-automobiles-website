@@ -2091,7 +2091,7 @@ function printInvoice() {
     const invDate = document.getElementById('invoiceDate')?.value || '';
     const veh = document.getElementById('vehicleNumber')?.value || '';
     const billToName = document.getElementById('billToName')?.value || '';
-    const shipToName = document.getElementById('shipToName')?.value || '';
+
     const billToAddress = document.getElementById('billToAddress')?.value || '';
     const billToContact = document.getElementById('billToContact')?.value || '';
     const billToGstin = document.getElementById('billToGstin')?.value || '';
@@ -2159,7 +2159,6 @@ function printInvoice() {
                     <div><strong>State:</strong> ${billToState || ''}</div>
                 </td>
                 <td style="border:1px solid #000; padding:6px; vertical-align:top;">
-                    <div><strong>Shipping To:</strong> ${shipToName || ''}</div>
                     <div><strong>Invoice No.:</strong> ${invNo}</div>
                     <div><strong>Date:</strong> ${invDate}</div>
                     ${veh ? `<div><strong>Vehicle:</strong> ${veh}</div>` : ''}
@@ -2280,7 +2279,9 @@ function bindInvoiceUi() {
     }
     const printBtn = document.getElementById('printInvoiceBtn');
     if (printBtn && !printBtn.dataset.bound) {
-        printBtn.addEventListener('click', printInvoice);
+        // Use pointerup for mobile to avoid click delays and overlaps
+        printBtn.addEventListener('pointerup', (e) => { e.preventDefault(); printInvoice(); });
+        printBtn.addEventListener('click', (e) => { e.preventDefault(); printInvoice(); });
         printBtn.dataset.bound = '1';
     }
 }
