@@ -2251,12 +2251,12 @@ function printInvoice() {
             </thead>
             <tbody>${rowsHtml}</tbody>
             <tfoot>
-                <tr>
-                    <td colspan="5" style="font-weight:700; background:#e6e6f5;">Total</td>
-                    <td class="right">${Number.isInteger(qtyTotalPrint) ? qtyTotalPrint : qtyTotalPrint}</td>
+                <tr style="background:#ededed;">
+                    <td colspan="5" style="font-weight:700; background:#e6e6f5;"><b>Total</b></td>
+                    <td class="right"><b>${Number.isInteger(qtyTotalPrint) ? qtyTotalPrint : qtyTotalPrint}</b></td>
                     <td></td>
                     <td></td>
-                    <td class="right">₹${amountTotalPrint.toFixed(2)}</td>
+                   <td class="right"><b>₹${amountTotalPrint.toFixed(2)}</b></td>
                 </tr>
             </tfoot>
         </table>
