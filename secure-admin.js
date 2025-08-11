@@ -1946,9 +1946,25 @@ function openInvoiceModal() {
     modal.style.display = 'block';
 }
 
+function resetInvoiceForm() {
+    try {
+        const form = document.getElementById('invoiceForm');
+        const tbody = document.getElementById('invoiceItemsBody');
+        if (form) form.reset();
+        if (tbody) tbody.innerHTML = '';
+        const zero = (id) => { const el = document.getElementById(id); if (el) el.textContent = '₹0.00'; };
+        zero('invoiceSubtotal');
+        const discEl = document.getElementById('invoiceDiscountTotal'); if (discEl) discEl.textContent = '₹0.00';
+        zero('invoiceTaxTotal');
+        zero('invoiceGrandTotal');
+        const invEl = document.getElementById('invoiceNumber'); if (invEl) invEl.value = '';
+    } catch (_) {}
+}
+
 function closeInvoiceModal() {
     const modal = document.getElementById('invoiceModal');
     if (!modal) return;
+    resetInvoiceForm();
     modal.style.display = 'none';
 }
 
@@ -1961,11 +1977,13 @@ function addInvoiceItemRow() {
         <td class="num">${index}</td>
         <td><input type="text" class="desc" placeholder="Item name" required></td>
         <td><input type="text" class="hsn" placeholder="HSN/SAC"></td>
+         <td><input type="number" class="gst num" min="0" step="0.01" value="0"></td>
+          <td><input type="text" class="unit" placeholder="pcs" value="pcs"></td>
         <td><input type="number" class="qty num" min="0" step="1" value=""></td>
-        <td><input type="text" class="unit" placeholder="pcs" value="pcs"></td>
+       
         <td><input type="number" class="rate num" min="0" step="0.01" value=""></td>
         <td><input type="number" class="disc num" min="0" step="0.01" value="" placeholder="%"></td>
-        <td><input type="number" class="gst num" min="0" step="0.01" value="0"></td>
+       
         <td class="amount num">₹0.00</td>
         <td><button type="button" class="btn-secondary remove-row" title="Remove" style="padding: 6px 10px; border-radius: 6px;">✕</button></td>
     `;
@@ -2146,13 +2164,26 @@ function printInvoice() {
             setTimeout(() => {
                 iframe.contentWindow.focus();
                 iframe.contentWindow.print();
+                try {
+                    const billToName = document.getElementById('billToName')?.value || 'Invoice';
+                    const billToContact = document.getElementById('billToContact')?.value || '';
+                    const invoiceDate = document.getElementById('invoiceDate')?.value || '';
+                    const invoiceNumber = document.getElementById('invoiceNumber')?.value || '';
+                    const fname = `${billToName}_${billToContact}_${invoiceDate}_${invoiceNumber}`.replace(/\s+/g,'_');
+                    iframe.contentDocument.title = fname;
+                } catch(_) {}
                 setTimeout(() => document.body.removeChild(iframe), 1000);
             }, 250);
         };
     } catch (err) {
         const w = window.open('', 'PRINT', 'height=800,width=800');
         if (!w) return;
-        w.document.write('<html><head><title>Invoice</title>' + printStyles + '</head><body>' + printable + '</body></html>');
+        const billToName = document.getElementById('billToName')?.value || 'Invoice';
+        const billToContact = document.getElementById('billToContact')?.value || '';
+        const invoiceDate = document.getElementById('invoiceDate')?.value || '';
+        const invoiceNumber = document.getElementById('invoiceNumber')?.value || '';
+        const fname = `${billToName}_${billToContact}_${invoiceDate}_${invoiceNumber}`.replace(/\s+/g,'_');
+        w.document.write('<html><head><title>'+fname+'</title>' + printStyles + '</head><body>' + printable + '</body></html>');
         w.document.close();
         w.focus();
         w.print();
@@ -2184,6 +2215,12 @@ function bindInvoiceUi() {
         cancelBtn.addEventListener('click', closeInvoiceModal);
         cancelBtn.dataset.bound = '1';
     }
+    // Reset form on ESC
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && invoiceModal && invoiceModal.style.display === 'block') {
+            closeInvoiceModal();
+        }
+    });
     const addItemBtn = document.getElementById('addInvoiceItemBtn');
     if (addItemBtn && !addItemBtn.dataset.bound) {
         addItemBtn.addEventListener('click', addInvoiceItemRow);
