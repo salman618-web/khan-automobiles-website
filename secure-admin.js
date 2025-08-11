@@ -2383,13 +2383,8 @@ function bindInvoiceUi() {
         addItemBtn.addEventListener('click', addInvoiceItemRow);
         addItemBtn.dataset.bound = '1';
     }
-    const printBtn = document.getElementById('printInvoiceBtn');
-    if (printBtn && !printBtn.dataset.bound) {
-        // Use pointerup for mobile to avoid click delays and overlaps
-        printBtn.addEventListener('pointerup', (e) => { e.preventDefault(); printInvoice(); });
-        printBtn.addEventListener('click', (e) => { e.preventDefault(); printInvoice(); });
-        printBtn.dataset.bound = '1';
-    }
+    // Print button uses inline onclick to guarantee a direct user gesture for pop-up allowance
+    // No extra event listeners are attached here to avoid conflicts on some browsers.
 }
 
 // Ensure invoice UI is bound after dashboard loads
