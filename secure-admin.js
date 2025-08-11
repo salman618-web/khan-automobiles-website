@@ -2178,7 +2178,7 @@ function printInvoice() {
             th, td { border: 1px solid #ddd; padding: 6px 8px; font-size: 12px; }
             th { background: #e6e6f5 !important; text-align: left; }
             .total-row td { background: #ededed !important; }
-            .words-header { background: #e6f0f5; font-weight: 700; text-align: center; padding: 6px; }
+            .words-header { background: #ededed; font-weight: 700; text-align: center; padding: 6px; }
             .words-text { padding: 8px; font-size: 12px; }
             .right { text-align: right; }
             .summary { width: 280px; margin-left: auto; margin-top: 10px; }
@@ -2252,10 +2252,13 @@ function printInvoice() {
                     <div><strong>GSTIN:</strong> ${shopGstin || ''}</div>
                     <div><strong>State:</strong> ${shopState || ''}</div>
                 </td>
-                <td style="border:1px solid #000; padding:6px; vertical-align:top; width:30%;"></td>
+                <td style="border:1px solid #000; padding:6px; vertical-align:top; width:30%;">
+                <img src="assets/khan-automobiles-logo.jpg" alt="logo pic" style="width:100%; max-width:200px;">
+                
+                </td>
             </tr>
             <tr>
-                <td colspan="2" style="border:1px solid #000; background:#cdd6eb; text-align:center; font-weight:700; font-size:22px; padding:6px;">Tax Invoice</td>
+                <td colspan="2" style="border:1px solid #000; background:#ededed; text-align:center; font-weight:700; font-size:22px; padding:6px;">Tax Invoice</td>
             </tr>
             <tr>
                 <td style="border:1px solid #000; padding:6px; vertical-align:top;">
@@ -2308,11 +2311,19 @@ function printInvoice() {
         </table>
         <table style="width:100%; border-collapse: collapse; margin-top: 10px;">
             <tr>
-                <td style="width:70%; border:1px solid #ddd; vertical-align: top;">
+                <td style="width:70%; border:1px solid #000; vertical-align: top;">
                     <div class="words-header">Amount in words:</div>
                     <div class="words-text">${amountInWords}</div>
+                     <div class="words-header">Terms & Conditions:</div> 
+                      <div class="words-text">Thanks for doing business with us.<br> We look forward to serving you again in the future.</div>
                 </td>
-                <td style="width:30%; border:1px solid #ddd; vertical-align: top;"></td>
+                <td style="width:30%; border:1px solid #000; vertical-align: top;">
+                <div class="words-header">For Khan Automobiles</div>
+               <img src="assets/khan_sign.jpg" alt="Signature" style="max-width:100%; height:auto; margin: 10px 0;">
+                    <div class="words-text">Authorized Signatory</div>
+
+                
+                </td>
             </tr>
         </table>
     `;
