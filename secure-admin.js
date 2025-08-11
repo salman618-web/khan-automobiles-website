@@ -1922,6 +1922,11 @@ window.deleteEntry = deleteEntry;
 function openInvoiceModal() {
     const modal = document.getElementById('invoiceModal');
     if (!modal) return;
+
+    // Hard reset first to avoid stale values without page refresh
+    resetInvoiceForm();
+
+    // Set today's date
     const dateInput = document.getElementById('invoiceDate');
     if (dateInput) {
         dateInput.value = new Date().toISOString().split('T')[0];
@@ -1936,18 +1941,23 @@ function openInvoiceModal() {
         if (invEl) invEl.value = String(next);
         localStorage.setItem(key, String(next));
     } catch (e) {}
+
+    // Ensure at least one blank row
     const tbody = document.getElementById('invoiceItemsBody');
     if (tbody && tbody.children.length === 0) {
         addInvoiceItemRow();
     }
-    // Ensure a clean slate each time modal opens
+
+    // Clear buyer fields explicitly on open as well
     ['billToName','billToContact','billToAddress','billToGstin','billToState'].forEach(id=>{
         const el = document.getElementById(id);
-        if (el && !el.value) el.value = '';
+        if (el) el.value = '';
     });
+
     // Clear numeric fields by default; set unit to pcs
     tbody?.querySelectorAll('.qty, .rate, .disc, .gst').forEach(inp => inp.value = '');
-    tbody?.querySelectorAll('.unit').forEach(inp => { if (!inp.value) inp.value = 'pcs'; });
+    tbody?.querySelectorAll('.unit').forEach(inp => { inp.value = 'pcs'; });
+
     modal.style.display = 'block';
 }
 
