@@ -2180,7 +2180,8 @@ function printInvoice() {
             th, td { border: 1px solid #ddd; padding: 6px 8px; font-size: 12px; }
             th { background: #e6e6f5 !important; text-align: left; }
             .total-row td { background: #ededed !important; }
-            .words-header { background: #ededed; font-weight: 700; text-align: center; padding: 6px; }
+            .words-header { background: #ededed; font-weight: 700; text-align:left; padding: 6px; }
+            .words-header-TC { background: #ffffff; font-weight: 700; text-align: left; padding: 6x; }
             .words-text { padding: 8px; font-size: 12px; }
             .right { text-align: right; }
             .summary { width: 280px; margin-left: auto; margin-top: 10px; }
@@ -2268,10 +2269,10 @@ function printInvoice() {
                 <td class="avoid-break" style="border:1px solid #000; padding:6px; vertical-align:top;">
                     <div><h3>Buyer (Bill To)</h3></div>
                     <div><strong>Name:</strong> ${billToName || ''}</div>
+                     <div><strong>Mobile No.:</strong> ${billToContact || ''}</div>
                     <div><strong>Address:</strong> ${billToAddress || ''}</div>
-                    <div><strong>Contact No.:</strong> ${billToContact || ''}</div>
+                   
                     <div><strong>GSTIN No.:</strong> ${billToGstin || ''}</div>
-                    <div><strong>State:</strong> ${billToState || ''}</div>
                 </td>
                 <td style="border:1px solid #000; padding:6px; vertical-align:top;">
                     <div><strong>Invoice No.:</strong> ${invNo}</div>
@@ -2318,9 +2319,9 @@ function printInvoice() {
                 <td style="width:70%; border:1px solid #000; vertical-align: top;">
                     <div class="words-header">Amount in words:</div>
                     <div class="words-text">${amountInWords}</div>
-                    <div class="words-header">Terms & Conditions:</div>
-                    <div class="words-text">Thanks for doing business with us.<br>We look forward to serving you again in the future.</div>
-                </td>
+                    <div class="words-header-TC">Terms & Conditions:</div>
+           <div class="words-text">*Thanks for doing business with us.<br>*We look forward to serving you again in the future.</div>
+                    </td>
                 <td style="width:30%; border:1px solid #000; vertical-align: top; text-align:center;">
                     <div class="words-header">For Khan Automobiles</div>
                     <img class="sign" src="assets/khan_sign.jpg" alt="Signature">
