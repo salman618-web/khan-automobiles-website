@@ -2247,16 +2247,13 @@ function printInvoice() {
             <tr>
                 <td style="border:1px solid #000; padding:6px; vertical-align:top; width:70%;">
                     <div><strong>Company/Seller Name:</strong> ${shopName || ''}</div>
-                    <div><strong>Address :</strong> ${shopAddress || ''}</div>
+                    <div><strong>Address :</strong> ${shopAddress || ''}${shopState ? ', ' + shopState : ''}</div>
                     <div><strong>Phone No.:</strong> ${shopPhone || ''}</div>
                     <div><strong>Email ID:</strong> ${shopEmail || ''}</div>
                     <div><strong>GSTIN:</strong> ${shopGstin || ''}</div>
                     <div><strong>State:</strong> ${shopState || ''}</div>
                 </td>
-                <td style="border:1px solid #000; padding:6px; vertical-align:top; width:30%;">
-                <img src="assets/khan-automobiles-logo.jpg" alt="logo pic" style="width:100%; max-width:180px;">
-                
-                </td>
+                <td style="border:1px solid #000; padding:6px; vertical-align:top; width:30%;"></td>
             </tr>
             <tr>
                 <td colspan="2" style="border:1px solid #000; background:#ededed; text-align:center; font-weight:700; font-size:22px; padding:6px;">Tax Invoice</td>
@@ -2268,11 +2265,12 @@ function printInvoice() {
                     <div><strong>Address:</strong> ${billToAddress || ''}</div>
                     <div><strong>Contact No.:</strong> ${billToContact || ''}</div>
                     <div><strong>GSTIN No.:</strong> ${billToGstin || ''}</div>
+                    <div><strong>State:</strong> ${billToState || ''}</div>
                 </td>
                 <td style="border:1px solid #000; padding:6px; vertical-align:top;">
                     <div><strong>Invoice No.:</strong> ${invNo}</div>
-                   <div><strong>Date:</strong> <strong> ${formatFriendlyDate(invDate)} </strong> </div>
-                
+                    <div><strong>Date:</strong> ${formatFriendlyDate(invDate)}</div>
+                    ${veh ? `<div><strong>Vehicle:</strong> ${veh}</div>` : ''}
                 </td>
             </tr>
         </table>
@@ -2314,57 +2312,37 @@ function printInvoice() {
                 <td style="width:70%; border:1px solid #000; vertical-align: top;">
                     <div class="words-header">Amount in words:</div>
                     <div class="words-text">${amountInWords}</div>
-                     <div class="words-header-TC">Terms & Conditions:</div> 
-                     <div class="words-text">*Thanks for doing business with us.<br>*We look forward to serving you again in the future.</div>
-                     </td>
+                    <div class="words-header">Terms & Conditions:</div>
+                    <div class="words-text">Thanks for doing business with us.<br>We look forward to serving you again in the future.</div>
+                </td>
                 <td style="width:30%; border:1px solid #000; vertical-align: top;">
-                <div class="words-header">For Khan Automobiles</div>
-              <img src="assets/khan_sign.jpg" alt="logo pic" style="width:100%; max-width:180px;">
+                    <div class="words-header">For Khan Automobiles</div>
                     <div class="words-text">Authorized Signatory</div>
-
-                
                 </td>
             </tr>
         </table>
     `;
 
-    try {
-        const iframe = document.createElement('iframe');
-        iframe.style.position = 'fixed';
-        iframe.style.right = '0';
-        iframe.style.bottom = '0';
-        iframe.style.width = '0';
-        iframe.style.height = '0';
-        iframe.style.border = '0';
-        document.body.appendChild(iframe);
-        const doc = iframe.contentWindow || iframe.contentDocument;
-        const docEl = doc.document || doc;
-        docEl.open();
-        docEl.write('<!doctype html><html><head><title>Invoice</title>' + printStyles + '</head><body>' + printable + '</body></html>');
-        docEl.close();
-        iframe.onload = () => {
-            setTimeout(() => {
-                iframe.contentWindow.focus();
-                iframe.contentWindow.print();
-                try {
-                    const billToName = document.getElementById('billToName')?.value || 'Invoice';
-                    const billToContact = document.getElementById('billToContact')?.value || '';
-                    const invoiceDate = document.getElementById('invoiceDate')?.value || '';
-                    const invoiceNumber = document.getElementById('invoiceNumber')?.value || '';
-                    const fname = `${billToName}_${billToContact}_${invoiceDate}_${invoiceNumber}`.replace(/\s+/g,'_');
-                    iframe.contentDocument.title = fname;
-                } catch(_) {}
-                setTimeout(() => document.body.removeChild(iframe), 1000);
-            }, 250);
+    // ===== html2pdf generation (no browser header/footer) =====
+    const fname = `${(billToName||'Invoice')}_${billToContact}_${invoiceDate}_${invNo}`.replace(/\s+/g,'_');
+
+    // Build a container element for html2pdf
+    const container = document.createElement('div');
+    container.innerHTML = `<style>${printStyles.replace(/<\/?style>/g,'')}</style>` + printable;
+
+    if (window.html2pdf) {
+        const opt = {
+            margin: [12/25.4 * 72, 12/25.4 * 72], // approx 12mm margins in points
+            filename: fname + '.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' }
         };
-    } catch (err) {
+        window.html2pdf().set(opt).from(container).save();
+    } else {
+        // Fallback to original print flow if library not loaded
         const w = window.open('', 'PRINT', 'height=800,width=800');
         if (!w) return;
-        const billToName = document.getElementById('billToName')?.value || 'Invoice';
-        const billToContact = document.getElementById('billToContact')?.value || '';
-        const invoiceDate = document.getElementById('invoiceDate')?.value || '';
-        const invoiceNumber = document.getElementById('invoiceNumber')?.value || '';
-        const fname = `${billToName}_${billToContact}_${invoiceDate}_${invoiceNumber}`.replace(/\s+/g,'_');
         w.document.write('<html><head><title>'+fname+'</title>' + printStyles + '</head><body>' + printable + '</body></html>');
         w.document.close();
         w.focus();
