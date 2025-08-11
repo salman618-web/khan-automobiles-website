@@ -2010,6 +2010,9 @@ function printInvoice() {
     const cust = document.getElementById('customerNameInv')?.value || '';
     const gstin = document.getElementById('customerGstin')?.value || '';
     const addr = document.getElementById('customerAddress')?.value || '';
+    const shopName = document.getElementById('shopName')?.value || 'Khan Automobiles';
+    const shopPhone = document.getElementById('shopPhone')?.value || '';
+    const shopAddress = document.getElementById('shopAddress')?.value || '';
 
     let rowsHtml = '';
     document.querySelectorAll('#invoiceItemsBody tr').forEach((tr, idx) => {
@@ -2037,8 +2040,8 @@ function printInvoice() {
     const printable = `
         <div class="inv-header">
             <div>
-                <div class="inv-h1">Khan Automobiles</div>
-                <div class="inv-meta">Tax Invoice / Purchase Order</div>
+                <div class="inv-h1">${shopName}</div>
+                <div class="inv-meta">${shopPhone}${shopAddress ? ' • ' + shopAddress : ''}</div>
             </div>
             <div class="inv-meta">
                 <div><strong>No:</strong> ${invNo}</div>
