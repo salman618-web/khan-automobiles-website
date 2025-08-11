@@ -2075,13 +2075,36 @@ function printInvoice() {
         </table>
     `;
 
-    const w = window.open('', 'PRINT', 'height=800,width=800');
-    if (!w) return;
-    w.document.write('<html><head><title>Invoice</title>' + printStyles + '</head><body>' + printable + '</body></html>');
-    w.document.close();
-    w.focus();
-    w.print();
-    w.close();
+    try {
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = '0';
+        document.body.appendChild(iframe);
+        const doc = iframe.contentWindow || iframe.contentDocument;
+        const docEl = doc.document || doc;
+        docEl.open();
+        docEl.write('<!doctype html><html><head><title>Invoice</title>' + printStyles + '</head><body>' + printable + '</body></html>');
+        docEl.close();
+        iframe.onload = () => {
+            setTimeout(() => {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+                setTimeout(() => document.body.removeChild(iframe), 1000);
+            }, 250);
+        };
+    } catch (err) {
+        const w = window.open('', 'PRINT', 'height=800,width=800');
+        if (!w) return;
+        w.document.write('<html><head><title>Invoice</title>' + printStyles + '</head><body>' + printable + '</body></html>');
+        w.document.close();
+        w.focus();
+        w.print();
+        w.close();
+    }
 }
 
 function bindInvoiceUi() {
