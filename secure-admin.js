@@ -1951,13 +1951,21 @@ function resetInvoiceForm() {
         const form = document.getElementById('invoiceForm');
         const tbody = document.getElementById('invoiceItemsBody');
         if (form) form.reset();
+        // Explicitly clear buyer fields to avoid browser autofill retaining values
+        const clear = (id) => { const el = document.getElementById(id); if (el) el.value = ''; };
+        clear('billToName');
+        clear('billToContact');
+        clear('billToAddress');
+        clear('billToGstin');
+        clear('billToState');
+        clear('invoiceDate');
+        const invEl = document.getElementById('invoiceNumber'); if (invEl) invEl.value = '';
         if (tbody) tbody.innerHTML = '';
         const zero = (id) => { const el = document.getElementById(id); if (el) el.textContent = '₹0.00'; };
         zero('invoiceSubtotal');
         const discEl = document.getElementById('invoiceDiscountTotal'); if (discEl) discEl.textContent = '₹0.00';
         zero('invoiceTaxTotal');
         zero('invoiceGrandTotal');
-        const invEl = document.getElementById('invoiceNumber'); if (invEl) invEl.value = '';
     } catch (_) {}
 }
 
