@@ -2148,7 +2148,7 @@ function printInvoice() {
             </tr>
             <tr>
                 <td style="border:1px solid #000; padding:6px; vertical-align:top;">
-                    <div><strong>Bill To:</strong></div>
+                    <div><h3>Buyer (Bill To)</h3></div>
                     <div><strong>Name:</strong> ${billToName || ''}</div>
                     <div><strong>Address:</strong> ${billToAddress || ''}</div>
                     <div><strong>Contact No.:</strong> ${billToContact || ''}</div>
@@ -2169,11 +2169,13 @@ function printInvoice() {
                     <th style="width:40px;">#</th>
                     <th>Item name</th>
                     <th>HSN/SAC</th>
-                    <th class="right">Quantity</th>
+                    <th class="right">GST</th>
                     <th class="right">Unit</th>
+                    <th class="right">Quantity</th>
+                    
                     <th class="right">Rate</th>
                     <th class="right">Discount %</th>
-                    <th class="right">GST</th>
+                    
                     <th class="right">Amount</th>
                 </tr>
             </thead>
