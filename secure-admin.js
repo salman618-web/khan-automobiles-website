@@ -811,6 +811,24 @@ function getTodayLocalDate() {
     return localDate.toISOString().split('T')[0];
 }
 
+// Helper function to get today's date in IST (Asia/Kolkata) as YYYY-MM-DD
+function getTodayISTDate() {
+    try {
+        if (typeof Intl !== 'undefined' && Intl.DateTimeFormat) {
+            // en-CA gives ISO-like YYYY-MM-DD
+            return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+        }
+    } catch (_) { /* fallback below */ }
+    const now = new Date();
+    const utcTimeMs = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const istTimeMs = utcTimeMs + (330 * 60000); // IST = UTC+5:30 -> 330 minutes
+    const ist = new Date(istTimeMs);
+    const yyyy = ist.getUTCFullYear();
+    const mm = String(ist.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(ist.getUTCDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+}
+
 function setSalesDefaults() {
     // Get today's date in local timezone (fixes timezone issue for Indian users)
     const todayString = getTodayLocalDate();
@@ -1929,7 +1947,7 @@ function openInvoiceModal() {
     // Set today's date
     const dateInput = document.getElementById('invoiceDate');
     if (dateInput) {
-        dateInput.value = new Date().toISOString().split('T')[0];
+        dateInput.value = getTodayISTDate();
     }
     // Autopopulate incremental invoice number
     try {
@@ -2318,7 +2336,7 @@ function printInvoice() {
             <tr>
                 <td style="width:70%; border:1px solid #000; vertical-align: top;">
                     <div class="words-header">Amount in words:</div>
-                    <div class="words-text">${amountInWords}</div>
+                    <div class="words-text">${amountInWords}</div> <br><br>
                     <div class="words-header-TC">Terms & Conditions:</div>
            <div class="words-text">*Thanks for doing business with us.<br>*We look forward to serving you again in the future.</div>
                     </td>
