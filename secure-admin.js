@@ -829,6 +829,41 @@ function getTodayISTDate() {
     return `${yyyy}-${mm}-${dd}`;
 }
 
+// Helper to generate IST timestamp for invoice number: DDMMYYYY-HHMM
+function getISTInvoiceNumber() {
+    try {
+        // Prefer Intl for correctness across DST edge cases (IST has no DST but safe practice)
+        const parts = new Intl.DateTimeFormat('en-GB', {
+            timeZone: 'Asia/Kolkata',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        }).formatToParts(new Date());
+        const map = Object.fromEntries(parts.map(p => [p.type, p.value]));
+        const dd = map.day || '01';
+        const MM = map.month || '01';
+        const yyyy = map.year || '1970';
+        const HH = (map.hour || '00').padStart(2, '0');
+        const mm = (map.minute || '00').padStart(2, '0');
+        return `${dd}${MM}${yyyy}-${HH}${mm}`;
+    } catch (_) {
+        // Fallback manual IST computation
+        const now = new Date();
+        const utcTimeMs = now.getTime() + (now.getTimezoneOffset() * 60000);
+        const istTimeMs = utcTimeMs + (330 * 60000);
+        const d = new Date(istTimeMs);
+        const dd = String(d.getUTCDate()).padStart(2, '0');
+        const MM = String(d.getUTCMonth() + 1).padStart(2, '0');
+        const yyyy = String(d.getUTCFullYear());
+        const HH = String(d.getUTCHours()).padStart(2, '0');
+        const mm = String(d.getUTCMinutes()).padStart(2, '0');
+        return `${dd}${MM}${yyyy}-${HH}${mm}`;
+    }
+}
+
 function setSalesDefaults() {
     // Get today's date in local timezone (fixes timezone issue for Indian users)
     const todayString = getTodayLocalDate();
@@ -1949,15 +1984,10 @@ function openInvoiceModal() {
     if (dateInput) {
         dateInput.value = getTodayISTDate();
     }
-    // Autopopulate incremental invoice number
+    // Autopopulate invoice number using IST date-time DDMMYYYY-HHMM
     try {
-        const key = 'lastInvoiceNumber';
-        let last = parseInt(localStorage.getItem(key) || '0', 10);
-        if (isNaN(last) || last < 0) last = 0;
-        const next = last + 1;
         const invEl = document.getElementById('invoiceNumber');
-        if (invEl) invEl.value = String(next);
-        localStorage.setItem(key, String(next));
+        if (invEl) invEl.value = getISTInvoiceNumber();
     } catch (e) {}
 
     // Ensure at least one blank row
