@@ -2181,7 +2181,7 @@ function printInvoice() {
             th { background: #e6e6f5 !important; text-align: left; }
             .total-row td { background: #ededed !important; }
             .words-header { background: #ededed; font-weight: 700; text-align:left; padding: 6px; }
-            .words-header-TC { background: #ffffff; font-weight: 700; text-align: left; padding: 6x; }
+            .words-header-TC { background: #ffffff; font-weight: 700; text-align: left; padding: 9x; }
             .words-text { padding: 8px; font-size: 12px; }
             .right { text-align: right; }
             .summary { width: 280px; margin-left: auto; margin-top: 10px; }
@@ -2251,8 +2251,8 @@ function printInvoice() {
         <table style="border:1px solid #000; border-collapse:collapse;">
             <tr>
                 <td style="border:1px solid #000; padding:6px; vertical-align:top; width:70%;">
-                    <div><strong>Company/Seller Name:</strong> ${shopName || ''}</div>
-                    <div><strong>Address :</strong> ${shopAddress || ''}${shopState ? ', ' + shopState : ''}</div>
+                    <div><strong>Company Name:</strong> ${shopName || ''}</div>
+                    <div><strong>Address :</strong> ${shopAddress || ''}</div>
                     <div><strong>Phone No.:</strong> ${shopPhone || ''}</div>
                     <div><strong>Email ID:</strong> ${shopEmail || ''}</div>
                     <div><strong>GSTIN:</strong> ${shopGstin || ''}</div>
