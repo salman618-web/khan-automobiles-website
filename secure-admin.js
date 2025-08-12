@@ -841,6 +841,7 @@ function getISTInvoiceNumber() {
             year: 'numeric',
             hour: '2-digit',
             minute: '2-digit',
+            second: '2-digit',
             hour12: false
         }).formatToParts(new Date());
         const map = Object.fromEntries(parts.map(p => [p.type, p.value]));
@@ -849,7 +850,8 @@ function getISTInvoiceNumber() {
         const yyyy = map.year || '1970';
         const HH = (map.hour || '00').padStart(2, '0');
         const mm = (map.minute || '00').padStart(2, '0');
-        return `${dd}${MM}${yyyy}-${HH}${mm}`;
+        const ss = (map.second || '00').padStart(2, '0');
+        return `${dd}${MM}${yyyy}-${HH}${mm}${ss}`;
     } catch (_) {
         // Fallback manual IST computation
         const now = new Date();
@@ -861,7 +863,8 @@ function getISTInvoiceNumber() {
         const yyyy = String(d.getUTCFullYear());
         const HH = String(d.getUTCHours()).padStart(2, '0');
         const mm = String(d.getUTCMinutes()).padStart(2, '0');
-        return `${dd}${MM}${yyyy}-${HH}${mm}`;
+        const ss = String(d.getUTCSeconds()).padStart(2, '0');
+        return `${dd}${MM}${yyyy}-${HH}${mm}${ss}`;
     }
 }
 

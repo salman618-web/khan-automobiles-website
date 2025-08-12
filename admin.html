@@ -557,8 +557,20 @@
             #invoiceModal .chart-container { padding: 0.75rem !important; }
         }
         @media (max-width: 480px) {
-            .invoice-table th:nth-child(3), .invoice-table td:nth-child(3) { display: none; } /* hide HSN on very small screens */
+            .invoice-table th:nth-child(2), .invoice-table td:nth-child(2) { display: none; } /* hide HSN on very small screens */
             .invoice-table th:nth-child(7), .invoice-table td:nth-child(7) { width: 60px; }
+        }
+        /* Ensure Cancel button is visible in invoice modal */
+        #invoiceModal .btn-secondary#invoiceCancelBtn {
+            background: #ef4444 !important;
+            color: #ffffff !important;
+            border: 2px solid #ef4444 !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+        #invoiceModal .btn-secondary#invoiceCancelBtn:hover {
+            background: #dc2626 !important;
+            border-color: #dc2626 !important;
         }
     </style>
 
