@@ -2385,7 +2385,9 @@ function printInvoice() {
     `;
 
     // System print dialog (restored) using hidden iframe for reliability
-    const fname = `${(billToName||'Invoice')}_${billToContact}_${invoiceDate}_${invNo}`.replace(/\s+/g,'_');
+    const fname = `${(billToName||'Buyer')}_${billToContact}_${invoiceDate}`.replace(/\s+/g,'_');
+    const prevTitle = document.title;
+    try { document.title = fname; } catch (_) {}
 
     try {
         const iframe = document.createElement('iframe');
@@ -2413,6 +2415,7 @@ function printInvoice() {
                 // Remove after a delay to avoid closing too early on some browsers
                 setTimeout(() => {
                     try { document.body.removeChild(iframe); } catch (_) {}
+                    try { document.title = prevTitle; } catch (_) {}
                 }, 1500);
             }, 250);
         };
