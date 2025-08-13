@@ -2,6 +2,8 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 
+// deploy: no-op marker for redeploy
+
 // Import Firebase service
 const firestoreService = require('./firebase-config');
 

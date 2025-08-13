@@ -1,6 +1,6 @@
 // Clean Secure Admin JavaScript - Works with simple server
 // No JWT tokens, no complex authentication - just working functionality
-// deploy: no-op 3
+// deploy: no-op 4
 
 // Global variables
 let currentUser = null;
