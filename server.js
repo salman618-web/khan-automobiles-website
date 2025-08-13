@@ -9,8 +9,6 @@ const helmet = require('helmet');
 const session = require('express-session');
 const rateLimit = require('express-rate-limit');
 const cors = require('cors');
-const cookieParser = require('cookie-parser');
-const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 
 // Import Firebase service
@@ -22,7 +20,6 @@ const PORT = process.env.PORT || 3000;
 // Feature flags (default off to preserve behavior)
 const SECURITY_ENFORCE = process.env.SECURITY_ENFORCE === 'true';
 const ENFORCE_HTTPS = process.env.ENFORCE_HTTPS === 'true';
-const CSRF_ENFORCE = process.env.CSRF_ENFORCE === 'true';
 
 // Trust proxy for Render/Heroku to get client IP and proto
 app.set('trust proxy', 1);
@@ -78,43 +75,6 @@ app.use(session({
 		maxAge: 1000 * 60 * 60 * 8
 	}
 }));
-
-// Cookie parser for CSRF helper
-app.use(cookieParser());
-
-// CSRF helper: set token cookie (non-HttpOnly so client could read if needed)
-function ensureCsrfToken(req, res, next) {
-	try {
-		if (!req.session.csrfToken) {
-			req.session.csrfToken = crypto.randomBytes(32).toString('hex');
-		}
-		// Always refresh cookie to keep in sync
-		res.cookie('csrfToken', req.session.csrfToken, {
-			secure: process.env.NODE_ENV === 'production',
-			sameSite: 'lax',
-			httpOnly: false,
-			path: '/'
-		});
-	} catch (_) {}
-	return next();
-}
-
-// CSRF guard (double-submit cookie pattern) — enforced only if CSRF_ENFORCE=true
-function csrfGuard(req, res, next) {
-	if (!CSRF_ENFORCE) return next();
-	const method = req.method.toUpperCase();
-	if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) return next();
-	const headerToken = req.get('x-csrf-token') || '';
-	const cookieToken = req.cookies?.csrfToken || '';
-	// Relaxed: header must match cookie; session token not required to match to avoid edge mismatches
-	if (headerToken && cookieToken && headerToken === cookieToken) {
-		return next();
-	}
-	return res.status(403).json({ error: 'CSRF token invalid' });
-}
-
-app.use(ensureCsrfToken);
-app.use(csrfGuard);
 
 // Block direct static access to /data from the web
 app.use('/data', (req, res) => res.status(403).send('Forbidden'));

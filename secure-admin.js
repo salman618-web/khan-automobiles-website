@@ -2518,32 +2518,3 @@ window.closeInvoiceModal = closeInvoiceModal;
 window.addInvoiceItemRow = addInvoiceItemRow;
 window.printInvoice = printInvoice; 
 
-// Helper to read a cookie by name (used for CSRF token)
-function _getCookie(name) {
-	try {
-		const m = document.cookie.match(new RegExp('(^|; )' + name + '=([^;]+)'));
-		return m ? decodeURIComponent(m[2]) : '';
-	} catch (_) { return ''; }
-}
-
-// Wrap window.fetch to auto-attach CSRF header for write methods and include credentials
-(function wrapFetchForCsrf(){
-	try {
-		if (typeof window === 'undefined' || typeof window.fetch !== 'function') return;
-		const _origFetch = window.fetch.bind(window);
-		window.fetch = function(input, init){
-			const options = init ? { ...init } : {};
-			const method = (options.method || 'GET').toUpperCase();
-			const needsToken = method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE';
-			// Merge headers safely
-			let headers = new Headers(options.headers || {});
-			if (needsToken) {
-				const token = _getCookie('csrfToken');
-				if (token) headers.set('x-csrf-token', token);
-			}
-			options.headers = headers;
-			if (!options.credentials) options.credentials = 'include';
-			return _origFetch(input, options);
-		};
-	} catch (_) {}
-})();

@@ -15,7 +15,6 @@
     "helmet": "^7.1.0",
     "express-session": "^1.17.3",
     "express-rate-limit": "^7.1.5",
-    "cookie-parser": "^1.4.6",
     "bcryptjs": "^2.4.3"
   },
   "devDependencies": {
@@ -27,5 +26,5 @@
   "keywords": ["automobiles", "spare-parts", "service-center", "khan"],
   "author": "Khan Automobiles",
   "license": "MIT",
-  "_deploymentTrigger": "2025-08-13T00:10:00Z"
+  "_deploymentTrigger": "2025-08-13T00:15:00Z"
 } 
