@@ -2,7 +2,7 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 
-// deploy: no-op trigger for redeploy
+// deploy: no-op marker 2
 
 // Security middleware (feature-flagged for non-breaking rollout)
 const helmet = require('helmet');
