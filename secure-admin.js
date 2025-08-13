@@ -269,14 +269,14 @@ async function showDashboard() {
 // Load dashboard data
 async function loadDashboard() {
     try {
-        console.log('🔄 Loading dashboard data...');
+        console.log('📊 Loading dashboard data...');
         const response = await fetch('/api/dashboard');
+        const dashboardData = await response.json();
         
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         
-        const dashboardData = await response.json();
         console.log('📊 Dashboard data received:', dashboardData);
         
         // Check if we have error in response
@@ -295,6 +295,7 @@ async function loadDashboard() {
 
         console.log('🔄 Loading chart and transactions...');
         await loadQuickChart();
+        await loadSalesPieChart();
         await loadRecentTransactions();
         updateDataCountInfo();
         console.log('✅ Dashboard fully loaded');
@@ -2575,4 +2576,83 @@ window.openInvoiceModal = openInvoiceModal;
 window.closeInvoiceModal = closeInvoiceModal;
 window.addInvoiceItemRow = addInvoiceItemRow;
 window.printInvoice = printInvoice; 
+
+// Load pie chart: Monthly Sales totals for current year
+async function loadSalesPieChart() {
+    try {
+        if (typeof echarts === 'undefined') return;
+        const el = document.getElementById('salesPieChart');
+        if (!el) return;
+        
+        const salesResponse = await fetch('/api/sales');
+        if (!salesResponse.ok) throw new Error(`Sales API error: ${salesResponse.status}`);
+        const sales = await salesResponse.json();
+        
+        // Current year filter
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const months = Array.from({ length: 12 }, (_, i) => i); // 0..11
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        const totals = new Array(12).fill(0);
+        
+        function parseDateToYM(d) {
+            if (!d) return null;
+            if (/^\d{4}-\d{2}-\d{2}/.test(d)) {
+                const y = Number(d.substring(0, 4));
+                const m = Number(d.substring(5, 7)) - 1;
+                return { y, m };
+            }
+            const dt = new Date(d);
+            if (Number.isNaN(dt.getTime())) return null;
+            return { y: dt.getFullYear(), m: dt.getMonth() };
+        }
+        
+        sales.forEach(s => {
+            const ym = parseDateToYM(s.sale_date || s.date);
+            if (!ym) return;
+            if (ym.y !== currentYear) return;
+            const amt = parseFloat(s.total || 0) || 0;
+            totals[ym.m] += amt;
+        });
+        
+        const data = months.map(i => ({ name: monthNames[i], value: totals[i] }));
+        
+        if (!window._salesPieChart) {
+            window._salesPieChart = echarts.init(el, null, { renderer: 'canvas' });
+        }
+        const chart = window._salesPieChart;
+        
+        const isSmall = window.innerWidth < 768;
+        const option = {
+            title: { text: 'Montly Sale Amount', left: 'center', top: 6, textStyle: { fontSize: isSmall ? 14 : 16, fontWeight: 'bold' } },
+            tooltip: {
+                trigger: 'item',
+                formatter: info => {
+                    const v = Number(info.value || 0).toLocaleString('en-IN');
+                    const p = info.percent != null ? info.percent : '-';
+                    return `${info.marker} ${info.name}<br/>₹${v} (${p}%)`;
+                }
+            },
+            legend: { type: isSmall ? 'scroll' : 'plain', bottom: 6, left: 'center', textStyle: { fontSize: isSmall ? 11 : 12 } },
+            series: [
+                {
+                    name: 'Sales',
+                    type: 'pie',
+                    radius: isSmall ? '55%' : '60%',
+                    center: ['50%', isSmall ? '46%' : '50%'],
+                    data: data,
+                    emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.2)' } },
+                    label: { formatter: params => `${params.name}\n₹${Number(params.value||0).toLocaleString('en-IN')}` , fontSize: isSmall ? 10 : 12 },
+                    labelLine: { length: 10, length2: 8 }
+                }
+            ]
+        };
+        chart.setOption(option, true);
+        window.addEventListener('resize', () => chart.resize());
+    } catch (error) {
+        console.error('Pie chart error:', error);
+        const el = document.getElementById('salesPieChart');
+        if (el) el.innerHTML = '<p style="text-align:center;color:#666;padding:2rem;">Unable to load sales pie chart</p>';
+    }
+}
 
