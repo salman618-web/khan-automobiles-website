@@ -337,33 +337,52 @@ async function loadQuickChart() {
         const purchaseData = await purchasesResponse.json();
         console.log('📊 Purchase data for chart:', purchaseData.length, 'entries');
         
+        // Helper to normalize to YYYY-MM from various date strings
+        function toYearMonth(dateStr) {
+            if (!dateStr) return '';
+            if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) return dateStr.substring(0, 7);
+            const d = new Date(dateStr);
+            if (Number.isNaN(d.getTime())) return '';
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            return `${y}-${m}`;
+        }
+        
         // Aggregate by YYYY-MM
         const monthly = {};
         salesData.forEach(sale => {
-            const month = sale.sale_date ? sale.sale_date.substring(0, 7) : '';
-            if (!month) return;
-            if (!monthly[month]) monthly[month] = { sales: 0, purchases: 0, saleCount: 0 };
-            monthly[month].sales += parseFloat(sale.total || 0);
-            monthly[month].saleCount += 1;
+            const ym = toYearMonth(sale.sale_date || sale.date);
+            if (!ym) return;
+            if (!monthly[ym]) monthly[ym] = { sales: 0, purchases: 0, saleCount: 0 };
+            const total = parseFloat(sale.total || 0) || 0;
+            monthly[ym].sales += total;
+            monthly[ym].saleCount += 1;
         });
         purchaseData.forEach(p => {
-            const month = p.purchase_date ? p.purchase_date.substring(0, 7) : '';
-            if (!month) return;
-            if (!monthly[month]) monthly[month] = { sales: 0, purchases: 0, saleCount: 0 };
-            monthly[month].purchases += parseFloat(p.total || 0);
+            const ym = toYearMonth(p.purchase_date || p.date);
+            if (!ym) return;
+            if (!monthly[ym]) monthly[ym] = { sales: 0, purchases: 0, saleCount: 0 };
+            const total = parseFloat(p.total || 0) || 0;
+            monthly[ym].purchases += total;
         });
         
         const months = Object.keys(monthly).sort().slice(-6);
+        if (months.length === 0) {
+            const c = document.getElementById('quickChart');
+            if (c) c.innerHTML = '<p style="text-align:center;color:#666;padding:2rem;">No data to chart yet</p>';
+            return;
+        }
+        
         const labels = months.map(m => {
             const [year, monthNum] = m.split('-');
             const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             return `${monthNames[parseInt(monthNum) - 1]} ${year}`;
         });
-        const salesValues = months.map(m => monthly[m].sales);
-        const purchaseValues = months.map(m => monthly[m].purchases);
+        const salesValues = months.map(m => Number(monthly[m].sales || 0));
+        const purchaseValues = months.map(m => Number(monthly[m].purchases || 0));
         const avgSaleValues = months.map(m => {
             const count = monthly[m].saleCount || 0;
-            return count > 0 ? monthly[m].sales / count : 0;
+            return count > 0 ? Number(monthly[m].sales) / count : null; // null hides points with no data
         });
         
         const el = document.getElementById('quickChart');
@@ -383,16 +402,26 @@ async function loadQuickChart() {
             title: {
                 text: 'Monthly Sales vs Purchases',
                 left: 'center',
-                textStyle: { fontSize: 16 }
+                top: 6,
+                textStyle: { fontSize: 16, fontWeight: 'bold' }
             },
-            grid: { left: 50, right: 20, top: 50, bottom: 50 },
+            grid: { left: 56, right: 40, top: 80, bottom: 50 },
             tooltip: {
                 trigger: 'axis',
                 axisPointer: { type: 'cross' },
-                valueFormatter: (val) => `₹${Number(val || 0).toLocaleString('en-IN')}`
+                formatter: params => {
+                    let s = `<strong>${params[0]?.axisValueLabel || ''}</strong><br/>`;
+                    params.forEach(p => {
+                        const val = p.value == null ? '-' : `₹${Number(p.value).toLocaleString('en-IN')}`;
+                        s += `${p.marker} ${p.seriesName}: ${val}<br/>`;
+                    });
+                    return s;
+                }
             },
             legend: {
-                top: 5,
+                top: 34,
+                left: 'center',
+                itemGap: 20,
                 data: ['Sales (₹)', 'Purchases (₹)', 'Avg Sale (₹)']
             },
             xAxis: [{
@@ -400,39 +429,53 @@ async function loadQuickChart() {
                 data: labels,
                 axisLabel: { rotate: window.innerWidth < 768 ? 45 : 0 }
             }],
-            yAxis: [{
-                type: 'value',
-                name: 'Amount (₹)',
-                axisLabel: {
-                    formatter: (val) => `₹${Number(val).toLocaleString('en-IN')}`
+            yAxis: [
+                {
+                    type: 'value',
+                    name: 'Amount (₹)',
+                    min: 0,
+                    axisLabel: { formatter: val => `₹${Number(val).toLocaleString('en-IN')}` },
+                    splitLine: { show: true }
+                },
+                {
+                    type: 'value',
+                    name: 'Avg Sale (₹)',
+                    min: 0,
+                    axisLabel: { formatter: val => `₹${Number(val).toLocaleString('en-IN')}` },
+                    splitLine: { show: false }
                 }
-            }],
+            ],
             series: [
                 {
                     name: 'Sales (₹)',
                     type: 'bar',
                     data: salesValues,
-                    itemStyle: { color: '#22c55e' },
-                    barMaxWidth: 28
+                    itemStyle: { color: '#22c55e', borderRadius: [6, 6, 0, 0] },
+                    barWidth: 26,
+                    barGap: '20%'
                 },
                 {
                     name: 'Purchases (₹)',
                     type: 'bar',
                     data: purchaseValues,
-                    itemStyle: { color: '#ef4444' },
-                    barMaxWidth: 28
+                    itemStyle: { color: '#ef4444', borderRadius: [6, 6, 0, 0] },
+                    barWidth: 26,
+                    barGap: '20%'
                 },
                 {
                     name: 'Avg Sale (₹)',
                     type: 'line',
                     data: avgSaleValues,
-                    yAxisIndex: 0,
+                    yAxisIndex: 1,
                     smooth: true,
+                    symbol: 'circle',
+                    symbolSize: 8,
                     lineStyle: { width: 3, color: '#3b82f6' },
                     itemStyle: { color: '#3b82f6' },
                     areaStyle: { color: 'rgba(59, 130, 246, 0.08)' }
                 }
-            ]
+            ],
+            animationDuration: 600
         };
         
         chart.setOption(option, true);
