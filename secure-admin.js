@@ -415,7 +415,7 @@ async function loadQuickChart() {
                 top: 6,
                 textStyle: { fontSize: isSmall ? 14 : 16, fontWeight: 'bold' }
             },
-            grid: { left: isSmall ? 48 : 56, right: isSmall ? 28 : 40, top: isSmall ? 72 : 80, bottom: isSmall ? 44 : 50, containLabel: true },
+            grid: { left: isSmall ? 48 : 56, right: isSmall ? 28 : 40, top: isSmall ? 54 : 80, bottom: isSmall ? 72 : 50, containLabel: true },
             tooltip: {
                 trigger: 'axis',
                 axisPointer: { type: 'cross' },
@@ -429,30 +429,33 @@ async function loadQuickChart() {
                 }
             },
             legend: {
-                top: 34,
+                type: isSmall ? 'scroll' : 'plain',
+                top: isSmall ? null : 34,
+                bottom: isSmall ? 6 : undefined,
                 left: 'center',
-                itemGap: isSmall ? 12 : 20,
+                orient: 'horizontal',
+                itemGap: isSmall ? 8 : 20,
                 textStyle: { fontSize: isSmall ? 11 : 12 },
                 data: ['Sales (₹)', 'Purchases (₹)', 'Avg Sale (₹)']
             },
             xAxis: [{
                 type: 'category',
                 data: labels,
-                axisLabel: { rotate: isSmall ? 45 : 0, fontSize: isSmall ? 10 : 12 }
+                axisLabel: { rotate: isSmall ? 45 : 0, fontSize: isSmall ? 10 : 12, hideOverlap: true }
             }],
             yAxis: [
                 {
                     type: 'value',
                     name: 'Amount (₹)',
                     min: 0,
-                    axisLabel: { formatter: val => `₹${Number(val).toLocaleString('en-IN')}`, fontSize: isSmall ? 10 : 12 },
+                    axisLabel: { formatter: val => `₹${Number(val).toLocaleString('en-IN')}`, fontSize: isSmall ? 10 : 12, hideOverlap: true },
                     splitLine: { show: true }
                 },
                 {
                     type: 'value',
                     name: 'Avg Sale (₹)',
                     min: 0,
-                    axisLabel: { formatter: val => `₹${Number(val).toLocaleString('en-IN')}`, fontSize: isSmall ? 10 : 12 },
+                    axisLabel: { formatter: val => `₹${Number(val).toLocaleString('en-IN')}`, fontSize: isSmall ? 10 : 12, hideOverlap: true },
                     splitLine: { show: false }
                 }
             ],
@@ -491,9 +494,9 @@ async function loadQuickChart() {
                 {
                     query: { maxWidth: 480 },
                     option: {
-                        grid: { left: 42, right: 20, top: 66, bottom: 40, containLabel: true },
+                        grid: { left: 42, right: 20, top: 50, bottom: 80, containLabel: true },
                         title: { textStyle: { fontSize: 13 } },
-                        legend: { textStyle: { fontSize: 10 } }
+                        legend: { type: 'scroll', bottom: 6, top: null, textStyle: { fontSize: 10 } }
                     }
                 }
             ]
