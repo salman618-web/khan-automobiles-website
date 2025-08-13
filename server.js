@@ -373,6 +373,16 @@ app.post('/api/login', async (req, res) => {
 				} catch (_) {}
 			}
 		}
+
+		// Fallback: allow admin to login using ADMIN_PASSWORD from env if configured
+		if (!ok && process.env.ADMIN_PASSWORD) {
+			try {
+				const envOk = await bcrypt.compare(password || '', isBcryptHash(process.env.ADMIN_PASSWORD) ? process.env.ADMIN_PASSWORD : await hashPassword(process.env.ADMIN_PASSWORD));
+				if (envOk && (username === user.username || username === 'admin')) {
+					ok = true;
+				}
+			} catch (_) {}
+		}
 		
 		if (ok) {
 			if (SECURITY_ENFORCE) {
