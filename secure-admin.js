@@ -2723,15 +2723,27 @@ async function loadOverallTimelineChart() {
                 bottom: 6,
                 label: { formatter: s => s }
             },
-            tooltip: { trigger: 'axis', axisPointer: { type: 'cross' }, valueFormatter: v => `₹${Number(v||0).toLocaleString('en-IN')}` },
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: { type: 'cross' },
+                formatter: (params) => {
+                    let s = `<strong>${params[0]?.axisValueLabel || ''}</strong><br/>`;
+                    params.forEach(p => {
+                        const val = `₹${Number(p.value || (p.data && p.data.value) || 0).toLocaleString('en-IN')}`;
+                        const countSuffix = (p.seriesName === 'Sales (₹)' && p.data && typeof p.data.saleCount === 'number') ? ` (${p.data.saleCount} sales)` : '';
+                        s += `${p.marker} ${p.seriesName}: ${val}${countSuffix}<br/>`;
+                    });
+                    return s;
+                }
+            },
             legend: { top: 34, left: 'center', data: ['Sales (₹)', 'Purchases (₹)', 'Net Profit (₹)', 'Avg Sale (₹)'], textStyle: { fontSize: isSmall ? 11 : 12 } },
             grid: { left: isSmall ? 48 : 56, right: isSmall ? 28 : 40, top: isSmall ? 72 : 80, bottom: isSmall ? 90 : 100, containLabel: true },
             xAxis: [{ type: 'category', data: monthNamesShort, axisLabel: { fontSize: isSmall ? 10 : 12 } }],
             yAxis: [{ type: 'value', axisLabel: { formatter: v => `₹${Number(v).toLocaleString('en-IN')}` } }],
             series: [
-                { name: 'Sales (₹)', type: 'bar', itemStyle: { color: '#22c55e' }, barWidth: isSmall ? 14 : 20 },
+                { name: 'Sales (₹)', type: 'bar', itemStyle: { color: '#22c55e' }, barWidth: isSmall ? 10 : 16, label: { show: !isSmall, position: 'top', formatter: (p) => (p.data && typeof p.data.saleCount === 'number' && p.data.saleCount > 0) ? `${p.data.saleCount}` : '' } },
                 { name: 'Purchases (₹)', type: 'bar', itemStyle: { color: '#ef4444' }, barWidth: isSmall ? 14 : 20 },
-                { name: 'Net Profit (₹)', type: 'line', smooth: true, lineStyle: { width: isSmall ? 2 : 3, color: '#f59e0b' }, itemStyle: { color: '#f59e0b' }, symbol: 'circle', symbolSize: isSmall ? 6 : 8 },
+                { name: 'Net Profit (₹)', type: 'line', smooth: true, lineStyle: { width: isSmall ? 2 : 3, color: '#FA5827' }, itemStyle: { color: '#FA5827' }, symbol: 'circle', symbolSize: isSmall ? 6 : 8 },
                 { name: 'Avg Sale (₹)', type: 'line', smooth: true, lineStyle: { width: isSmall ? 2 : 3, color: '#3b82f6' }, itemStyle: { color: '#3b82f6' }, symbol: 'circle', symbolSize: isSmall ? 6 : 8 }
             ]
         };
@@ -2739,7 +2751,7 @@ async function loadOverallTimelineChart() {
         const options = years.map(y => ({
             title: { text: `Overalll Report — ${y}`, left: 'center', top: 6, textStyle: { fontSize: isSmall ? 14 : 16, fontWeight: 'bold' } },
             series: [
-                { data: byYear[y].sales },
+                { data: byYear[y].sales.map((v, i) => ({ value: v, saleCount: byYear[y].saleCount[i] || 0 })) },
                 { data: byYear[y].purchases },
                 { data: byYear[y].sales.map((v, i) => Math.max(0, v - (byYear[y].purchases[i]||0))) },
                 { data: byYear[y].sales.map((v, i) => { const c = byYear[y].saleCount[i] || 0; return c > 0 ? v / c : null; }) }
@@ -2750,8 +2762,16 @@ async function loadOverallTimelineChart() {
         chart.setOption(option, true);
         // Jump to latest year by default
         try { chart.dispatchAction({ type: 'timelineChange', currentIndex: timelineYears.length - 1 }); } catch(_) {}
-
+ 
         window.addEventListener('resize', () => chart.resize());
+        // Also observe container size for true 100% responsiveness
+        if (!window._overallChartResizeObs) {
+            try {
+                window._overallChartResizeObs = new ResizeObserver(() => chart.resize());
+                window._overallChartResizeObs.observe(el);
+            } catch (_) {}
+        }
+        
     } catch (error) {
         console.error('Overall chart error:', error);
         const el = document.getElementById('overallTimelineChart');
