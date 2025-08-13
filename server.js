@@ -1,13 +1,6 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
-const crypto = require('crypto');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
-const cookieParser = require('cookie-parser');
-const bcrypt = require('bcrypt');
-const Joi = require('joi');
-const Redis = require('ioredis');
 
 // Import Firebase service
 const firestoreService = require('./firebase-config');
@@ -16,98 +9,25 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(express.json({ limit: '200kb' }));
-app.use(express.urlencoded({ extended: true, limit: '200kb' }));
-app.use(helmet({ hsts: true }));
-app.use(cookieParser());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// CORS headers (restricted if ALLOWED_ORIGINS is set)
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
+// CORS headers
 app.use((req, res, next) => {
-    const origin = req.headers.origin;
-    if (allowedOrigins.length > 0) {
-        if (origin && allowedOrigins.includes(origin)) {
-            res.header('Access-Control-Allow-Origin', origin);
-        }
-    } else {
-        res.header('Access-Control-Allow-Origin', '*');
-    }
-    res.header('Vary', 'Origin');
+    res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Session-Token');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
     if (req.method === 'OPTIONS') {
-        return res.sendStatus(200);
+        res.sendStatus(200);
+    } else {
+        next();
     }
-    next();
 });
 
-// Block public access to data directory
-app.use((req, res, next) => {
-    if (req.path.startsWith('/data')) {
-        return res.status(403).send('Forbidden');
-    }
-    next();
-});
-
-// Redis session store
-const redisUrl = process.env.REDIS_URL || process.env.REDIS_TLS_URL || '';
-const redis = redisUrl ? new Redis(redisUrl, { tls: redisUrl.startsWith('rediss://') ? {} : undefined }) : null;
-const sessions = { // wrapper to allow optional Redis
-    async set(token, value) {
-        if (redis) return redis.setex(`sess:${token}`, SESSION_TTL_SEC, JSON.stringify(value));
-        memorySessions.set(token, value);
-    },
-    async get(token) {
-        if (redis) {
-            const v = await redis.get(`sess:${token}`);
-            return v ? JSON.parse(v) : null;
-        }
-        return memorySessions.get(token) || null;
-    },
-    async del(token) {
-        if (redis) return redis.del(`sess:${token}`);
-        memorySessions.delete(token);
-    }
-};
-const memorySessions = new Map();
-const SESSION_TTL_MS = 1000 * 60 * 60 * 8; // 8 hours
-const SESSION_TTL_SEC = Math.floor(SESSION_TTL_MS / 1000);
-
-async function createSession(username) {
-    const token = crypto.randomBytes(48).toString('hex');
-    await sessions.set(token, { username, expiry: Date.now() + SESSION_TTL_MS });
-    return token;
-}
-
-async function authMiddleware(req, res, next) {
-    const token = req.get('X-Session-Token') || req.cookies?.session;
-    const s = token ? await sessions.get(token) : null;
-    if (!s || s.expiry < Date.now()) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    req.user = { username: s.username };
-    next();
-}
-
-// Rate limiter for login
-const loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 20,
-    standardHeaders: true,
-    legacyHeaders: false
-});
-
-// Rate limiter for write endpoints
-const writeLimiter = rateLimit({
-    windowMs: 5 * 60 * 1000,
-    max: 200,
-    standardHeaders: true,
-    legacyHeaders: false
-});
-
-// Serve only the public directory for static assets
-const PUBLIC_DIR = path.join(__dirname, 'public');
-app.use(express.static(PUBLIC_DIR, { index: 'index.html' }));
+// Serve static files
+app.use(express.static('./', {
+    index: 'index.html'
+}));
 
 // Database Configuration - Hybrid approach (Firestore + JSON fallback)
 const DATA_DIR = process.env.DATA_DIR || './data';
@@ -347,12 +267,14 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// Simple login endpoint (rate-limited)
-app.post('/api/login', loginLimiter, async (req, res) => {
+// Simple login endpoint
+app.post('/api/login', async (req, res) => {
     try {
         const { username, password } = req.body;
-        console.log('🔐 Login request received:', { username });
-
+        console.log('🔐 Login request received:', { username, passwordLength: password?.length });
+        console.log('🔧 ADMIN_PASSWORD env var set:', !!process.env.ADMIN_PASSWORD);
+        console.log('👥 Users array length:', users.length);
+        
         let user = null;
         
         if (firestoreService.isAvailable()) {
@@ -370,26 +292,23 @@ app.post('/api/login', loginLimiter, async (req, res) => {
         }
         
         console.log('👤 User found:', !!user);
- 
-        // Require bcrypt (drop plaintext fallback)
-        let passwordMatch = false;
-        if (user && user.password && user.password.startsWith('$2')) {
-            passwordMatch = await bcrypt.compare(password, user.password);
-        }
-        // ADMIN_PASSWORD no longer grants user access; only used to bootstrap default user at setup
-        if (user && passwordMatch) {
-            const token = createSession(user.username || username);
-            // Set secure httpOnly cookie
-            res.cookie('session', token, {
-                httpOnly: true,
-                secure: true,
-                sameSite: 'strict',
-                maxAge: SESSION_TTL_MS
+        if (user) {
+            console.log('🔍 User details:', { 
+                id: user.id, 
+                username: user.username, 
+                role: user.role,
+                passwordLength: user.password?.length 
             });
+            console.log('🔐 Password match:', user.password === password);
+        } else {
+            console.log('❌ No user found with username:', username);
+            console.log('📋 Available users:', users.map(u => ({ id: u.id, username: u.username })));
+        }
+        
+        if (user && user.password === password) {
             res.json({
                 success: true,
                 message: 'Login successful',
-                token,
                 user: {
                     id: user.id,
                     username: user.username,
@@ -403,12 +322,6 @@ app.post('/api/login', loginLimiter, async (req, res) => {
         console.error('Login error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
-});
-
-// Protect all API routes except health and login
-app.use('/api', async (req, res, next) => {
-    if (req.path === '/health' || req.path === '/login') return next();
-    return authMiddleware(req, res, next);
 });
 
 // Sales endpoints
@@ -426,29 +339,16 @@ app.get('/api/sales', async (req, res) => {
     }
 });
 
-app.post('/api/sales', writeLimiter, async (req, res) => {
-    // Validate input
-    const schema = Joi.object({
-        customer: Joi.string().min(1).max(200).required(),
-        category: Joi.string().min(1).max(100).required(),
-        description: Joi.string().min(1).max(2000).required(),
-        total: Joi.number().min(0).required(),
-        paymentMethod: Joi.string().min(1).max(100).allow('', null),
-        notes: Joi.string().max(2000).allow('', null),
-        sale_date: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).required()
-    });
-    const { error, value } = schema.validate(req.body);
-    if (error) return res.status(400).json({ error: 'Invalid payload' });
-
+app.post('/api/sales', async (req, res) => {
     try {
         if (firestoreService.isAvailable()) {
-            const newSale = await firestoreService.addSale(value);
+            const newSale = await firestoreService.addSale(req.body);
             res.status(201).json({ success: true, id: newSale.id, message: 'Sale added successfully' });
         } else {
             // Fallback to local storage
             const newSale = {
                 id: Date.now().toString(),
-                ...value,
+                ...req.body,
                 created_at: new Date().toISOString()
             };
             sales.push(newSale);
@@ -461,30 +361,18 @@ app.post('/api/sales', writeLimiter, async (req, res) => {
     }
 });
 
-app.put('/api/sales/:id', writeLimiter, async (req, res) => {
-    const schema = Joi.object({
-        customer: Joi.string().min(1).max(200),
-        category: Joi.string().min(1).max(100),
-        description: Joi.string().min(1).max(2000),
-        total: Joi.number().min(0),
-        paymentMethod: Joi.string().min(1).max(100).allow('', null),
-        notes: Joi.string().max(2000).allow('', null),
-        sale_date: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/)
-    });
-    const { error, value } = schema.validate(req.body);
-    if (error) return res.status(400).json({ error: 'Invalid payload' });
-
+app.put('/api/sales/:id', async (req, res) => {
     try {
         const { id } = req.params;
         
         if (firestoreService.isAvailable()) {
-            await firestoreService.updateSale(id, value);
+            await firestoreService.updateSale(id, req.body);
             res.json({ success: true, message: 'Sale updated successfully' });
         } else {
             // Fallback to local storage
             const saleIndex = sales.findIndex(s => s.id == id);
             if (saleIndex !== -1) {
-                sales[saleIndex] = { ...sales[saleIndex], ...value, updated_at: new Date().toISOString() };
+                sales[saleIndex] = { ...sales[saleIndex], ...req.body, updated_at: new Date().toISOString() };
                 saveSales();
                 res.json({ success: true, message: 'Sale updated successfully' });
             } else {
@@ -536,28 +424,16 @@ app.get('/api/purchases', async (req, res) => {
     }
 });
 
-app.post('/api/purchases', writeLimiter, async (req, res) => {
-    const schema = Joi.object({
-        supplier: Joi.string().min(1).max(200).required(),
-        category: Joi.string().min(1).max(100).required(),
-        description: Joi.string().min(1).max(2000).required(),
-        total: Joi.number().min(0).required(),
-        invoice_number: Joi.string().max(200).allow('', null),
-        notes: Joi.string().max(2000).allow('', null),
-        purchase_date: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).required()
-    });
-    const { error, value } = schema.validate(req.body);
-    if (error) return res.status(400).json({ error: 'Invalid payload' });
-
+app.post('/api/purchases', async (req, res) => {
     try {
         if (firestoreService.isAvailable()) {
-            const newPurchase = await firestoreService.addPurchase(value);
+            const newPurchase = await firestoreService.addPurchase(req.body);
             res.status(201).json({ success: true, id: newPurchase.id, message: 'Purchase added successfully' });
         } else {
             // Fallback to local storage
             const newPurchase = {
                 id: Date.now().toString(),
-                ...value,
+                ...req.body,
                 created_at: new Date().toISOString()
             };
             purchases.push(newPurchase);
@@ -570,30 +446,18 @@ app.post('/api/purchases', writeLimiter, async (req, res) => {
     }
 });
 
-app.put('/api/purchases/:id', writeLimiter, async (req, res) => {
-    const schema = Joi.object({
-        supplier: Joi.string().min(1).max(200),
-        category: Joi.string().min(1).max(100),
-        description: Joi.string().min(1).max(2000),
-        total: Joi.number().min(0),
-        invoice_number: Joi.string().max(200).allow('', null),
-        notes: Joi.string().max(2000).allow('', null),
-        purchase_date: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/)
-    });
-    const { error, value } = schema.validate(req.body);
-    if (error) return res.status(400).json({ error: 'Invalid payload' });
-
+app.put('/api/purchases/:id', async (req, res) => {
     try {
         const { id } = req.params;
         
         if (firestoreService.isAvailable()) {
-            await firestoreService.updatePurchase(id, value);
+            await firestoreService.updatePurchase(id, req.body);
             res.json({ success: true, message: 'Purchase updated successfully' });
         } else {
             // Fallback to local storage
             const purchaseIndex = purchases.findIndex(p => p.id == id);
             if (purchaseIndex !== -1) {
-                purchases[purchaseIndex] = { ...purchases[purchaseIndex], ...value, updated_at: new Date().toISOString() };
+                purchases[purchaseIndex] = { ...purchases[purchaseIndex], ...req.body, updated_at: new Date().toISOString() };
                 savePurchases();
                 res.json({ success: true, message: 'Purchase updated successfully' });
             } else {
@@ -744,8 +608,6 @@ async function startServer() {
             console.log(`📊 Data: ${sales.length} sales, ${purchases.length} purchases`);
             console.log(`👥 Users: ${users.length} (${users.map(u => u.username).join(', ')})`);
             console.log(`🔐 ADMIN_PASSWORD set: ${!!process.env.ADMIN_PASSWORD}`);
-            if (allowedOrigins.length > 0) console.log(`🌍 CORS restricted to: ${allowedOrigins.join(', ')}`);
-            console.log(`🗃️ Sessions stored in: ${redis ? 'Redis' : 'memory (dev)'} (TTL ${SESSION_TTL_SEC}s)`);
             console.log('🎉 =================================');
             console.log('');
         });

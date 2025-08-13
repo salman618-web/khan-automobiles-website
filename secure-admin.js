@@ -204,11 +204,6 @@ async function handleLogin(e) {
         if (response.success) {
             console.log('✅ Login successful on admin.html (unlikely scenario)');
             
-            // Store session token
-            if (response.token) {
-                localStorage.setItem('sessionToken', response.token);
-            }
-            
             // Set authentication data
             localStorage.setItem('isAdminLoggedIn', 'true');
             localStorage.setItem('adminUsername', username);
@@ -328,14 +323,14 @@ async function loadQuickChart() {
             return;
         }
         
-        const salesResponse = await fetch('/api/sales', { headers: authHeaders() });
+        const salesResponse = await fetch('/api/sales');
         if (!salesResponse.ok) {
             throw new Error(`Sales API error: ${salesResponse.status}`);
         }
         const salesData = await salesResponse.json();
         console.log('📊 Sales data for chart:', salesData.length, 'entries');
         
-        const purchasesResponse = await fetch('/api/purchases', { headers: authHeaders() });
+        const purchasesResponse = await fetch('/api/purchases');
         if (!purchasesResponse.ok) {
             throw new Error(`Purchases API error: ${purchasesResponse.status}`);
         }
@@ -472,10 +467,10 @@ async function loadQuickChart() {
 // Load recent transactions
 async function loadRecentTransactions() {
     try {
-        const salesResponse = await fetch('/api/sales', { headers: authHeaders() });
+        const salesResponse = await fetch('/api/sales');
         const salesData = await salesResponse.json();
         
-        const purchasesResponse = await fetch('/api/purchases', { headers: authHeaders() });
+        const purchasesResponse = await fetch('/api/purchases');
         const purchaseData = await purchasesResponse.json();
         
         const allTransactions = [
@@ -535,17 +530,17 @@ async function loadRecentTransactions() {
                 }
             
             return `
-                    <div class="transaction-item" data-type="${escapeHtml(transaction.type)}">
+                    <div class="transaction-item" data-type="${transaction.type}">
                         <div class="transaction-header">
                             <span class="transaction-icon">${icon}</span>
-                            <div class="transaction-contact">${escapeHtml(transaction.contact)}</div>
+                            <div class="transaction-contact">${transaction.contact}</div>
                             <div class="transaction-amount" style="color: ${color};">${sign}₹${parseFloat(transaction.amount || 0).toLocaleString('en-IN')}</div>
                         </div>
                         <div class="transaction-details">
-                            <div>${escapeHtml(transaction.description || 'No description')}</div>
+                            <div>${transaction.description || 'No description'}</div>
                         </div>
                         <div class="transaction-meta">
-                            <span>${escapeHtml(displayDate)}</span>
+                            <span>${displayDate}</span>
                         </div>
                     </div>
             `;
@@ -569,10 +564,10 @@ async function updateDataCountInfo() {
         const dataCountElement = document.getElementById('dataCountInfo');
         if (!dataCountElement) return;
         
-        const salesResponse = await fetch('/api/sales', { headers: authHeaders() });
+        const salesResponse = await fetch('/api/sales');
         const salesData = await salesResponse.json();
         
-        const purchasesResponse = await fetch('/api/purchases', { headers: authHeaders() });
+        const purchasesResponse = await fetch('/api/purchases');
         const purchaseData = await purchasesResponse.json();
         
         const totalSales = salesData.reduce((sum, sale) => sum + parseFloat(sale.total_amount || sale.total || 0), 0);
@@ -613,7 +608,7 @@ async function handleAddSale(e) {
     try {
         const response = await fetch('/api/sales', {
             method: 'POST',
-            headers: authHeaders({ 'Content-Type': 'application/json' }),
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(saleData)
         });
         
@@ -674,7 +669,7 @@ async function handleAddPurchase(e) {
     try {
         const response = await fetch('/api/purchases', {
             method: 'POST',
-            headers: authHeaders({ 'Content-Type': 'application/json' }),
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(purchaseData)
         });
         
@@ -941,10 +936,10 @@ async function generateReport() {
         const reportYear = document.getElementById('reportYear').value;
         
         // Get all data from server
-        const salesResponse = await fetch('/api/sales', { headers: authHeaders() });
+        const salesResponse = await fetch('/api/sales');
         const salesData = await salesResponse.json();
         
-        const purchasesResponse = await fetch('/api/purchases', { headers: authHeaders() });
+        const purchasesResponse = await fetch('/api/purchases');
         const purchaseData = await purchasesResponse.json();
         
         // Apply filters client-side
@@ -1329,10 +1324,10 @@ async function generateReport() {
         const reportYear = document.getElementById('reportYear').value;
         
         // Get all data from server
-        const salesResponse = await fetch('/api/sales', { headers: authHeaders() });
+        const salesResponse = await fetch('/api/sales');
         const salesData = await salesResponse.json();
         
-        const purchasesResponse = await fetch('/api/purchases', { headers: authHeaders() });
+        const purchasesResponse = await fetch('/api/purchases');
         const purchaseData = await purchasesResponse.json();
         
         // Apply filters client-side
@@ -1409,10 +1404,10 @@ async function exportToExcel() {
         const reportYear = document.getElementById('reportYear').value;
         
         // Get filtered data using same logic as generateReport
-        const salesResponse = await fetch('/api/sales', { headers: authHeaders() });
+        const salesResponse = await fetch('/api/sales');
         const salesData = await salesResponse.json();
         
-        const purchasesResponse = await fetch('/api/purchases', { headers: authHeaders() });
+        const purchasesResponse = await fetch('/api/purchases');
         const purchaseData = await purchasesResponse.json();
         
         let filteredSales = salesData;
@@ -1643,10 +1638,10 @@ async function populateYearOptions() {
     
     try {
         // Get all sales and purchase data to find the year range
-        const salesResponse = await fetch('/api/sales', { headers: authHeaders() });
+        const salesResponse = await fetch('/api/sales');
         const salesData = await salesResponse.json();
         
-        const purchasesResponse = await fetch('/api/purchases', { headers: authHeaders() });
+        const purchasesResponse = await fetch('/api/purchases');
         const purchaseData = await purchasesResponse.json();
         
         // Extract all years from the data
@@ -1848,22 +1843,22 @@ function displayEntries() {
         <div style="padding: 1rem; border-bottom: 1px solid #e2e8f0; display: grid; grid-template-columns: 100px 120px 130px 150px 180px 120px 120px 130px; gap: 1rem; align-items: center; transition: background-color 0.2s;" 
              onmouseover="this.style.backgroundColor='#f8fafc'" 
              onmouseout="this.style.backgroundColor='white'">
-            <div style="font-size: 14px;">${escapeHtml(entry.date || 'N/A')}</div>
+            <div style="font-size: 14px;">${entry.date || 'N/A'}</div>
             <div>
                 <span class="badge ${entry.type === 'sale' ? 'badge-success' : 'badge-danger'}" style="display: inline-block; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 12px; font-weight: 600; color: white; background: ${entry.type === 'sale' ? '#22c55e' : '#ef4444'};">
                     ${entry.type === 'sale' ? 'Sale' : 'Purchase'}
                 </span>
             </div>
-            <div style="font-size: 14px; font-weight: 500;">${escapeHtml(entry.contact || 'N/A')}</div>
-            <div style="font-size: 14px;">${escapeHtml(entry.category || 'N/A')}</div>
-            <div style="font-size: 14px;" title="${escapeHtml(entry.description || '')}">${escapeHtml(((entry.description || 'N/A').length > 25 ? (entry.description || 'N/A').substring(0, 25) + '...' : (entry.description || 'N/A')))}</div>
+            <div style="font-size: 14px; font-weight: 500;">${entry.contact || 'N/A'}</div>
+            <div style="font-size: 14px;">${entry.category || 'N/A'}</div>
+            <div style="font-size: 14px;" title="${entry.description || ''}">${(entry.description || 'N/A').length > 25 ? (entry.description || 'N/A').substring(0, 25) + '...' : (entry.description || 'N/A')}</div>
             <div style="font-size: 14px; font-weight: 600;">₹${parseFloat(entry.total || 0).toLocaleString('en-IN')}</div>
-            <div style="font-size: 12px; color: #6b7280;" title="${escapeHtml(createdDisplay)}">${escapeHtml(createdDisplay)}</div>
+            <div style="font-size: 12px; color: #6b7280;" title="${createdDisplay}">${createdDisplay}</div>
             <div style="display: flex; gap: 0.5rem;">
-                <button onclick="editEntry('${escapeHtml(entry.id)}', '${escapeHtml(entry.type)}')" class="btn-sm btn-primary" style="padding: 0.25rem 0.5rem; font-size: 12px; border-radius: 6px;" title="Edit Entry">
+                <button onclick="editEntry('${entry.id}', '${entry.type}')" class="btn-sm btn-primary" style="padding: 0.25rem 0.5rem; font-size: 12px; border-radius: 6px;" title="Edit Entry">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button onclick="deleteEntry('${escapeHtml(entry.id)}', '${escapeHtml(entry.type)}')" class="btn-sm btn-danger" style="padding: 0.25rem 0.5rem; font-size: 12px; border-radius: 6px; background: #ef4444; border: none; color: white;" title="Delete Entry">
+                <button onclick="deleteEntry('${entry.id}', '${entry.type}')" class="btn-sm btn-danger" style="padding: 0.25rem 0.5rem; font-size: 12px; border-radius: 6px; background: #ef4444; border: none; color: white;" title="Delete Entry">
                     <i class="fas fa-trash"></i>
                 </button>
             </div>
