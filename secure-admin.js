@@ -1622,6 +1622,15 @@ function getMonthName(monthNumber) {
     return months[parseInt(monthNumber) - 1] || '';
 }
 
+// Simple mobile browser detection
+function isMobileBrowser() {
+    try {
+        return /Android|iPhone|iPad|iPod|IEMobile|Opera Mini|Mobile/i.test(navigator.userAgent || '');
+    } catch (_) {
+        return false;
+    }
+}
+
 // Populate year options dynamically based on actual data
 async function populateYearOptions() {
     const yearSelect = document.getElementById('reportYear');
@@ -2274,7 +2283,7 @@ function printInvoice() {
         
         const rate = tr.querySelector('.rate')?.value || '0';
         const discPct = tr.querySelector('.disc')?.value || '0';
-       
+        
         const amount = tr.querySelector('.amount')?.textContent || '';
         rowsHtml += `<tr>
             <td>${idx + 1}</td>
@@ -2388,6 +2397,19 @@ function printInvoice() {
     const fname = `${(billToName||'Buyer')}_${billToContact}_${invDate}`.replace(/\s+/g,'_');
     const prevTitle = document.title;
     try { document.title = fname; } catch (_) {}
+
+    // Prefer new window on mobile to avoid printing the dashboard content
+    if (isMobileBrowser()) {
+        const w = window.open('', '_blank');
+        if (w && w.document) {
+            w.document.write('<!doctype html><html><head><title>' + fname + '</title>' + printStyles + '</head><body>' + printable + '</body></html>');
+            w.document.close();
+            // Give time to render before print
+            setTimeout(() => { try { w.focus(); w.print(); } catch(_) {} }, 250);
+            return; // Do not continue to iframe path on mobile
+        }
+        // If popup blocked, fall through to iframe method
+    }
 
     try {
         const iframe = document.createElement('iframe');
