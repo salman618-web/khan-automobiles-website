@@ -318,8 +318,8 @@ async function loadDashboard() {
 async function loadQuickChart() {
     try {
         console.log('📈 Loading quick chart...');
-        if (typeof Chart === 'undefined') {
-            console.error('❌ Chart.js library not loaded');
+        if (typeof Plotly === 'undefined') {
+            console.error('❌ Plotly library not loaded');
             return;
         }
         
@@ -367,93 +367,54 @@ async function loadQuickChart() {
         const salesValues = sortedMonths.map(month => monthlyData[month].sales);
         const purchaseValues = sortedMonths.map(month => monthlyData[month].purchases);
         
-        console.log('📈 Chart data prepared - Labels:', labels);
-        console.log('💚 Sales values:', salesValues);
-        console.log('🔴 Purchase values:', purchaseValues);
-        
-        const ctx = document.getElementById('quickChart');
-        if (!ctx) {
-            console.error('❌ quickChart canvas element not found');
+        const el = document.getElementById('quickChart');
+        if (!el) {
+            console.error('❌ quickChart element not found');
             return;
         }
         
-        console.log('🎨 Creating chart...');
-            if (window.quickChart && typeof window.quickChart.destroy === 'function') {
-                window.quickChart.destroy();
-            }
-            
-            window.quickChart = new Chart(ctx.getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Sales (₹)',
-                        data: salesValues,
-                        borderColor: '#22c55e',
-                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4
-                    }, {
-                        label: 'Purchases (₹)',
-                        data: purchaseValues,
-                        borderColor: '#ef4444',
-                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Monthly Sales vs Purchases',
-                            font: { 
-                                size: window.innerWidth < 768 ? 12 : 16, 
-                                weight: 'bold' 
-                            }
-                        },
-                        legend: { 
-                            position: 'top',
-                            labels: {
-                                font: {
-                                    size: window.innerWidth < 768 ? 10 : 12
-                                },
-                                padding: window.innerWidth < 768 ? 10 : 20
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            ticks: {
-                                font: {
-                                    size: window.innerWidth < 768 ? 9 : 11
-                                },
-                                maxRotation: window.innerWidth < 768 ? 45 : 0
-                            }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                font: {
-                                    size: window.innerWidth < 768 ? 9 : 11
-                                },
-                                callback: function(value) {
-                                    return '₹' + value.toLocaleString('en-IN');
-                                }
-                            }
-                        }
-                    },
-                    interaction: {
-                        intersect: false,
-                        mode: 'index'
-                    }
-                }
-            });
-        console.log('✅ Quick chart created successfully');
+        // Prepare traces
+        const salesTrace = {
+            x: labels,
+            y: salesValues,
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'Sales (₹)'
+            , line: { color: '#22c55e', width: 3 }
+            , marker: { color: '#22c55e', size: 6 }
+            , fill: 'tozeroy'
+            , fillcolor: 'rgba(34, 197, 94, 0.1)'
+        };
+        const purchaseTrace = {
+            x: labels,
+            y: purchaseValues,
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'Purchases (₹)'
+            , line: { color: '#ef4444', width: 3 }
+            , marker: { color: '#ef4444', size: 6 }
+            , fill: 'tozeroy'
+            , fillcolor: 'rgba(239, 68, 68, 0.1)'
+        };
+        
+        const layout = {
+            title: { text: 'Monthly Sales vs Purchases', font: { size: window.innerWidth < 768 ? 12 : 16 } },
+            legend: { orientation: 'h', x: 0, y: 1.15, font: { size: window.innerWidth < 768 ? 10 : 12 } },
+            margin: { l: 50, r: 20, t: 40, b: 50 },
+            xaxis: { tickangle: window.innerWidth < 768 ? -45 : 0 },
+            yaxis: { rangemode: 'tozero', tickprefix: '₹', separatethousands: true },
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            paper_bgcolor: 'rgba(0,0,0,0)'
+        };
+        
+        const config = { responsive: true, displayModeBar: false };
+        
+        // Render
+        await Plotly.newPlot(el, [salesTrace, purchaseTrace], layout, config);
+        console.log('✅ Plotly quick chart created successfully');
+        
+        // Handle responsiveness on resize
+        window.addEventListener('resize', () => Plotly.Plots.resize(el));
         
     } catch (error) {
         console.error('Error loading quick chart:', error);

@@ -103,7 +103,7 @@
                 <div class="chart-container">
                     <h3>📊 Monthly Sales vs Purchases</h3>
                     <div style="height: 350px; position: relative;">
-                        <canvas id="quickChart"></canvas>
+                        <div id="quickChart" style="width: 100%; height: 100%;"></div>
                     </div>
                 </div>
                 <div class="chart-container">
@@ -579,6 +579,8 @@
     <!-- SheetJS library for Excel export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
         <!-- deploy: trigger no-op 3 -->
+    <!-- Plotly.js for rich interactive charts -->
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
     <script src="secure-admin.js"></script>
   </body>
 </html>
