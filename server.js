@@ -9,6 +9,9 @@ const helmet = require('helmet');
 const session = require('express-session');
 const rateLimit = require('express-rate-limit');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
+const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 
 // Import Firebase service
 const firestoreService = require('./firebase-config');
@@ -19,6 +22,7 @@ const PORT = process.env.PORT || 3000;
 // Feature flags (default off to preserve behavior)
 const SECURITY_ENFORCE = process.env.SECURITY_ENFORCE === 'true';
 const ENFORCE_HTTPS = process.env.ENFORCE_HTTPS === 'true';
+const CSRF_ENFORCE = process.env.CSRF_ENFORCE === 'true';
 
 // Trust proxy for Render/Heroku to get client IP and proto
 app.set('trust proxy', 1);
@@ -75,6 +79,43 @@ app.use(session({
 	}
 }));
 
+// Cookie parser for CSRF helper
+app.use(cookieParser());
+
+// CSRF helper: set token cookie (non-HttpOnly so client could read if needed)
+function ensureCsrfToken(req, res, next) {
+	try {
+		if (!req.session.csrfToken) {
+			req.session.csrfToken = crypto.randomBytes(32).toString('hex');
+		}
+		// Always refresh cookie to keep in sync
+		res.cookie('csrfToken', req.session.csrfToken, {
+			secure: process.env.NODE_ENV === 'production',
+			sameSite: 'lax',
+			httpOnly: false,
+			path: '/'
+		});
+	} catch (_) {}
+	return next();
+}
+
+// CSRF guard (double-submit cookie pattern) — enforced only if CSRF_ENFORCE=true
+function csrfGuard(req, res, next) {
+	if (!CSRF_ENFORCE) return next();
+	const method = req.method.toUpperCase();
+	if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) return next();
+	const headerToken = req.get('x-csrf-token') || '';
+	const cookieToken = req.cookies?.csrfToken || '';
+	const sessionToken = req.session?.csrfToken || '';
+	if (headerToken && cookieToken && sessionToken && headerToken === cookieToken && headerToken === sessionToken) {
+		return next();
+	}
+	return res.status(403).json({ error: 'CSRF token invalid' });
+}
+
+app.use(ensureCsrfToken);
+app.use(csrfGuard);
+
 // Block direct static access to /data from the web
 app.use('/data', (req, res) => res.status(403).send('Forbidden'));
 
@@ -127,6 +168,15 @@ function ensureAuthenticated(req, res, next) {
 // Minimal validators (used only when enforcing to avoid breakage)
 function isNonEmptyString(v) { return typeof v === 'string' && v.trim().length > 0; }
 function isValidMoney(n) { const num = typeof n === 'number' ? n : parseFloat(n); return Number.isFinite(num) && num >= 0; }
+
+// Password helpers (bcrypt)
+function isBcryptHash(value) {
+	return typeof value === 'string' && value.startsWith('$2');
+}
+async function hashPassword(plain) {
+	const rounds = parseInt(process.env.BCRYPT_ROUNDS || '10', 10);
+	return await bcrypt.hash(plain, rounds);
+}
 
 // Hybrid data loading - Firestore first, then fallbacks
 async function loadData() {
@@ -221,41 +271,32 @@ async function loadFromFallback() {
 	}
 }
 
-// Create default admin user
+// Create default admin user (store bcrypt hash, not plaintext)
 async function createDefaultData() {
 	const defaultAdminPassword = process.env.ADMIN_PASSWORD || 'admin123';
-	console.log('👤 Creating default admin user...');
-	console.log('🔧 Using ADMIN_PASSWORD from env:', !!process.env.ADMIN_PASSWORD);
-	console.log('🔐 Password length:', defaultAdminPassword.length);
-	
+	const hashed = await hashPassword(defaultAdminPassword);
 	users = [
 		{
 			id: '1',
 			username: 'admin',
-			password: defaultAdminPassword,
+			password: hashed,
 			role: 'admin',
 			created_at: new Date().toISOString()
 		}
 	];
 	
-	console.log('✅ Default admin user created:', { 
-		username: users[0].username, 
-		role: users[0].role,
-		passwordLength: users[0].password.length 
-	});
-	
 	// Save to Firestore if available, otherwise to file
 	if (firestoreService.isAvailable()) {
 		try {
 			await firestoreService.addUser(users[0]);
-			console.log('👥 Created default admin user in Firestore');
+			console.log('👥 Created default admin user in Firestore (hashed)');
 		} catch (error) {
 			console.error('❌ Error creating default user in Firestore:', error);
-			saveUsers(); // Fallback to file
+			saveUsers();
 		}
 	} else {
 		saveUsers();
-		console.log('👥 Created default admin user in file');
+		console.log('👥 Created default admin user in file (hashed)');
 	}
 }
 
@@ -294,10 +335,6 @@ function saveSales() {
 		const data = JSON.stringify(sales, null, 2);
 		fs.writeFileSync(SALES_FILE, data, 'utf8');
 		console.log(`💾 Saved ${sales.length} sales records to ${SALES_FILE}`);
-		
-		if (process.env.NODE_ENV === 'production' && !PERSISTENT_SALES_DATA) {
-			console.log('⚠️  WARNING: Consider using Firestore for permanent data persistence');
-		}
 	} catch (error) {
 		console.error('❌ Error saving sales:', error);
 	}
@@ -308,10 +345,6 @@ function savePurchases() {
 		const data = JSON.stringify(purchases, null, 2);
 		fs.writeFileSync(PURCHASES_FILE, data, 'utf8');
 		console.log(`💾 Saved ${purchases.length} purchase records to ${PURCHASES_FILE}`);
-		
-		if (process.env.NODE_ENV === 'production' && !PERSISTENT_PURCHASES_DATA) {
-			console.log('⚠️  WARNING: Consider using Firestore for permanent data persistence');
-		}
 	} catch (error) {
 		console.error('❌ Error saving purchases:', error);
 	}
@@ -351,7 +384,28 @@ app.post('/api/login', async (req, res) => {
 		if (!user) {
 			user = users.find(u => u.username === username);
 		}
-		if (user && user.password === password) {
+		if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+		
+		let ok = false;
+		if (isBcryptHash(user.password)) {
+			ok = await bcrypt.compare(password || '', user.password);
+		} else {
+			// Legacy plaintext support with seamless upgrade
+			ok = user.password === password;
+			if (ok) {
+				try {
+					const newHash = await hashPassword(password || '');
+					if (firestoreService.isAvailable()) {
+						try { await firestoreService.updateUser(user.id, { password: newHash }); } catch (_) {}
+					} else {
+						const idx = users.findIndex(u => u.id === user.id);
+						if (idx !== -1) { users[idx].password = newHash; saveUsers(); }
+					}
+				} catch (_) {}
+			}
+		}
+		
+		if (ok) {
 			if (SECURITY_ENFORCE) {
 				req.session.user = { id: user.id, username: user.username, role: user.role };
 			}
@@ -542,7 +596,7 @@ app.delete('/api/purchases/:id', async (req, res) => {
 	}
 });
 
-// Dashboard endpoint
+// Dashboard endpoint (unchanged)
 app.get('/api/dashboard', async (req, res) => {
 	try {
 		let currentSales = sales;
@@ -562,49 +616,26 @@ app.get('/api/dashboard', async (req, res) => {
 		const totalPurchases = currentPurchases.reduce((sum, purchase) => sum + parseFloat(purchase.total_amount || purchase.total || 0), 0);
 		const netProfit = totalSales - totalPurchases;
 		
-		// Today's data (timezone-aware local date calculation)
 		const getTodayLocal = () => {
 			const today = new Date();
 			const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000));
 			return localDate.toISOString().split('T')[0];
 		};
 		const today = getTodayLocal();
-		console.log('📅 Server calculating today as:', today);
-		console.log('📊 Total sales records:', currentSales.length);
-		console.log('📊 Sample sales dates:', currentSales.slice(0, 3).map(s => ({
-			id: s.id,
-			sale_date: s.sale_date,
-			date: s.date,
-			total: s.total || s.total_amount
-		})));
 		
 		const todaySales = currentSales
 			.filter(sale => {
 				const dateToCheck = sale.sale_date || sale.date || '';
-				const match = dateToCheck.startsWith(today);
-				if (match) console.log('📈 Found today\'s sale:', { id: sale.id, date: dateToCheck, amount: sale.total_amount || sale.total });
-				return match;
+				return dateToCheck.startsWith(today);
 			})
 			.reduce((sum, sale) => sum + parseFloat(sale.total_amount || sale.total || 0), 0);
-			
-		console.log('📊 Total purchase records:', currentPurchases.length);
-		console.log('📊 Sample purchase dates:', currentPurchases.slice(0, 3).map(p => ({
-			id: p.id,
-			purchase_date: p.purchase_date,
-			date: p.date,
-			total: p.total || p.total_amount
-		})));
 		
 		const todayPurchases = currentPurchases
 			.filter(purchase => {
 				const dateToCheck = purchase.purchase_date || purchase.date || '';
-				const match = dateToCheck.startsWith(today);
-				if (match) console.log('📉 Found today\'s purchase:', { id: purchase.id, date: dateToCheck, amount: purchase.total_amount || purchase.total });
-				return match;
+				return dateToCheck.startsWith(today);
 			})
 			.reduce((sum, purchase) => sum + parseFloat(purchase.total_amount || purchase.total || 0), 0);
-			
-		console.log('📊 Today\'s totals:', { sales: todaySales, purchases: todayPurchases });
 		
 		res.json({
 			totalSales,
