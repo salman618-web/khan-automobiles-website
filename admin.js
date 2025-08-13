@@ -22,7 +22,7 @@ function checkAuthentication() {
     
     if (!isLoggedIn || isLoggedIn !== 'true') {
         alert('Access denied. Please login first.');
-        window.location.href = 'index.html';
+        window.location.href = '/';
         return;
     }
     
@@ -34,7 +34,7 @@ function logout() {
     localStorage.removeItem('isAdminLoggedIn');
     localStorage.removeItem('adminUsername');
     alert('Logged out successfully!');
-    window.location.href = 'index.html';
+    window.location.href = '/';
 }
 
 // Initialize admin dashboard

@@ -79,12 +79,21 @@ app.use(session({
 // Block direct static access to /data from the web
 app.use('/data', (req, res) => res.status(403).send('Forbidden'));
 
-// Gate admin.html behind session only when enforcing
-app.get('/admin.html', (req, res, next) => {
+// Gate admin and admin.html behind session only when enforcing
+app.get(['/admin', '/admin.html'], (req, res, next) => {
 	if (!SECURITY_ENFORCE) return next();
 	if (req.session && req.session.user) return next();
-	return res.redirect('/index.html');
+	return res.redirect('/');
 });
+
+// Canonical clean URLs
+app.get('/admin', (req, res) => {
+	return res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
+// Redirect old .html paths to clean URLs
+app.get('/admin.html', (req, res) => res.redirect(301, '/admin'));
+app.get('/index.html', (req, res) => res.redirect(301, '/'));
 
 // Serve static files
 app.use(express.static('./', {

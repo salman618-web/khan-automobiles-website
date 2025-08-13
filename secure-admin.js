@@ -65,16 +65,16 @@ async function initializeSecureApp() {
         console.log('❌ User not authenticated after multiple checks, redirecting to login page');
         showNotification('Please login to access the admin panel', 'error');
         
-        // Redirect to index.html after a longer delay
+        // Redirect to home after a longer delay
         setTimeout(() => {
-            window.location.href = 'index.html';
+            window.location.href = '/';
         }, 3000);
         
     } catch (error) {
         console.error('Initialization error:', error);
         showNotification('Authentication error. Redirecting to login...', 'error');
         setTimeout(() => {
-            window.location.href = 'index.html';
+            window.location.href = '/';
         }, 2000);
     }
 }
@@ -101,10 +101,10 @@ function showLoginModal() {
         console.log('ℹ️ No login modal found - likely on admin page. User should login from index.html');
         showNotification('Please login from the main page first', 'error');
         
-        // If on admin page without authentication, redirect to index
-        if (window.location.pathname.includes('admin.html')) {
+        // If on admin page without authentication, redirect to home
+        if (window.location.pathname === '/admin' || window.location.pathname.endsWith('/admin.html')) {
             setTimeout(() => {
-                window.location.href = 'index.html';
+                window.location.href = '/';
             }, 2000);
         }
     }
@@ -125,14 +125,14 @@ function hideLoginModal() {
 
 // Setup form handlers
 function setupFormHandlers() {
-    // Login form handler - only handle if we're on admin.html
-    // On index.html, script.js handles the login form
+    // Login form handler - only handle if we're on admin
+    // On home (/), script.js handles the login form
     const adminForm = document.getElementById('adminForm');
-    if (adminForm && window.location.pathname.includes('admin.html')) {
-        console.log('ℹ️ Setting up admin form handler on admin.html');
+    if (adminForm && (window.location.pathname === '/admin' || window.location.pathname.endsWith('/admin.html'))) {
+        console.log('ℹ️ Setting up admin form handler on /admin');
         adminForm.addEventListener('submit', handleLogin);
     } else if (adminForm) {
-        console.log('ℹ️ Login form found but on index.html - script.js will handle it');
+        console.log('ℹ️ Login form found but on home - script.js will handle it');
     }
 
     // Sales form handler
@@ -202,7 +202,7 @@ async function handleLogin(e) {
         const response = await loginResponse.json();
         
         if (response.success) {
-            console.log('✅ Login successful on admin.html (unlikely scenario)');
+            console.log('✅ Login successful on /admin (unlikely scenario)');
             
             // Set authentication data
             localStorage.setItem('isAdminLoggedIn', 'true');
@@ -241,7 +241,7 @@ async function logout() {
         
         console.log('🚪 User logged out, clearing all authentication data');
         showNotification('Logged out successfully', 'success');
-        setTimeout(() => window.location.href = 'index.html', 1000);
+        setTimeout(() => window.location.href = '/', 1000);
     } catch (error) {
         console.error('Logout error:', error);
     }
