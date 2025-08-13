@@ -572,6 +572,9 @@
             background: #dc2626 !important;
             border-color: #dc2626 !important;
         }
+        /* ECharts container should fully fill height */
+        #quickChart { min-height: 320px; }
+        #quickChart canvas { width: 100% !important; height: 100% !important; }
     </style>
 
     <!-- No login modal needed on admin page - users should login from index.html first -->

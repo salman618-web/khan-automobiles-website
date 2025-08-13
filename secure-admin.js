@@ -391,6 +391,14 @@ async function loadQuickChart() {
             return;
         }
         
+        // If container has too small height due to layout, ensure a reasonable minimum
+        try {
+            const rect = el.getBoundingClientRect();
+            if (rect.height < 260) {
+                el.style.minHeight = '360px';
+            }
+        } catch (_) {}
+        
         // Init or reuse chart instance
         if (!window._quickEChart) {
             window._quickEChart = echarts.init(el, null, { renderer: 'canvas' });
