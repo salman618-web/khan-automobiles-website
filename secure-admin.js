@@ -455,13 +455,6 @@ const avgSaleValues = months.map(m => {
                     min: 0,
                     axisLabel: { formatter: val => `₹${Number(val).toLocaleString('en-IN')}`, fontSize: isSmall ? 10 : 12, hideOverlap: true },
                     splitLine: { show: true }
-                },
-                {
-                    type: 'value',
-                    name: 'Avg Sale (₹)',
-                    min: 0,
-                    axisLabel: { formatter: val => `₹${Number(val).toLocaleString('en-IN')}`, fontSize: isSmall ? 10 : 12, hideOverlap: true },
-                    splitLine: { show: false }
                 }
             ],
             series: [
@@ -488,14 +481,12 @@ const avgSaleValues = months.map(m => {
                     name: 'Avg Sale (₹)',
                     type: 'line',
                     data: avgSaleValues,
-                    yAxisIndex: 1,
                     smooth: true,
                     symbol: 'circle',
                     symbolSize: isSmall ? 6 : 8,
                     z: 3,
                     lineStyle: { width: isSmall ? 2 : 3, color: '#3b82f6' },
-                    itemStyle: { color: '#3b82f6' },
-                    areaStyle: { color: 'rgba(59, 130, 246, 0.08)' }
+                    itemStyle: { color: '#3b82f6' }
                 }
             ],
             animationDuration: 600,
