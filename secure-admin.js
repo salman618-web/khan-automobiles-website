@@ -471,7 +471,8 @@ const avgSaleValues = months.map(m => {
                     data: salesBarData,
                     itemStyle: { color: '#22c55e', borderRadius: [6, 6, 0, 0] },
                     barWidth: isSmall ? 8 : 12,
-                    barGap: '30%',
+                    barGap: '0%',
+                    barCategoryGap: '45%',
                     label: { show: !isSmall, position: 'top', formatter: (p) => (p.data && typeof p.data.saleCount === 'number' && p.data.saleCount > 0) ? `${p.data.saleCount}` : '' }
                 },
                 {
@@ -480,7 +481,8 @@ const avgSaleValues = months.map(m => {
                     data: purchaseValues,
                     itemStyle: { color: '#ef4444', borderRadius: [6, 6, 0, 0] },
                     barWidth: isSmall ? 8 : 12,
-                    barGap: '30%'
+                    barGap: '0%',
+                    barCategoryGap: '45%'
                 },
                 {
                     name: 'Avg Sale (₹)',
@@ -490,6 +492,7 @@ const avgSaleValues = months.map(m => {
                     smooth: true,
                     symbol: 'circle',
                     symbolSize: isSmall ? 6 : 8,
+                    z: 3,
                     lineStyle: { width: isSmall ? 2 : 3, color: '#3b82f6' },
                     itemStyle: { color: '#3b82f6' },
                     areaStyle: { color: 'rgba(59, 130, 246, 0.08)' }
