@@ -2696,30 +2696,59 @@ async function loadOverallTimelineChart() {
             if (y && purchasesByYear[y] != null) purchasesByYear[y] += parseFloat(p.total || 0) || 0;
         });
         
-        const xYears = years.map(String);
-        const salesSeries = years.map(y => salesByYear[y]);
-        const purchaseSeries = years.map(y => purchasesByYear[y]);
-        const profitSeries = years.map(y => Math.max(0, (salesByYear[y] || 0) - (purchasesByYear[y] || 0)));
+        // Build monthly data per year for timeline
+        const monthNamesShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const initYearArrays = () => ({ sales: new Array(12).fill(0), purchases: new Array(12).fill(0) });
+        const byYear = Object.fromEntries(years.map(y => [y, initYearArrays()]));
+        const getYM = d => {
+            if (!d) return null;
+            if (/^\d{4}-\d{2}-\d{2}/.test(d)) return { y: Number(d.substring(0,4)), m: Number(d.substring(5,7)) - 1 };
+            const dt = new Date(d); if (Number.isNaN(dt.getTime())) return null; return { y: dt.getFullYear(), m: dt.getMonth() };
+        };
+        sales.forEach(s => { const ym = getYM(s.sale_date || s.date); if (!ym) return; if (byYear[ym.y]) byYear[ym.y].sales[ym.m] += parseFloat(s.total||0)||0; });
+        purchases.forEach(p => { const ym = getYM(p.purchase_date || p.date); if (!ym) return; if (byYear[ym.y]) byYear[ym.y].purchases[ym.m] += parseFloat(p.total||0)||0; });
         
         if (!window._overallChart) window._overallChart = echarts.init(el);
         const chart = window._overallChart;
         const isSmall = window.innerWidth < 768;
         
-        const option = {
+        const timelineYears = years.map(String);
+        const baseOption = {
             backgroundColor: 'transparent',
-            title: { text: 'Overalll Report (Last 10 Years)', left: 'center', top: 6, textStyle: { fontSize: isSmall ? 14 : 16, fontWeight: 'bold' } },
+            timeline: {
+                axisType: 'category',
+                autoPlay: false,
+                playInterval: 2500,
+                data: timelineYears,
+                bottom: 6,
+                label: { formatter: s => s }
+            },
             tooltip: { trigger: 'axis', axisPointer: { type: 'cross' }, valueFormatter: v => `₹${Number(v||0).toLocaleString('en-IN')}` },
             legend: { top: 34, left: 'center', data: ['Sales (₹)', 'Purchases (₹)', 'Net Profit (₹)'], textStyle: { fontSize: isSmall ? 11 : 12 } },
-            grid: { left: isSmall ? 48 : 56, right: isSmall ? 28 : 40, top: isSmall ? 72 : 80, bottom: isSmall ? 54 : 60, containLabel: true },
-            xAxis: [{ type: 'category', data: xYears, axisLabel: { fontSize: isSmall ? 10 : 12 } }],
+            grid: { left: isSmall ? 48 : 56, right: isSmall ? 28 : 40, top: isSmall ? 72 : 80, bottom: isSmall ? 90 : 100, containLabel: true },
+            xAxis: [{ type: 'category', data: monthNamesShort, axisLabel: { fontSize: isSmall ? 10 : 12 } }],
             yAxis: [{ type: 'value', axisLabel: { formatter: v => `₹${Number(v).toLocaleString('en-IN')}` } }],
             series: [
-                { name: 'Sales (₹)', type: 'bar', data: salesSeries, itemStyle: { color: '#22c55e' }, barWidth: isSmall ? 14 : 20 },
-                { name: 'Purchases (₹)', type: 'bar', data: purchaseSeries, itemStyle: { color: '#ef4444' }, barWidth: isSmall ? 14 : 20 },
-                { name: 'Net Profit (₹)', type: 'line', data: profitSeries, smooth: true, lineStyle: { width: isSmall ? 2 : 3, color: '#3b82f6' }, symbol: 'circle', symbolSize: isSmall ? 6 : 8 }
+                { name: 'Sales (₹)', type: 'bar', itemStyle: { color: '#22c55e' }, barWidth: isSmall ? 14 : 20 },
+                { name: 'Purchases (₹)', type: 'bar', itemStyle: { color: '#ef4444' }, barWidth: isSmall ? 14 : 20 },
+                { name: 'Net Profit (₹)', type: 'line', smooth: true, lineStyle: { width: isSmall ? 2 : 3, color: '#3b82f6' }, symbol: 'circle', symbolSize: isSmall ? 6 : 8 }
             ]
         };
+        
+        const options = years.map(y => ({
+            title: { text: `Overalll Report — ${y}`, left: 'center', top: 6, textStyle: { fontSize: isSmall ? 14 : 16, fontWeight: 'bold' } },
+            series: [
+                { data: byYear[y].sales },
+                { data: byYear[y].purchases },
+                { data: byYear[y].sales.map((v, i) => Math.max(0, v - (byYear[y].purchases[i]||0))) }
+            ]
+        }));
+        
+        const option = { baseOption, options };
         chart.setOption(option, true);
+        // Jump to latest year by default
+        try { chart.dispatchAction({ type: 'timelineChange', currentIndex: timelineYears.length - 1 }); } catch(_) {}
+
         window.addEventListener('resize', () => chart.resize());
     } catch (error) {
         console.error('Overall chart error:', error);
