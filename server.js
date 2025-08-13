@@ -4,6 +4,8 @@ const fs = require('fs');
 const crypto = require('crypto');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const cookieParser = require('cookie-parser');
+const bcrypt = require('bcrypt');
 
 // Import Firebase service
 const firestoreService = require('./firebase-config');
@@ -12,9 +14,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(helmet());
+app.use(express.json({ limit: '200kb' }));
+app.use(express.urlencoded({ extended: true, limit: '200kb' }));
+app.use(helmet({ hsts: true }));
+app.use(cookieParser());
 
 // CORS headers (restricted if ALLOWED_ORIGINS is set)
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
@@ -55,7 +58,7 @@ function createSession(username) {
 }
 
 function authMiddleware(req, res, next) {
-    const token = req.get('X-Session-Token');
+    const token = req.get('X-Session-Token') || req.cookies?.session;
     const s = token && sessions.get(token);
     if (!s || s.expiry < Date.now()) {
         return res.status(401).json({ error: 'Unauthorized' });
@@ -340,9 +343,29 @@ app.post('/api/login', loginLimiter, async (req, res) => {
         console.log('👤 User found:', !!user);
  
         const adminPw = process.env.ADMIN_PASSWORD;
-        const passwordMatch = (user && user.password === password) || (adminPw && password === adminPw);
+        let passwordMatch = false;
+        if (user) {
+            // Try bcrypt compare first, fallback to plaintext for compatibility
+            try {
+                if (user.password && user.password.startsWith('$2')) {
+                    passwordMatch = await bcrypt.compare(password, user.password);
+                } else {
+                    passwordMatch = user.password === password;
+                }
+            } catch (_) {}
+        }
+        if (!passwordMatch && adminPw) {
+            passwordMatch = password === adminPw;
+        }
         if (user && passwordMatch) {
             const token = createSession(user.username || username);
+            // Set secure httpOnly cookie
+            res.cookie('session', token, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'strict',
+                maxAge: SESSION_TTL_MS
+            });
             res.json({
                 success: true,
                 message: 'Login successful',

@@ -535,17 +535,17 @@ async function loadRecentTransactions() {
                 }
             
             return `
-                    <div class="transaction-item" data-type="${transaction.type}">
+                    <div class="transaction-item" data-type="${escapeHtml(transaction.type)}">
                         <div class="transaction-header">
                             <span class="transaction-icon">${icon}</span>
-                            <div class="transaction-contact">${transaction.contact}</div>
+                            <div class="transaction-contact">${escapeHtml(transaction.contact)}</div>
                             <div class="transaction-amount" style="color: ${color};">${sign}₹${parseFloat(transaction.amount || 0).toLocaleString('en-IN')}</div>
                         </div>
                         <div class="transaction-details">
-                            <div>${transaction.description || 'No description'}</div>
+                            <div>${escapeHtml(transaction.description || 'No description')}</div>
                         </div>
                         <div class="transaction-meta">
-                            <span>${displayDate}</span>
+                            <span>${escapeHtml(displayDate)}</span>
                         </div>
                     </div>
             `;
@@ -1848,22 +1848,22 @@ function displayEntries() {
         <div style="padding: 1rem; border-bottom: 1px solid #e2e8f0; display: grid; grid-template-columns: 100px 120px 130px 150px 180px 120px 120px 130px; gap: 1rem; align-items: center; transition: background-color 0.2s;" 
              onmouseover="this.style.backgroundColor='#f8fafc'" 
              onmouseout="this.style.backgroundColor='white'">
-            <div style="font-size: 14px;">${entry.date || 'N/A'}</div>
+            <div style="font-size: 14px;">${escapeHtml(entry.date || 'N/A')}</div>
             <div>
                 <span class="badge ${entry.type === 'sale' ? 'badge-success' : 'badge-danger'}" style="display: inline-block; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 12px; font-weight: 600; color: white; background: ${entry.type === 'sale' ? '#22c55e' : '#ef4444'};">
                     ${entry.type === 'sale' ? 'Sale' : 'Purchase'}
                 </span>
             </div>
-            <div style="font-size: 14px; font-weight: 500;">${entry.contact || 'N/A'}</div>
-            <div style="font-size: 14px;">${entry.category || 'N/A'}</div>
-            <div style="font-size: 14px;" title="${entry.description || ''}">${(entry.description || 'N/A').length > 25 ? (entry.description || 'N/A').substring(0, 25) + '...' : (entry.description || 'N/A')}</div>
+            <div style="font-size: 14px; font-weight: 500;">${escapeHtml(entry.contact || 'N/A')}</div>
+            <div style="font-size: 14px;">${escapeHtml(entry.category || 'N/A')}</div>
+            <div style="font-size: 14px;" title="${escapeHtml(entry.description || '')}">${escapeHtml(((entry.description || 'N/A').length > 25 ? (entry.description || 'N/A').substring(0, 25) + '...' : (entry.description || 'N/A')))}</div>
             <div style="font-size: 14px; font-weight: 600;">₹${parseFloat(entry.total || 0).toLocaleString('en-IN')}</div>
-            <div style="font-size: 12px; color: #6b7280;" title="${createdDisplay}">${createdDisplay}</div>
+            <div style="font-size: 12px; color: #6b7280;" title="${escapeHtml(createdDisplay)}">${escapeHtml(createdDisplay)}</div>
             <div style="display: flex; gap: 0.5rem;">
-                <button onclick="editEntry('${entry.id}', '${entry.type}')" class="btn-sm btn-primary" style="padding: 0.25rem 0.5rem; font-size: 12px; border-radius: 6px;" title="Edit Entry">
+                <button onclick="editEntry('${escapeHtml(entry.id)}', '${escapeHtml(entry.type)}')" class="btn-sm btn-primary" style="padding: 0.25rem 0.5rem; font-size: 12px; border-radius: 6px;" title="Edit Entry">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button onclick="deleteEntry('${entry.id}', '${entry.type}')" class="btn-sm btn-danger" style="padding: 0.25rem 0.5rem; font-size: 12px; border-radius: 6px; background: #ef4444; border: none; color: white;" title="Delete Entry">
+                <button onclick="deleteEntry('${escapeHtml(entry.id)}', '${escapeHtml(entry.type)}')" class="btn-sm btn-danger" style="padding: 0.25rem 0.5rem; font-size: 12px; border-radius: 6px; background: #ef4444; border: none; color: white;" title="Delete Entry">
                     <i class="fas fa-trash"></i>
                 </button>
             </div>
