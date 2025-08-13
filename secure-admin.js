@@ -68,7 +68,7 @@ async function initializeSecureApp() {
         // Redirect to home after a longer delay
         setTimeout(() => {
             window.location.href = '/';
-        }, 1500);
+        }, 1000);
         
     } catch (error) {
         console.error('Initialization error:', error);
