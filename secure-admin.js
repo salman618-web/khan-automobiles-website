@@ -397,15 +397,17 @@ async function loadQuickChart() {
         }
         const chart = window._quickEChart;
         
+        const isSmall = window.innerWidth < 768;
+        
         const option = {
             backgroundColor: 'transparent',
             title: {
                 text: 'Monthly Sales vs Purchases',
                 left: 'center',
                 top: 6,
-                textStyle: { fontSize: 16, fontWeight: 'bold' }
+                textStyle: { fontSize: isSmall ? 14 : 16, fontWeight: 'bold' }
             },
-            grid: { left: 56, right: 40, top: 80, bottom: 50 },
+            grid: { left: isSmall ? 48 : 56, right: isSmall ? 28 : 40, top: isSmall ? 72 : 80, bottom: isSmall ? 44 : 50, containLabel: true },
             tooltip: {
                 trigger: 'axis',
                 axisPointer: { type: 'cross' },
@@ -421,27 +423,28 @@ async function loadQuickChart() {
             legend: {
                 top: 34,
                 left: 'center',
-                itemGap: 20,
+                itemGap: isSmall ? 12 : 20,
+                textStyle: { fontSize: isSmall ? 11 : 12 },
                 data: ['Sales (₹)', 'Purchases (₹)', 'Avg Sale (₹)']
             },
             xAxis: [{
                 type: 'category',
                 data: labels,
-                axisLabel: { rotate: window.innerWidth < 768 ? 45 : 0 }
+                axisLabel: { rotate: isSmall ? 45 : 0, fontSize: isSmall ? 10 : 12 }
             }],
             yAxis: [
                 {
                     type: 'value',
                     name: 'Amount (₹)',
                     min: 0,
-                    axisLabel: { formatter: val => `₹${Number(val).toLocaleString('en-IN')}` },
+                    axisLabel: { formatter: val => `₹${Number(val).toLocaleString('en-IN')}`, fontSize: isSmall ? 10 : 12 },
                     splitLine: { show: true }
                 },
                 {
                     type: 'value',
                     name: 'Avg Sale (₹)',
                     min: 0,
-                    axisLabel: { formatter: val => `₹${Number(val).toLocaleString('en-IN')}` },
+                    axisLabel: { formatter: val => `₹${Number(val).toLocaleString('en-IN')}`, fontSize: isSmall ? 10 : 12 },
                     splitLine: { show: false }
                 }
             ],
@@ -451,7 +454,7 @@ async function loadQuickChart() {
                     type: 'bar',
                     data: salesValues,
                     itemStyle: { color: '#22c55e', borderRadius: [6, 6, 0, 0] },
-                    barWidth: 26,
+                    barWidth: isSmall ? 20 : 26,
                     barGap: '20%'
                 },
                 {
@@ -459,7 +462,7 @@ async function loadQuickChart() {
                     type: 'bar',
                     data: purchaseValues,
                     itemStyle: { color: '#ef4444', borderRadius: [6, 6, 0, 0] },
-                    barWidth: 26,
+                    barWidth: isSmall ? 20 : 26,
                     barGap: '20%'
                 },
                 {
@@ -469,17 +472,34 @@ async function loadQuickChart() {
                     yAxisIndex: 1,
                     smooth: true,
                     symbol: 'circle',
-                    symbolSize: 8,
-                    lineStyle: { width: 3, color: '#3b82f6' },
+                    symbolSize: isSmall ? 6 : 8,
+                    lineStyle: { width: isSmall ? 2 : 3, color: '#3b82f6' },
                     itemStyle: { color: '#3b82f6' },
                     areaStyle: { color: 'rgba(59, 130, 246, 0.08)' }
                 }
             ],
-            animationDuration: 600
+            animationDuration: 600,
+            media: [
+                {
+                    query: { maxWidth: 480 },
+                    option: {
+                        grid: { left: 42, right: 20, top: 66, bottom: 40, containLabel: true },
+                        title: { textStyle: { fontSize: 13 } },
+                        legend: { textStyle: { fontSize: 10 } }
+                    }
+                }
+            ]
         };
         
         chart.setOption(option, true);
+        // Resize on window and when container size changes
         window.addEventListener('resize', () => chart.resize());
+        if (!window._quickChartResizeObs) {
+            try {
+                window._quickChartResizeObs = new ResizeObserver(() => chart.resize());
+                window._quickChartResizeObs.observe(el);
+            } catch (_) {}
+        }
         console.log('✅ ECharts quick chart rendered');
         
     } catch (error) {
