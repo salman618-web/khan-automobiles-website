@@ -655,6 +655,30 @@ async function startServer() {
 		
 		// Load data
 		await loadData();
+
+		// Optional: one-time startup sync to align stored admin hash with ADMIN_PASSWORD
+		if (process.env.SYNC_ADMIN_PASSWORD === 'true' && process.env.ADMIN_PASSWORD) {
+			try {
+				const targetUsername = process.env.ADMIN_USERNAME || 'admin';
+				let adminUser = null;
+				if (firestoreService.isAvailable()) {
+					try { adminUser = await firestoreService.getUserByUsername(targetUsername); } catch(_) {}
+				}
+				if (!adminUser) adminUser = users.find(u => u.username === targetUsername);
+				if (adminUser) {
+					const newHash = await hashPassword(process.env.ADMIN_PASSWORD);
+					if (firestoreService.isAvailable()) {
+						try { await firestoreService.updateUser(adminUser.id, { password: newHash }); } catch(_) {}
+					} else {
+						const idx = users.findIndex(u => u.id === adminUser.id);
+						if (idx !== -1) { users[idx].password = newHash; saveUsers(); }
+					}
+					console.log('🔐 Admin password hash synced with ADMIN_PASSWORD');
+				}
+			} catch (syncErr) {
+				console.warn('⚠️ Admin password sync skipped:', syncErr.message);
+			}
+		}
 		
 		// Start server
 		app.listen(PORT, () => {
@@ -666,6 +690,7 @@ async function startServer() {
 			console.log(`📊 Data: ${sales.length} sales, ${purchases.length} purchases`);
 			console.log(`👥 Users: ${users.length} (${users.map(u => u.username).join(', ')})`);
 			console.log(`🔐 ADMIN_PASSWORD set: ${!!process.env.ADMIN_PASSWORD}`);
+			console.log(`🔁 SYNC_ADMIN_PASSWORD: ${process.env.SYNC_ADMIN_PASSWORD === 'true'}`);
 			console.log('🎉 =================================');
 			console.log('');
 		});
