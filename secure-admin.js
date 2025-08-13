@@ -367,7 +367,7 @@ async function loadQuickChart() {
             monthly[ym].purchases += total;
         });
         
-        const months = Object.keys(monthly).sort().slice(-6);
+        const months = Object.keys(monthly).sort().slice(-3);
         if (months.length === 0) {
             const c = document.getElementById('quickChart');
             if (c) c.innerHTML = '<p style="text-align:center;color:#666;padding:2rem;">No data to chart yet</p>';
@@ -466,16 +466,16 @@ async function loadQuickChart() {
                     type: 'bar',
                     data: salesValues,
                     itemStyle: { color: '#22c55e', borderRadius: [6, 6, 0, 0] },
-                    barWidth: isSmall ? 20 : 26,
-                    barGap: '20%'
+                    barWidth: isSmall ? 8 : 12,
+                    barGap: '30%'
                 },
                 {
                     name: 'Purchases (₹)',
                     type: 'bar',
                     data: purchaseValues,
                     itemStyle: { color: '#ef4444', borderRadius: [6, 6, 0, 0] },
-                    barWidth: isSmall ? 20 : 26,
-                    barGap: '20%'
+                    barWidth: isSmall ? 8 : 12,
+                    barGap: '30%'
                 },
                 {
                     name: 'Avg Sale (₹)',
