@@ -379,12 +379,12 @@ async function loadQuickChart() {
             const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             return `${monthNames[parseInt(monthNum) - 1]} ${year}`;
         });
-        const salesValues = months.map(m => Number(monthly[m].sales || 0));
-        const purchaseValues = months.map(m => Number(monthly[m].purchases || 0));
-        const avgSaleValues = months.map(m => {
-            const count = monthly[m].saleCount || 0;
-            return count > 0 ? Number(monthly[m].sales) / count : null; // null hides points with no data
-        });
+        const salesBarData = months.map(m => ({ value: Number(monthly[m].sales || 0), saleCount: monthly[m].saleCount || 0 }));
+const purchaseValues = months.map(m => Number(monthly[m].purchases || 0));
+const avgSaleValues = months.map(m => {
+    const count = monthly[m].saleCount || 0;
+    return count > 0 ? Number(monthly[m].sales) / count : null; // null hides points with no data
+});
         
         const el = document.getElementById('quickChart');
         if (!el) {
@@ -423,8 +423,10 @@ async function loadQuickChart() {
                 formatter: params => {
                     let s = `<strong>${params[0]?.axisValueLabel || ''}</strong><br/>`;
                     params.forEach(p => {
-                        const val = p.value == null ? '-' : `₹${Number(p.value).toLocaleString('en-IN')}`;
-                        s += `${p.marker} ${p.seriesName}: ${val}<br/>`;
+                        const raw = p.data && typeof p.data === 'object' && 'value' in p.data ? p.data.value : p.value;
+                        const val = raw == null ? '-' : `₹${Number(raw).toLocaleString('en-IN')}`;
+                        const countSuffix = (p.seriesName === 'Sales (₹)' && p.data && typeof p.data.saleCount === 'number') ? ` (${p.data.saleCount} sales)` : '';
+                        s += `${p.marker} ${p.seriesName}: ${val}${countSuffix}<br/>`;
                     });
                     return s;
                 }
@@ -464,10 +466,11 @@ async function loadQuickChart() {
                 {
                     name: 'Sales (₹)',
                     type: 'bar',
-                    data: salesValues,
+                    data: salesBarData,
                     itemStyle: { color: '#22c55e', borderRadius: [6, 6, 0, 0] },
                     barWidth: isSmall ? 8 : 12,
-                    barGap: '30%'
+                    barGap: '30%',
+                    label: { show: !isSmall, position: 'top', formatter: (p) => (p.data && typeof p.data.saleCount === 'number' && p.data.saleCount > 0) ? `${p.data.saleCount}` : '' }
                 },
                 {
                     name: 'Purchases (₹)',
