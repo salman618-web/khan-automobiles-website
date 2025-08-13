@@ -2635,22 +2635,37 @@ async function loadSalesPieChart() {
                     return `${info.marker} ${info.name}<br/>₹${v} (${p}%)`;
                 }
             },
-            legend: { type: isSmall ? 'scroll' : 'plain', bottom: 6, left: 'center', textStyle: { fontSize: isSmall ? 11 : 12 } },
+            legend: { type: 'scroll', bottom: 6, left: 'center', textStyle: { fontSize: isSmall ? 11 : 12 } },
             series: [
                 {
                     name: 'Sales',
                     type: 'pie',
-                    radius: isSmall ? '55%' : '60%',
-                    center: ['50%', isSmall ? '46%' : '50%'],
+                    radius: isSmall ? ['35%', '70%'] : ['40%', '70%'],
+                    center: ['50%', isSmall ? '48%' : '50%'],
+                    avoidLabelOverlap: true,
                     data: data,
-                    emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.2)' } },
-                    label: { formatter: params => `${params.name}\n₹${Number(params.value||0).toLocaleString('en-IN')}` , fontSize: isSmall ? 10 : 12 },
-                    labelLine: { length: 10, length2: 8 }
+                    label: {
+                        show: true,
+                        position: isSmall ? 'inside' : 'outside',
+                        formatter: params => {
+                            const amount = Number(params.value || 0);
+                            if (amount <= 0) return '';
+                            return isSmall ? `${params.name.substring(0,3)}\n₹${amount.toLocaleString('en-IN')}` : `${params.name}: ₹${amount.toLocaleString('en-IN')} (${params.percent}%)`;
+                        },
+                        fontSize: isSmall ? 10 : 12
+                    },
+                    labelLine: { length: isSmall ? 6 : 12, length2: isSmall ? 6 : 10 }
                 }
             ]
         };
         chart.setOption(option, true);
         window.addEventListener('resize', () => chart.resize());
+        if (!window._salesPieChartResizeObs) {
+            try {
+                window._salesPieChartResizeObs = new ResizeObserver(() => chart.resize());
+                window._salesPieChartResizeObs.observe(el);
+            } catch (_) {}
+        }
     } catch (error) {
         console.error('Pie chart error:', error);
         const el = document.getElementById('salesPieChart');
