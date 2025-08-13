@@ -990,9 +990,9 @@ function setupNavigation() {
 // Report generation
 async function generateReport() {
     try {
-        const reportType = document.getElementById('reportType').value;
-        const reportMonth = document.getElementById('reportMonth').value;
-        const reportYear = document.getElementById('reportYear').value;
+        const type = document.getElementById('reportType').value;
+        const month = document.getElementById('reportMonth').value;
+        const year = document.getElementById('reportYear').value;
         
         // Get all data from server
         const salesResponse = await fetch('/api/sales');
@@ -1006,15 +1006,15 @@ async function generateReport() {
         let filteredPurchases = purchaseData;
         
         // Filter by month and year
-        if (reportMonth || reportYear) {
+        if (month || year) {
             filteredSales = salesData.filter(sale => {
                 const saleDate = sale.sale_date;
                 if (!saleDate) return false;
                 
                 const [year, month] = saleDate.split('-');
                 
-                if (reportMonth && month !== reportMonth) return false;
-                if (reportYear && year !== reportYear) return false;
+                if (month && month !== month) return false;
+                if (year && year !== year) return false;
                 
                 return true;
             });
@@ -1025,25 +1025,29 @@ async function generateReport() {
                 
                 const [year, month] = purchaseDate.split('-');
                 
-                if (reportMonth && month !== reportMonth) return false;
-                if (reportYear && year !== reportYear) return false;
+                if (month && month !== month) return false;
+                if (year && year !== year) return false;
                 
                 return true;
             });
         }
         
         // Apply report type filter
-        if (reportType === 'sales') {
+        if (type === 'sales') {
             filteredPurchases = [];
-        } else if (reportType === 'purchases') {
+        } else if (type === 'purchases') {
             filteredSales = [];
         }
         
-        generateReportChart(filteredSales, filteredPurchases, reportType);
-        generateReportTable(filteredSales, filteredPurchases, reportType);
+        generateReportChart(filteredSales, filteredPurchases, type);
+        generateReportTable(filteredSales, filteredPurchases, type);
+        
+        updateDataCountInfo();
+        // also refresh overall chart contextually
+        ensureOverallChart();
         
     } catch (error) {
-        console.error('Generate report error:', error);
+        console.error('Report generation error:', error);
         showNotification('Error generating report', 'error');
     }
 }
@@ -2655,4 +2659,76 @@ async function loadSalesPieChart() {
         if (el) el.innerHTML = '<p style="text-align:center;color:#666;padding:2rem;">Unable to load sales pie chart</p>';
     }
 }
+
+// Build overall 10-year chart
+async function loadOverallTimelineChart() {
+    try {
+        if (typeof echarts === 'undefined') return;
+        const el = document.getElementById('overallTimelineChart');
+        if (!el) return;
+        
+        // Fetch all sales and purchases
+        const [salesRes, purchasesRes] = await Promise.all([
+            fetch('/api/sales'),
+            fetch('/api/purchases')
+        ]);
+        if (!salesRes.ok || !purchasesRes.ok) throw new Error('API error');
+        const [sales, purchases] = await Promise.all([salesRes.json(), purchasesRes.json()]);
+        
+        // Helper to year
+        const getYear = d => {
+            if (!d) return null;
+            if (/^\d{4}-\d{2}-\d{2}/.test(d)) return Number(d.substring(0,4));
+            const dt = new Date(d); return Number.isNaN(dt.getTime()) ? null : dt.getFullYear();
+        };
+        
+        // Determine the last 10 years range based on current year
+        const currentYear = new Date().getFullYear();
+        const years = Array.from({ length: 10 }, (_, i) => currentYear - 9 + i);
+        const salesByYear = Object.fromEntries(years.map(y => [y, 0]));
+        const purchasesByYear = Object.fromEntries(years.map(y => [y, 0]));
+        
+        sales.forEach(s => {
+            const y = getYear(s.sale_date || s.date);
+            if (y && salesByYear[y] != null) salesByYear[y] += parseFloat(s.total || 0) || 0;
+        });
+        purchases.forEach(p => {
+            const y = getYear(p.purchase_date || p.date);
+            if (y && purchasesByYear[y] != null) purchasesByYear[y] += parseFloat(p.total || 0) || 0;
+        });
+        
+        const xYears = years.map(String);
+        const salesSeries = years.map(y => salesByYear[y]);
+        const purchaseSeries = years.map(y => purchasesByYear[y]);
+        const profitSeries = years.map(y => Math.max(0, (salesByYear[y] || 0) - (purchasesByYear[y] || 0)));
+        
+        if (!window._overallChart) window._overallChart = echarts.init(el);
+        const chart = window._overallChart;
+        const isSmall = window.innerWidth < 768;
+        
+        const option = {
+            backgroundColor: 'transparent',
+            title: { text: 'Overalll Report (Last 10 Years)', left: 'center', top: 6, textStyle: { fontSize: isSmall ? 14 : 16, fontWeight: 'bold' } },
+            tooltip: { trigger: 'axis', axisPointer: { type: 'cross' }, valueFormatter: v => `₹${Number(v||0).toLocaleString('en-IN')}` },
+            legend: { top: 34, left: 'center', data: ['Sales (₹)', 'Purchases (₹)', 'Net Profit (₹)'], textStyle: { fontSize: isSmall ? 11 : 12 } },
+            grid: { left: isSmall ? 48 : 56, right: isSmall ? 28 : 40, top: isSmall ? 72 : 80, bottom: isSmall ? 54 : 60, containLabel: true },
+            xAxis: [{ type: 'category', data: xYears, axisLabel: { fontSize: isSmall ? 10 : 12 } }],
+            yAxis: [{ type: 'value', axisLabel: { formatter: v => `₹${Number(v).toLocaleString('en-IN')}` } }],
+            series: [
+                { name: 'Sales (₹)', type: 'bar', data: salesSeries, itemStyle: { color: '#22c55e' }, barWidth: isSmall ? 14 : 20 },
+                { name: 'Purchases (₹)', type: 'bar', data: purchaseSeries, itemStyle: { color: '#ef4444' }, barWidth: isSmall ? 14 : 20 },
+                { name: 'Net Profit (₹)', type: 'line', data: profitSeries, smooth: true, lineStyle: { width: isSmall ? 2 : 3, color: '#3b82f6' }, symbol: 'circle', symbolSize: isSmall ? 6 : 8 }
+            ]
+        };
+        chart.setOption(option, true);
+        window.addEventListener('resize', () => chart.resize());
+    } catch (error) {
+        console.error('Overall chart error:', error);
+        const el = document.getElementById('overallTimelineChart');
+        if (el) el.innerHTML = '<p style="text-align:center;color:#666;padding:2rem;">Unable to load 10-year overall report</p>';
+    }
+}
+
+// Hook overall chart when user views reports or generates reports
+async function ensureOverallChart() { try { await loadOverallTimelineChart(); } catch(_){} }
 
