@@ -204,6 +204,11 @@ async function handleLogin(e) {
         if (response.success) {
             console.log('✅ Login successful on admin.html (unlikely scenario)');
             
+            // Store session token
+            if (response.token) {
+                localStorage.setItem('sessionToken', response.token);
+            }
+            
             // Set authentication data
             localStorage.setItem('isAdminLoggedIn', 'true');
             localStorage.setItem('adminUsername', username);
@@ -323,14 +328,14 @@ async function loadQuickChart() {
             return;
         }
         
-        const salesResponse = await fetch('/api/sales');
+        const salesResponse = await fetch('/api/sales', { headers: authHeaders() });
         if (!salesResponse.ok) {
             throw new Error(`Sales API error: ${salesResponse.status}`);
         }
         const salesData = await salesResponse.json();
         console.log('📊 Sales data for chart:', salesData.length, 'entries');
         
-        const purchasesResponse = await fetch('/api/purchases');
+        const purchasesResponse = await fetch('/api/purchases', { headers: authHeaders() });
         if (!purchasesResponse.ok) {
             throw new Error(`Purchases API error: ${purchasesResponse.status}`);
         }
@@ -467,10 +472,10 @@ async function loadQuickChart() {
 // Load recent transactions
 async function loadRecentTransactions() {
     try {
-        const salesResponse = await fetch('/api/sales');
+        const salesResponse = await fetch('/api/sales', { headers: authHeaders() });
         const salesData = await salesResponse.json();
         
-        const purchasesResponse = await fetch('/api/purchases');
+        const purchasesResponse = await fetch('/api/purchases', { headers: authHeaders() });
         const purchaseData = await purchasesResponse.json();
         
         const allTransactions = [
@@ -564,10 +569,10 @@ async function updateDataCountInfo() {
         const dataCountElement = document.getElementById('dataCountInfo');
         if (!dataCountElement) return;
         
-        const salesResponse = await fetch('/api/sales');
+        const salesResponse = await fetch('/api/sales', { headers: authHeaders() });
         const salesData = await salesResponse.json();
         
-        const purchasesResponse = await fetch('/api/purchases');
+        const purchasesResponse = await fetch('/api/purchases', { headers: authHeaders() });
         const purchaseData = await purchasesResponse.json();
         
         const totalSales = salesData.reduce((sum, sale) => sum + parseFloat(sale.total_amount || sale.total || 0), 0);
@@ -608,7 +613,7 @@ async function handleAddSale(e) {
     try {
         const response = await fetch('/api/sales', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: authHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify(saleData)
         });
         
@@ -669,7 +674,7 @@ async function handleAddPurchase(e) {
     try {
         const response = await fetch('/api/purchases', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: authHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify(purchaseData)
         });
         
@@ -936,10 +941,10 @@ async function generateReport() {
         const reportYear = document.getElementById('reportYear').value;
         
         // Get all data from server
-        const salesResponse = await fetch('/api/sales');
+        const salesResponse = await fetch('/api/sales', { headers: authHeaders() });
         const salesData = await salesResponse.json();
         
-        const purchasesResponse = await fetch('/api/purchases');
+        const purchasesResponse = await fetch('/api/purchases', { headers: authHeaders() });
         const purchaseData = await purchasesResponse.json();
         
         // Apply filters client-side
@@ -1324,10 +1329,10 @@ async function generateReport() {
         const reportYear = document.getElementById('reportYear').value;
         
         // Get all data from server
-        const salesResponse = await fetch('/api/sales');
+        const salesResponse = await fetch('/api/sales', { headers: authHeaders() });
         const salesData = await salesResponse.json();
         
-        const purchasesResponse = await fetch('/api/purchases');
+        const purchasesResponse = await fetch('/api/purchases', { headers: authHeaders() });
         const purchaseData = await purchasesResponse.json();
         
         // Apply filters client-side
@@ -1404,10 +1409,10 @@ async function exportToExcel() {
         const reportYear = document.getElementById('reportYear').value;
         
         // Get filtered data using same logic as generateReport
-        const salesResponse = await fetch('/api/sales');
+        const salesResponse = await fetch('/api/sales', { headers: authHeaders() });
         const salesData = await salesResponse.json();
         
-        const purchasesResponse = await fetch('/api/purchases');
+        const purchasesResponse = await fetch('/api/purchases', { headers: authHeaders() });
         const purchaseData = await purchasesResponse.json();
         
         let filteredSales = salesData;
@@ -1638,10 +1643,10 @@ async function populateYearOptions() {
     
     try {
         // Get all sales and purchase data to find the year range
-        const salesResponse = await fetch('/api/sales');
+        const salesResponse = await fetch('/api/sales', { headers: authHeaders() });
         const salesData = await salesResponse.json();
         
-        const purchasesResponse = await fetch('/api/purchases');
+        const purchasesResponse = await fetch('/api/purchases', { headers: authHeaders() });
         const purchaseData = await purchasesResponse.json();
         
         // Extract all years from the data

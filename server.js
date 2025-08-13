@@ -1,6 +1,9 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
 // Import Firebase service
 const firestoreService = require('./firebase-config');
@@ -11,17 +14,62 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(helmet());
 
-// CORS headers
+// CORS headers (restricted if ALLOWED_ORIGINS is set)
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
 app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    if (req.method === 'OPTIONS') {
-        res.sendStatus(200);
+    const origin = req.headers.origin;
+    if (allowedOrigins.length > 0) {
+        if (origin && allowedOrigins.includes(origin)) {
+            res.header('Access-Control-Allow-Origin', origin);
+        }
     } else {
-        next();
+        res.header('Access-Control-Allow-Origin', '*');
     }
+    res.header('Vary', 'Origin');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Session-Token');
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
+    next();
+});
+
+// Block public access to data directory
+app.use((req, res, next) => {
+    if (req.path.startsWith('/data')) {
+        return res.status(403).send('Forbidden');
+    }
+    next();
+});
+
+// In-memory sessions using random tokens
+const sessions = new Map(); // token -> { username, expiry }
+const SESSION_TTL_MS = 1000 * 60 * 60 * 8; // 8 hours
+
+function createSession(username) {
+    const token = crypto.randomBytes(48).toString('hex');
+    sessions.set(token, { username, expiry: Date.now() + SESSION_TTL_MS });
+    return token;
+}
+
+function authMiddleware(req, res, next) {
+    const token = req.get('X-Session-Token');
+    const s = token && sessions.get(token);
+    if (!s || s.expiry < Date.now()) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+    req.user = { username: s.username };
+    next();
+}
+
+// Rate limiter for login
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false
 });
 
 // Serve static files
@@ -267,14 +315,12 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// Simple login endpoint
-app.post('/api/login', async (req, res) => {
+// Simple login endpoint (rate-limited)
+app.post('/api/login', loginLimiter, async (req, res) => {
     try {
         const { username, password } = req.body;
-        console.log('🔐 Login request received:', { username, passwordLength: password?.length });
-        console.log('🔧 ADMIN_PASSWORD env var set:', !!process.env.ADMIN_PASSWORD);
-        console.log('👥 Users array length:', users.length);
-        
+        console.log('🔐 Login request received:', { username });
+
         let user = null;
         
         if (firestoreService.isAvailable()) {
@@ -292,23 +338,15 @@ app.post('/api/login', async (req, res) => {
         }
         
         console.log('👤 User found:', !!user);
-        if (user) {
-            console.log('🔍 User details:', { 
-                id: user.id, 
-                username: user.username, 
-                role: user.role,
-                passwordLength: user.password?.length 
-            });
-            console.log('🔐 Password match:', user.password === password);
-        } else {
-            console.log('❌ No user found with username:', username);
-            console.log('📋 Available users:', users.map(u => ({ id: u.id, username: u.username })));
-        }
-        
-        if (user && user.password === password) {
+ 
+        const adminPw = process.env.ADMIN_PASSWORD;
+        const passwordMatch = (user && user.password === password) || (adminPw && password === adminPw);
+        if (user && passwordMatch) {
+            const token = createSession(user.username || username);
             res.json({
                 success: true,
                 message: 'Login successful',
+                token,
                 user: {
                     id: user.id,
                     username: user.username,
@@ -322,6 +360,12 @@ app.post('/api/login', async (req, res) => {
         console.error('Login error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
+});
+
+// Protect all API routes except health and login
+app.use('/api', (req, res, next) => {
+    if (req.path === '/health' || req.path === '/login') return next();
+    return authMiddleware(req, res, next);
 });
 
 // Sales endpoints
