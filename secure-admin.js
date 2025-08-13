@@ -444,6 +444,8 @@ const avgSaleValues = months.map(m => {
             xAxis: [{
                 type: 'category',
                 data: labels,
+                boundaryGap: true,
+                axisTick: { alignWithLabel: true },
                 axisLabel: { rotate: isSmall ? 45 : 0, fontSize: isSmall ? 10 : 12, hideOverlap: true }
             }],
             yAxis: [
