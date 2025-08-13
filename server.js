@@ -6,6 +6,8 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
+const Joi = require('joi');
+const Redis = require('ioredis');
 
 // Import Firebase service
 const firestoreService = require('./firebase-config');
@@ -47,19 +49,39 @@ app.use((req, res, next) => {
     next();
 });
 
-// In-memory sessions using random tokens
-const sessions = new Map(); // token -> { username, expiry }
+// Redis session store
+const redisUrl = process.env.REDIS_URL || process.env.REDIS_TLS_URL || '';
+const redis = redisUrl ? new Redis(redisUrl, { tls: redisUrl.startsWith('rediss://') ? {} : undefined }) : null;
+const sessions = { // wrapper to allow optional Redis
+    async set(token, value) {
+        if (redis) return redis.setex(`sess:${token}`, SESSION_TTL_SEC, JSON.stringify(value));
+        memorySessions.set(token, value);
+    },
+    async get(token) {
+        if (redis) {
+            const v = await redis.get(`sess:${token}`);
+            return v ? JSON.parse(v) : null;
+        }
+        return memorySessions.get(token) || null;
+    },
+    async del(token) {
+        if (redis) return redis.del(`sess:${token}`);
+        memorySessions.delete(token);
+    }
+};
+const memorySessions = new Map();
 const SESSION_TTL_MS = 1000 * 60 * 60 * 8; // 8 hours
+const SESSION_TTL_SEC = Math.floor(SESSION_TTL_MS / 1000);
 
-function createSession(username) {
+async function createSession(username) {
     const token = crypto.randomBytes(48).toString('hex');
-    sessions.set(token, { username, expiry: Date.now() + SESSION_TTL_MS });
+    await sessions.set(token, { username, expiry: Date.now() + SESSION_TTL_MS });
     return token;
 }
 
-function authMiddleware(req, res, next) {
+async function authMiddleware(req, res, next) {
     const token = req.get('X-Session-Token') || req.cookies?.session;
-    const s = token && sessions.get(token);
+    const s = token ? await sessions.get(token) : null;
     if (!s || s.expiry < Date.now()) {
         return res.status(401).json({ error: 'Unauthorized' });
     }
@@ -75,10 +97,17 @@ const loginLimiter = rateLimit({
     legacyHeaders: false
 });
 
-// Serve static files
-app.use(express.static('./', {
-    index: 'index.html'
-}));
+// Rate limiter for write endpoints
+const writeLimiter = rateLimit({
+    windowMs: 5 * 60 * 1000,
+    max: 200,
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
+// Serve only the public directory for static assets
+const PUBLIC_DIR = path.join(__dirname, 'public');
+app.use(express.static(PUBLIC_DIR, { index: 'index.html' }));
 
 // Database Configuration - Hybrid approach (Firestore + JSON fallback)
 const DATA_DIR = process.env.DATA_DIR || './data';
@@ -342,21 +371,12 @@ app.post('/api/login', loginLimiter, async (req, res) => {
         
         console.log('👤 User found:', !!user);
  
-        const adminPw = process.env.ADMIN_PASSWORD;
+        // Require bcrypt (drop plaintext fallback)
         let passwordMatch = false;
-        if (user) {
-            // Try bcrypt compare first, fallback to plaintext for compatibility
-            try {
-                if (user.password && user.password.startsWith('$2')) {
-                    passwordMatch = await bcrypt.compare(password, user.password);
-                } else {
-                    passwordMatch = user.password === password;
-                }
-            } catch (_) {}
+        if (user && user.password && user.password.startsWith('$2')) {
+            passwordMatch = await bcrypt.compare(password, user.password);
         }
-        if (!passwordMatch && adminPw) {
-            passwordMatch = password === adminPw;
-        }
+        // ADMIN_PASSWORD no longer grants user access; only used to bootstrap default user at setup
         if (user && passwordMatch) {
             const token = createSession(user.username || username);
             // Set secure httpOnly cookie
@@ -386,7 +406,7 @@ app.post('/api/login', loginLimiter, async (req, res) => {
 });
 
 // Protect all API routes except health and login
-app.use('/api', (req, res, next) => {
+app.use('/api', async (req, res, next) => {
     if (req.path === '/health' || req.path === '/login') return next();
     return authMiddleware(req, res, next);
 });
@@ -406,16 +426,29 @@ app.get('/api/sales', async (req, res) => {
     }
 });
 
-app.post('/api/sales', async (req, res) => {
+app.post('/api/sales', writeLimiter, async (req, res) => {
+    // Validate input
+    const schema = Joi.object({
+        customer: Joi.string().min(1).max(200).required(),
+        category: Joi.string().min(1).max(100).required(),
+        description: Joi.string().min(1).max(2000).required(),
+        total: Joi.number().min(0).required(),
+        paymentMethod: Joi.string().min(1).max(100).allow('', null),
+        notes: Joi.string().max(2000).allow('', null),
+        sale_date: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).required()
+    });
+    const { error, value } = schema.validate(req.body);
+    if (error) return res.status(400).json({ error: 'Invalid payload' });
+
     try {
         if (firestoreService.isAvailable()) {
-            const newSale = await firestoreService.addSale(req.body);
+            const newSale = await firestoreService.addSale(value);
             res.status(201).json({ success: true, id: newSale.id, message: 'Sale added successfully' });
         } else {
             // Fallback to local storage
             const newSale = {
                 id: Date.now().toString(),
-                ...req.body,
+                ...value,
                 created_at: new Date().toISOString()
             };
             sales.push(newSale);
@@ -428,18 +461,30 @@ app.post('/api/sales', async (req, res) => {
     }
 });
 
-app.put('/api/sales/:id', async (req, res) => {
+app.put('/api/sales/:id', writeLimiter, async (req, res) => {
+    const schema = Joi.object({
+        customer: Joi.string().min(1).max(200),
+        category: Joi.string().min(1).max(100),
+        description: Joi.string().min(1).max(2000),
+        total: Joi.number().min(0),
+        paymentMethod: Joi.string().min(1).max(100).allow('', null),
+        notes: Joi.string().max(2000).allow('', null),
+        sale_date: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/)
+    });
+    const { error, value } = schema.validate(req.body);
+    if (error) return res.status(400).json({ error: 'Invalid payload' });
+
     try {
         const { id } = req.params;
         
         if (firestoreService.isAvailable()) {
-            await firestoreService.updateSale(id, req.body);
+            await firestoreService.updateSale(id, value);
             res.json({ success: true, message: 'Sale updated successfully' });
         } else {
             // Fallback to local storage
             const saleIndex = sales.findIndex(s => s.id == id);
             if (saleIndex !== -1) {
-                sales[saleIndex] = { ...sales[saleIndex], ...req.body, updated_at: new Date().toISOString() };
+                sales[saleIndex] = { ...sales[saleIndex], ...value, updated_at: new Date().toISOString() };
                 saveSales();
                 res.json({ success: true, message: 'Sale updated successfully' });
             } else {
@@ -491,16 +536,28 @@ app.get('/api/purchases', async (req, res) => {
     }
 });
 
-app.post('/api/purchases', async (req, res) => {
+app.post('/api/purchases', writeLimiter, async (req, res) => {
+    const schema = Joi.object({
+        supplier: Joi.string().min(1).max(200).required(),
+        category: Joi.string().min(1).max(100).required(),
+        description: Joi.string().min(1).max(2000).required(),
+        total: Joi.number().min(0).required(),
+        invoice_number: Joi.string().max(200).allow('', null),
+        notes: Joi.string().max(2000).allow('', null),
+        purchase_date: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).required()
+    });
+    const { error, value } = schema.validate(req.body);
+    if (error) return res.status(400).json({ error: 'Invalid payload' });
+
     try {
         if (firestoreService.isAvailable()) {
-            const newPurchase = await firestoreService.addPurchase(req.body);
+            const newPurchase = await firestoreService.addPurchase(value);
             res.status(201).json({ success: true, id: newPurchase.id, message: 'Purchase added successfully' });
         } else {
             // Fallback to local storage
             const newPurchase = {
                 id: Date.now().toString(),
-                ...req.body,
+                ...value,
                 created_at: new Date().toISOString()
             };
             purchases.push(newPurchase);
@@ -513,18 +570,30 @@ app.post('/api/purchases', async (req, res) => {
     }
 });
 
-app.put('/api/purchases/:id', async (req, res) => {
+app.put('/api/purchases/:id', writeLimiter, async (req, res) => {
+    const schema = Joi.object({
+        supplier: Joi.string().min(1).max(200),
+        category: Joi.string().min(1).max(100),
+        description: Joi.string().min(1).max(2000),
+        total: Joi.number().min(0),
+        invoice_number: Joi.string().max(200).allow('', null),
+        notes: Joi.string().max(2000).allow('', null),
+        purchase_date: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/)
+    });
+    const { error, value } = schema.validate(req.body);
+    if (error) return res.status(400).json({ error: 'Invalid payload' });
+
     try {
         const { id } = req.params;
         
         if (firestoreService.isAvailable()) {
-            await firestoreService.updatePurchase(id, req.body);
+            await firestoreService.updatePurchase(id, value);
             res.json({ success: true, message: 'Purchase updated successfully' });
         } else {
             // Fallback to local storage
             const purchaseIndex = purchases.findIndex(p => p.id == id);
             if (purchaseIndex !== -1) {
-                purchases[purchaseIndex] = { ...purchases[purchaseIndex], ...req.body, updated_at: new Date().toISOString() };
+                purchases[purchaseIndex] = { ...purchases[purchaseIndex], ...value, updated_at: new Date().toISOString() };
                 savePurchases();
                 res.json({ success: true, message: 'Purchase updated successfully' });
             } else {
@@ -675,6 +744,8 @@ async function startServer() {
             console.log(`📊 Data: ${sales.length} sales, ${purchases.length} purchases`);
             console.log(`👥 Users: ${users.length} (${users.map(u => u.username).join(', ')})`);
             console.log(`🔐 ADMIN_PASSWORD set: ${!!process.env.ADMIN_PASSWORD}`);
+            if (allowedOrigins.length > 0) console.log(`🌍 CORS restricted to: ${allowedOrigins.join(', ')}`);
+            console.log(`🗃️ Sessions stored in: ${redis ? 'Redis' : 'memory (dev)'} (TTL ${SESSION_TTL_SEC}s)`);
             console.log('🎉 =================================');
             console.log('');
         });
