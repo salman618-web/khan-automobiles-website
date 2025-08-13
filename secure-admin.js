@@ -983,6 +983,7 @@ function setupNavigation() {
             updateDataCountInfo();
             populateYearOptions(); // Refresh year options when entering reports
             generateReport();
+            try { ensureOverallChart(); } catch (_) {}
         }
     };
 }
@@ -1011,10 +1012,9 @@ async function generateReport() {
                 const saleDate = sale.sale_date;
                 if (!saleDate) return false;
                 
-                const [year, month] = saleDate.split('-');
-                
-                if (month && month !== month) return false;
-                if (year && year !== year) return false;
+                const [yy, mm] = saleDate.split('-');
+                if (month && mm !== month) return false;
+                if (year && yy !== year) return false;
                 
                 return true;
             });
@@ -1023,10 +1023,9 @@ async function generateReport() {
                 const purchaseDate = purchase.purchase_date;
                 if (!purchaseDate) return false;
                 
-                const [year, month] = purchaseDate.split('-');
-                
-                if (month && month !== month) return false;
-                if (year && year !== year) return false;
+                const [yy, mm] = purchaseDate.split('-');
+                if (month && mm !== month) return false;
+                if (year && yy !== year) return false;
                 
                 return true;
             });
