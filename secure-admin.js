@@ -2698,14 +2698,14 @@ async function loadOverallTimelineChart() {
         
         // Build monthly data per year for timeline
         const monthNamesShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        const initYearArrays = () => ({ sales: new Array(12).fill(0), purchases: new Array(12).fill(0) });
+        const initYearArrays = () => ({ sales: new Array(12).fill(0), purchases: new Array(12).fill(0), saleCount: new Array(12).fill(0) });
         const byYear = Object.fromEntries(years.map(y => [y, initYearArrays()]));
         const getYM = d => {
             if (!d) return null;
             if (/^\d{4}-\d{2}-\d{2}/.test(d)) return { y: Number(d.substring(0,4)), m: Number(d.substring(5,7)) - 1 };
             const dt = new Date(d); if (Number.isNaN(dt.getTime())) return null; return { y: dt.getFullYear(), m: dt.getMonth() };
         };
-        sales.forEach(s => { const ym = getYM(s.sale_date || s.date); if (!ym) return; if (byYear[ym.y]) byYear[ym.y].sales[ym.m] += parseFloat(s.total||0)||0; });
+        sales.forEach(s => { const ym = getYM(s.sale_date || s.date); if (!ym) return; if (byYear[ym.y]) { byYear[ym.y].sales[ym.m] += parseFloat(s.total||0)||0; byYear[ym.y].saleCount[ym.m] += 1; } });
         purchases.forEach(p => { const ym = getYM(p.purchase_date || p.date); if (!ym) return; if (byYear[ym.y]) byYear[ym.y].purchases[ym.m] += parseFloat(p.total||0)||0; });
         
         if (!window._overallChart) window._overallChart = echarts.init(el);
@@ -2724,14 +2724,15 @@ async function loadOverallTimelineChart() {
                 label: { formatter: s => s }
             },
             tooltip: { trigger: 'axis', axisPointer: { type: 'cross' }, valueFormatter: v => `₹${Number(v||0).toLocaleString('en-IN')}` },
-            legend: { top: 34, left: 'center', data: ['Sales (₹)', 'Purchases (₹)', 'Net Profit (₹)'], textStyle: { fontSize: isSmall ? 11 : 12 } },
+            legend: { top: 34, left: 'center', data: ['Sales (₹)', 'Purchases (₹)', 'Net Profit (₹)', 'Avg Sale (₹)'], textStyle: { fontSize: isSmall ? 11 : 12 } },
             grid: { left: isSmall ? 48 : 56, right: isSmall ? 28 : 40, top: isSmall ? 72 : 80, bottom: isSmall ? 90 : 100, containLabel: true },
             xAxis: [{ type: 'category', data: monthNamesShort, axisLabel: { fontSize: isSmall ? 10 : 12 } }],
             yAxis: [{ type: 'value', axisLabel: { formatter: v => `₹${Number(v).toLocaleString('en-IN')}` } }],
             series: [
                 { name: 'Sales (₹)', type: 'bar', itemStyle: { color: '#22c55e' }, barWidth: isSmall ? 14 : 20 },
                 { name: 'Purchases (₹)', type: 'bar', itemStyle: { color: '#ef4444' }, barWidth: isSmall ? 14 : 20 },
-                { name: 'Net Profit (₹)', type: 'line', smooth: true, lineStyle: { width: isSmall ? 2 : 3, color: '#3b82f6' }, symbol: 'circle', symbolSize: isSmall ? 6 : 8 }
+                { name: 'Net Profit (₹)', type: 'line', smooth: true, lineStyle: { width: isSmall ? 2 : 3, color: '#f59e0b' }, itemStyle: { color: '#f59e0b' }, symbol: 'circle', symbolSize: isSmall ? 6 : 8 },
+                { name: 'Avg Sale (₹)', type: 'line', smooth: true, lineStyle: { width: isSmall ? 2 : 3, color: '#3b82f6' }, itemStyle: { color: '#3b82f6' }, symbol: 'circle', symbolSize: isSmall ? 6 : 8 }
             ]
         };
         
@@ -2740,7 +2741,8 @@ async function loadOverallTimelineChart() {
             series: [
                 { data: byYear[y].sales },
                 { data: byYear[y].purchases },
-                { data: byYear[y].sales.map((v, i) => Math.max(0, v - (byYear[y].purchases[i]||0))) }
+                { data: byYear[y].sales.map((v, i) => Math.max(0, v - (byYear[y].purchases[i]||0))) },
+                { data: byYear[y].sales.map((v, i) => { const c = byYear[y].saleCount[i] || 0; return c > 0 ? v / c : null; }) }
             ]
         }));
         
