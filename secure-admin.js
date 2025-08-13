@@ -318,8 +318,8 @@ async function loadDashboard() {
 async function loadQuickChart() {
     try {
         console.log('📈 Loading quick chart...');
-        if (typeof Plotly === 'undefined') {
-            console.error('❌ Plotly library not loaded');
+        if (typeof echarts === 'undefined') {
+            console.error('❌ ECharts library not loaded');
             return;
         }
         
@@ -337,35 +337,34 @@ async function loadQuickChart() {
         const purchaseData = await purchasesResponse.json();
         console.log('📊 Purchase data for chart:', purchaseData.length, 'entries');
         
-        const monthlyData = {};
-        
+        // Aggregate by YYYY-MM
+        const monthly = {};
         salesData.forEach(sale => {
             const month = sale.sale_date ? sale.sale_date.substring(0, 7) : '';
-            if (month && !monthlyData[month]) {
-                monthlyData[month] = { sales: 0, purchases: 0 };
-            }
-            if (month) monthlyData[month].sales += parseFloat(sale.total || 0);
+            if (!month) return;
+            if (!monthly[month]) monthly[month] = { sales: 0, purchases: 0, saleCount: 0 };
+            monthly[month].sales += parseFloat(sale.total || 0);
+            monthly[month].saleCount += 1;
+        });
+        purchaseData.forEach(p => {
+            const month = p.purchase_date ? p.purchase_date.substring(0, 7) : '';
+            if (!month) return;
+            if (!monthly[month]) monthly[month] = { sales: 0, purchases: 0, saleCount: 0 };
+            monthly[month].purchases += parseFloat(p.total || 0);
         });
         
-        purchaseData.forEach(purchase => {
-            const month = purchase.purchase_date ? purchase.purchase_date.substring(0, 7) : '';
-            if (month && !monthlyData[month]) {
-                monthlyData[month] = { sales: 0, purchases: 0 };
-            }
-            if (month) monthlyData[month].purchases += parseFloat(purchase.total || 0);
-        });
-        
-        const sortedMonths = Object.keys(monthlyData).sort().slice(-6);
-        console.log('📅 Chart months:', sortedMonths);
-        
-        const labels = sortedMonths.map(month => {
-            const [year, monthNum] = month.split('-');
+        const months = Object.keys(monthly).sort().slice(-6);
+        const labels = months.map(m => {
+            const [year, monthNum] = m.split('-');
             const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             return `${monthNames[parseInt(monthNum) - 1]} ${year}`;
         });
-        
-        const salesValues = sortedMonths.map(month => monthlyData[month].sales);
-        const purchaseValues = sortedMonths.map(month => monthlyData[month].purchases);
+        const salesValues = months.map(m => monthly[m].sales);
+        const purchaseValues = months.map(m => monthly[m].purchases);
+        const avgSaleValues = months.map(m => {
+            const count = monthly[m].saleCount || 0;
+            return count > 0 ? monthly[m].sales / count : 0;
+        });
         
         const el = document.getElementById('quickChart');
         if (!el) {
@@ -373,48 +372,72 @@ async function loadQuickChart() {
             return;
         }
         
-        // Prepare traces
-        const salesTrace = {
-            x: labels,
-            y: salesValues,
-            type: 'scatter',
-            mode: 'lines+markers',
-            name: 'Sales (₹)'
-            , line: { color: '#22c55e', width: 3 }
-            , marker: { color: '#22c55e', size: 6 }
-            , fill: 'tozeroy'
-            , fillcolor: 'rgba(34, 197, 94, 0.1)'
+        // Init or reuse chart instance
+        if (!window._quickEChart) {
+            window._quickEChart = echarts.init(el, null, { renderer: 'canvas' });
+        }
+        const chart = window._quickEChart;
+        
+        const option = {
+            backgroundColor: 'transparent',
+            title: {
+                text: 'Monthly Sales vs Purchases',
+                left: 'center',
+                textStyle: { fontSize: 16 }
+            },
+            grid: { left: 50, right: 20, top: 50, bottom: 50 },
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: { type: 'cross' },
+                valueFormatter: (val) => `₹${Number(val || 0).toLocaleString('en-IN')}`
+            },
+            legend: {
+                top: 5,
+                data: ['Sales (₹)', 'Purchases (₹)', 'Avg Sale (₹)']
+            },
+            xAxis: [{
+                type: 'category',
+                data: labels,
+                axisLabel: { rotate: window.innerWidth < 768 ? 45 : 0 }
+            }],
+            yAxis: [{
+                type: 'value',
+                name: 'Amount (₹)',
+                axisLabel: {
+                    formatter: (val) => `₹${Number(val).toLocaleString('en-IN')}`
+                }
+            }],
+            series: [
+                {
+                    name: 'Sales (₹)',
+                    type: 'bar',
+                    data: salesValues,
+                    itemStyle: { color: '#22c55e' },
+                    barMaxWidth: 28
+                },
+                {
+                    name: 'Purchases (₹)',
+                    type: 'bar',
+                    data: purchaseValues,
+                    itemStyle: { color: '#ef4444' },
+                    barMaxWidth: 28
+                },
+                {
+                    name: 'Avg Sale (₹)',
+                    type: 'line',
+                    data: avgSaleValues,
+                    yAxisIndex: 0,
+                    smooth: true,
+                    lineStyle: { width: 3, color: '#3b82f6' },
+                    itemStyle: { color: '#3b82f6' },
+                    areaStyle: { color: 'rgba(59, 130, 246, 0.08)' }
+                }
+            ]
         };
-        const purchaseTrace = {
-            x: labels,
-            y: purchaseValues,
-            type: 'scatter',
-            mode: 'lines+markers',
-            name: 'Purchases (₹)'
-            , line: { color: '#ef4444', width: 3 }
-            , marker: { color: '#ef4444', size: 6 }
-            , fill: 'tozeroy'
-            , fillcolor: 'rgba(239, 68, 68, 0.1)'
-        };
         
-        const layout = {
-            title: { text: 'Monthly Sales vs Purchases', font: { size: window.innerWidth < 768 ? 12 : 16 } },
-            legend: { orientation: 'h', x: 0, y: 1.15, font: { size: window.innerWidth < 768 ? 10 : 12 } },
-            margin: { l: 50, r: 20, t: 40, b: 50 },
-            xaxis: { tickangle: window.innerWidth < 768 ? -45 : 0 },
-            yaxis: { rangemode: 'tozero', tickprefix: '₹', separatethousands: true },
-            plot_bgcolor: 'rgba(0,0,0,0)',
-            paper_bgcolor: 'rgba(0,0,0,0)'
-        };
-        
-        const config = { responsive: true, displayModeBar: false };
-        
-        // Render
-        await Plotly.newPlot(el, [salesTrace, purchaseTrace], layout, config);
-        console.log('✅ Plotly quick chart created successfully');
-        
-        // Handle responsiveness on resize
-        window.addEventListener('resize', () => Plotly.Plots.resize(el));
+        chart.setOption(option, true);
+        window.addEventListener('resize', () => chart.resize());
+        console.log('✅ ECharts quick chart rendered');
         
     } catch (error) {
         console.error('Error loading quick chart:', error);
