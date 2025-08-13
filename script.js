@@ -1,3 +1,30 @@
+// CSRF fetch wrapper for landing page (index.html)
+(function wrapFetchForCsrf(){
+	try {
+		if (typeof window === 'undefined' || typeof window.fetch !== 'function') return;
+		function getCookie(name) {
+			try {
+				const m = document.cookie.match(new RegExp('(^|; )' + name + '=([^;]+)'));
+				return m ? decodeURIComponent(m[2]) : '';
+			} catch (_) { return ''; }
+		}
+		const _origFetch = window.fetch.bind(window);
+		window.fetch = function(input, init){
+			const options = init ? { ...init } : {};
+			const method = (options.method || 'GET').toUpperCase();
+			const needsToken = method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE';
+			let headers = new Headers(options.headers || {});
+			if (needsToken) {
+				const token = getCookie('csrfToken');
+				if (token) headers.set('x-csrf-token', token);
+			}
+			options.headers = headers;
+			if (!options.credentials) options.credentials = 'include';
+			return _origFetch(input, options);
+		};
+	} catch (_) {}
+})();
+
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚗 Khan Automobiles - Landing Page Loaded');
