@@ -606,6 +606,8 @@ async function loadRecentTransactions() {
             `;
         }).join('');
         
+            // Show last 20 transactions only
+            const limitedList = recentTransactions.slice(0, 20).map(() => '').join('');
             container.innerHTML = `
                 <h3>Recent Transactions</h3>
                 ${transactionsList}
@@ -1184,6 +1186,13 @@ function generateReportTable(salesData, purchaseData, reportType) {
         ...salesData.map(s => ({...s, type: 'Sale'})),
         ...purchaseData.map(p => ({...p, type: 'Purchase'}))
     ];
+    const limitedData = allData
+        .sort((a, b) => {
+            const da = new Date(a.sale_date || a.purchase_date || a.date || 0);
+            const db = new Date(b.sale_date || b.purchase_date || b.date || 0);
+            return db - da; // newest first
+        })
+        .slice(0, 20);
     
     if (allData.length === 0) {
         tableContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 2rem;">No data found for selected filters</p>';
@@ -1202,7 +1211,7 @@ function generateReportTable(salesData, purchaseData, reportType) {
                     </tr>
                 </thead>
                 <tbody>
-                ${allData.map(item => `
+                ${limitedData.map(item => `
                     <tr>
                         <td style="padding: 0.75rem; border: 1px solid #d1d5db;">${item.sale_date || item.purchase_date}</td>
                         <td style="padding: 0.75rem; border: 1px solid #d1d5db;">${item.type}</td>
@@ -2754,8 +2763,8 @@ async function loadOverallTimelineChart() {
                     return s;
                 }
             },
-            legend: { top: isSmall ? 6 : 34, left: 'center', itemGap: isSmall ? 10 : 20, data: ['Sales (₹)', 'Purchases (₹)', 'Net Profit (₹)', 'Avg Sale (₹)'], textStyle: { fontSize: isSmall ? 11 : 12 }, padding: isSmall ? [2, 6, 2, 6] : 5, backgroundColor: isSmall ? 'rgba(255,255,255,0.7)' : 'transparent' },
-            grid: { left: isSmall ? 36 : 56, right: isSmall ? 20 : 40, top: isSmall ? 62 : 80, bottom: isSmall ? 86 : 100, containLabel: true },
+            legend: { top: isSmall ? 34 : 46, left: 'center', itemGap: isSmall ? 10 : 20, data: ['Sales (₹)', 'Purchases (₹)', 'Net Profit (₹)', 'Avg Sale (₹)'], textStyle: { fontSize: isSmall ? 11 : 12 }, padding: isSmall ? [2, 6, 2, 6] : 5, backgroundColor: isSmall ? 'rgba(255,255,255,0.7)' : 'transparent' },
+            grid: { left: isSmall ? 36 : 56, right: isSmall ? 20 : 40, top: isSmall ? 88 : 96, bottom: isSmall ? 86 : 100, containLabel: true },
             xAxis: [{ type: 'category', data: monthNamesShort, axisLabel: { fontSize: isSmall ? 10 : 12, hideOverlap: true } }],
             yAxis: [{ type: 'value', axisLabel: { formatter: v => `₹${Number(v).toLocaleString('en-IN')}` } }],
             series: [
@@ -2767,7 +2776,7 @@ async function loadOverallTimelineChart() {
         };
         
         const options = years.map(y => ({
-            title: { text: `Overalll Report — ${y}`, left: 'center', top: 6, textStyle: { fontSize: isSmall ? 14 : 16, fontWeight: 'bold' } },
+            title: { text: `Overalll Report — ${y}`, left: 'center', top: 8, textStyle: { fontSize: isSmall ? 15 : 18, fontWeight: 'bold' } },
             series: [
                 { data: byYear[y].sales.map((v, i) => ({ value: v, saleCount: byYear[y].saleCount[i] || 0 })) },
                 { data: byYear[y].purchases },
