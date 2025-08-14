@@ -982,7 +982,7 @@ function setPurchaseDefaults() {
 
 // Navigation functions
 function setupNavigation() {
-    window.showSection = function(sectionName) {
+    window.showSection = async function(sectionName) {
         const sections = document.querySelectorAll('.admin-section');
         sections.forEach(section => {
             section.classList.remove('active');
@@ -1016,6 +1016,8 @@ function setupNavigation() {
             populateYearOptions(); // Refresh year options when entering reports
             generateReport();
             try { ensureOverallChart(); } catch (_) {}
+        } else if (sectionName === 'insights') {
+            try { await loadInsights(); } catch (e) { console.error(e); }
         }
     };
 }
@@ -2873,4 +2875,128 @@ async function loadOverallTimelineChart() {
 
 // Hook overall chart when user views reports or generates reports
 async function ensureOverallChart() { try { await loadOverallTimelineChart(); } catch(_){} }
+
+async function loadInsights() {
+    try {
+        if (typeof echarts === 'undefined') return;
+        const container = document.getElementById('insightsChart');
+        if (!container) return;
+
+        const [salesRes, purchasesRes] = await Promise.all([
+            fetch('/api/sales'), fetch('/api/purchases')
+        ]);
+        const [sales, purchases] = await Promise.all([salesRes.json(), purchasesRes.json()]);
+
+        const toYMD = d => {
+            if (!d) return null; const t = new Date(d); if (isNaN(t)) return null; return t.toISOString().slice(0,10);
+        };
+        // Aggregate sales by month (current year and last year)
+        const now = new Date();
+        const yThis = now.getFullYear();
+        const yPrev = yThis - 1;
+        const makeBuckets = () => ({ months: Array.from({length:12}, (_,i)=>i), values: Array(12).fill(0), days: Array.from({length:12}, ()=>({})) });
+        const bucketByYear = { [yThis]: makeBuckets(), [yPrev]: makeBuckets() };
+
+        sales.forEach(s => {
+            const d = new Date(s.sale_date || s.date); if (isNaN(d)) return;
+            const y = d.getFullYear(); const m = d.getMonth();
+            if (!bucketByYear[y]) return;
+            const val = parseFloat(s.total||0)||0;
+            bucketByYear[y].values[m] += val;
+            const key = d.toISOString().slice(0,10);
+            bucketByYear[y].days[m][key] = (bucketByYear[y].days[m][key]||0) + val;
+        });
+
+        // Simple moving average (window=3)
+        const sma = (arr, w=3) => arr.map((_,i)=>{
+            const start = Math.max(0, i-w+1); const slice = arr.slice(start, i+1);
+            const sum = slice.reduce((a,b)=>a+b,0); return slice.length ? sum/slice.length : 0;
+        });
+
+        // Build chart
+        const chart = echarts.init(container);
+        const isSmall = window.innerWidth < 768;
+        const monthsShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+        const yoyCheckbox = document.getElementById('toggleYoy');
+        const smaCheckbox = document.getElementById('toggleSma');
+
+        function getSeries() {
+            const ser = [
+                { name: 'Sales (₹)', type: 'bar', itemStyle: {color:'#22c55e'}, data: bucketByYear[yThis].values }
+            ];
+            if (yoyCheckbox && yoyCheckbox.checked) {
+                ser.push({ name: `Sales ${yPrev} (₹)`, type: 'bar', itemStyle: {color:'#94a3b8'}, data: bucketByYear[yPrev].values, barGap:'30%' });
+            }
+            if (smaCheckbox && smaCheckbox.checked) {
+                ser.push({ name: 'Forecast (SMA)', type: 'line', smooth: true, itemStyle:{color:'#3b82f6'}, lineStyle:{width:2}, data: sma(bucketByYear[yThis].values) });
+            }
+            return ser;
+        }
+
+        const option = {
+            backgroundColor: 'transparent',
+            tooltip: { trigger: 'axis', confine: true },
+            grid: { left: isSmall?36:56, right: isSmall?20:40, top: isSmall?20:30, bottom: isSmall?60:60, containLabel: true },
+            legend: { top: isSmall?0:6 },
+            xAxis: [{ type:'category', data: monthsShort }],
+            yAxis: [{ type:'value', axisLabel:{ formatter:v=>`₹${Number(v).toLocaleString('en-IN')}` } }],
+            brush: { toolbox: ['rect','polygon','clear'], xAxisIndex: 'all' },
+            toolbox: { feature: { restore: {} } },
+            series: getSeries()
+        };
+        chart.setOption(option);
+
+        function refresh() { chart.setOption({ series: getSeries() }, true); }
+        yoyCheckbox && yoyCheckbox.addEventListener('change', refresh);
+        smaCheckbox && smaCheckbox.addEventListener('change', refresh);
+
+        // Drilldown on month click -> replace with daily bars for that month (current year)
+        chart.on('click', params => {
+            if (params.componentType !== 'series' || params.seriesType === 'line') return;
+            const m = params.dataIndex; const daysMap = bucketByYear[yThis].days[m]||{};
+            const days = Object.keys(daysMap).sort();
+            if (days.length === 0) return;
+            const data = days.map(k => daysMap[k]);
+            chart.setOption({
+                xAxis: [{ type:'category', data: days }],
+                series: [ { name:'Sales (₹)', type:'bar', itemStyle:{color:'#22c55e'}, data }, ],
+                legend: { data: ['Sales (₹)'] }
+            });
+        });
+
+        // Lasso/brush: filter table below by selected months
+        chart.on('brushSelected', function (params) {
+            const areas = params.batch && params.batch[0] && params.batch[0].selected && params.batch[0].selected[0];
+            const idxs = areas ? areas.dataIndex : [];
+            const monthsSelected = new Set((idxs||[]).map(i => i));
+            const selectedDates = [];
+            monthsSelected.forEach(m => {
+                const map = bucketByYear[yThis].days[m]||{};
+                Object.keys(map).forEach(d => selectedDates.push(d));
+            });
+            updateInsightsTable(selectedDates, sales, purchases);
+        });
+
+        window.addEventListener('resize', () => chart.resize());
+    } catch (e) {
+        console.error('Insights load error', e);
+    }
+}
+
+function updateInsightsTable(isoDates, sales, purchases) {
+    try {
+        const el = document.getElementById('insightsSelectionTable');
+        if (!el) return;
+        if (!isoDates || isoDates.length === 0) { el.innerHTML = '<p style="text-align:center;color:#666;padding:1rem;">Select a range on the chart to filter...</p>'; return; }
+        const set = new Set(isoDates);
+        const selected = [
+            ...sales.filter(s => set.has((s.sale_date||s.date||'').slice(0,10))).map(s => ({date: s.sale_date||s.date, type:'Sale', contact:s.customer, description:s.description, total:s.total})),
+            ...purchases.filter(p => set.has((p.purchase_date||p.date||'').slice(0,10))).map(p => ({date: p.purchase_date||p.date, type:'Purchase', contact:p.supplier, description:p.description, total:p.total})),
+        ].sort((a,b)=> new Date(a.date) - new Date(b.date));
+        if (selected.length === 0) { el.innerHTML = '<p style="text-align:center;color:#666;padding:1rem;">No transactions in selection</p>'; return; }
+        const rows = selected.map(r => `<tr><td style="padding:8px;border:1px solid #e5e7eb;">${r.date}</td><td style="padding:8px;border:1px solid #e5e7eb;">${r.type}</td><td style="padding:8px;border:1px solid #e5e7eb;">${r.contact||''}</td><td style="padding:8px;border:1px solid #e5e7eb;">${r.description||''}</td><td style="padding:8px;border:1px solid #e5e7eb;text-align:right;">₹${Number(r.total||0).toLocaleString('en-IN')}</td></tr>`).join('');
+        el.innerHTML = `<div class="table-responsive"><table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#f3f4f6"><th style="padding:8px;border:1px solid #e5e7eb;">Date</th><th style="padding:8px;border:1px solid #e5e7eb;">Type</th><th style="padding:8px;border:1px solid #e5e7eb;">Contact</th><th style="padding:8px;border:1px solid #e5e7eb;">Description</th><th style="padding:8px;border:1px solid #e5e7eb;text-align:right;">Amount</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    } catch (e) { console.error('updateInsightsTable error', e); }
+}
 

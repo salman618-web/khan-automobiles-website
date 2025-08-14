@@ -43,6 +43,9 @@
             <button id="openInvoiceBtn" class="nav-btn" type="button" onclick="openInvoiceModal()">
                 <i class="fas fa-file-invoice"></i> Create Invoice
             </button>
+            <button class="nav-btn" onclick="showSection('insights')">
+                <i class="fas fa-lightbulb"></i> Insights
+            </button>
         </div>
 
         <!-- Dashboard Section -->
@@ -256,6 +259,7 @@
 
         <!-- Reports Section -->
         <div id="reports" class="admin-section">
+
             <div class="reports-header">
                 <h2>Sales & Purchase Reports</h2>
                 <div id="dataCountInfo" class="data-count-info">
@@ -343,6 +347,32 @@
                 <h3>📋 Transaction Details</h3>
                 <div id="reportTable" class="table-responsive">
                                             <p style="text-align: center; color: #666; padding: 2rem;">Click "View Report" to view data</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Insights Section -->
+        <div id="insights" class="admin-section" style="display:none;">
+            <h2>Insights</h2>
+            <div class="filter-container">
+                <label style="display:flex;align-items:center;gap:8px;">
+                    <input type="checkbox" id="toggleYoy"> <span>Compare with last year (YoY)</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;">
+                    <input type="checkbox" id="toggleSma"> <span>Show forecast (SMA)</span>
+                </label>
+                <small style="color:#6b7280">Tip: Drag on chart to lasso select a range; click a month to drill down to daily.</small>
+            </div>
+            <div class="chart-container">
+                <h3>📈 Monthly Sales Insights</h3>
+                <div style="height: 380px; position: relative;">
+                    <div id="insightsChart" style="width:100%; height:100%;"></div>
+                </div>
+            </div>
+            <div class="chart-container">
+                <h3>📋 Transactions in Selection</h3>
+                <div id="insightsSelectionTable" class="table-responsive">
+                    <p style="text-align:center; color:#666; padding:1rem;">Select a range on the chart to filter...</p>
                 </div>
             </div>
         </div>
