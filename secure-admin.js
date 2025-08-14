@@ -455,8 +455,8 @@ const avgSaleValues = months.map(m => {
                         s += `${p.marker} ${p.seriesName}: ${val}${countSuffix}<br/>`;
                     });
                     if (ex) {
-                        const hi = ex.max ? `Highest: ₹${Number(ex.max.value).toLocaleString('en-IN')} (${ex.max.label})` : '';
-                        const lo = ex.min ? `Lowest: ₹${Number(ex.min.value).toLocaleString('en-IN')} (${ex.min.label})` : '';
+                        const hi = ex.max ? `<strong>Highest:</strong> ₹${Number(ex.max.value).toLocaleString('en-IN')} (${ex.max.label})` : '';
+                        const lo = ex.min ? `<strong>Lowest:</strong> ₹${Number(ex.min.value).toLocaleString('en-IN')} (${ex.min.label})` : '';
                         if (hi || lo) s += `${hi}${hi && lo ? '<br/>' : ''}${lo}`;
                     }
                     return s;
@@ -2821,8 +2821,8 @@ async function loadOverallTimelineChart() {
                         s += `${p.marker} ${p.seriesName}: ${val}${countSuffix}<br/>`;
                     });
                     if (ex) {
-                        const hi = ex.max ? `Highest: ₹${Number(ex.max.value).toLocaleString('en-IN')} (${ex.max.label})` : '';
-                        const lo = ex.min ? `Lowest: ₹${Number(ex.min.value).toLocaleString('en-IN')} (${ex.min.label})` : '';
+                        const hi = ex.max ? `<strong>Highest:</strong> ₹${Number(ex.max.value).toLocaleString('en-IN')} (${ex.max.label})` : '';
+                        const lo = ex.min ? `<strong>Lowest:</strong> ₹${Number(ex.min.value).toLocaleString('en-IN')} (${ex.min.label})` : '';
                         if (hi || lo) s += `${hi}${hi && lo ? '<br/>' : ''}${lo}`;
                     }
                     return s;
