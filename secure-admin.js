@@ -349,8 +349,25 @@ async function loadQuickChart() {
             return `${y}-${m}`;
         }
         
-        // Aggregate by YYYY-MM
+        // Aggregate by YYYY-MM and track monthly extremes for tooltip
         const monthly = {};
+        const monthlyExtremes = {};
+        const monthNamesFull = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        const ordinal = n => {
+            const j = n % 10, k = n % 100;
+            if (j === 1 && k !== 11) return 'st';
+            if (j === 2 && k !== 12) return 'nd';
+            if (j === 3 && k !== 13) return 'rd';
+            return 'th';
+        };
+        const formatDayMonth = dstr => {
+            try {
+                const d = new Date(dstr);
+                if (Number.isNaN(d.getTime())) return '';
+                const day = d.getDate();
+                return `${day}${ordinal(day)} ${monthNamesFull[d.getMonth()]}`;
+            } catch (_) { return ''; }
+        };
         salesData.forEach(sale => {
             const ym = toYearMonth(sale.sale_date || sale.date);
             if (!ym) return;
@@ -358,6 +375,10 @@ async function loadQuickChart() {
             const total = parseFloat(sale.total || 0) || 0;
             monthly[ym].sales += total;
             monthly[ym].saleCount += 1;
+            if (!monthlyExtremes[ym]) monthlyExtremes[ym] = { max: null, min: null };
+            const curr = monthlyExtremes[ym];
+            if (!curr.max || total > curr.max.value) curr.max = { value: total, date: sale.sale_date || sale.date, label: formatDayMonth(sale.sale_date || sale.date) };
+            if (!curr.min || total < curr.min.value) curr.min = { value: total, date: sale.sale_date || sale.date, label: formatDayMonth(sale.sale_date || sale.date) };
         });
         purchaseData.forEach(p => {
             const ym = toYearMonth(p.purchase_date || p.date);
@@ -423,13 +444,21 @@ const avgSaleValues = months.map(m => {
                 extraCssText: isSmall ? 'max-width:92vw; white-space: normal; line-height:1.3;' : '',
                 axisPointer: { type: 'cross', label: { show: !isSmall } },
                 formatter: params => {
-                    let s = `<strong>${params[0]?.axisValueLabel || ''}</strong><br/>`;
+                    const label = params[0]?.axisValueLabel || '';
+                    const key = months[params[0]?.dataIndex] || '';
+                    const ex = monthlyExtremes[key];
+                    let s = `<strong>${label}</strong><br/>`;
                     params.forEach(p => {
                         const raw = p.data && typeof p.data === 'object' && 'value' in p.data ? p.data.value : p.value;
                         const val = raw == null ? '-' : `₹${Number(raw).toLocaleString('en-IN')}`;
                         const countSuffix = (p.seriesName === 'Sales (₹)' && p.data && typeof p.data.saleCount === 'number') ? ` (${p.data.saleCount} sales)` : '';
                         s += `${p.marker} ${p.seriesName}: ${val}${countSuffix}<br/>`;
                     });
+                    if (ex) {
+                        const hi = ex.max ? `Highest: ₹${Number(ex.max.value).toLocaleString('en-IN')} (${ex.max.label})` : '';
+                        const lo = ex.min ? `Lowest: ₹${Number(ex.min.value).toLocaleString('en-IN')} (${ex.min.label})` : '';
+                        if (hi || lo) s += `${hi}${hi && lo ? '<br/>' : ''}${lo}`;
+                    }
                     return s;
                 }
             },
@@ -2740,6 +2769,21 @@ async function loadOverallTimelineChart() {
         const timelineYears = years.map(String);
         const baseOption = {
             backgroundColor: 'transparent',
+            // Precomputed extremes per year for monthly sales
+            // Build once for all years to use in tooltip
+            __extremesByYear: (function(){
+                const map = {};
+                years.forEach(y => {
+                    const arr = byYear[y].sales.map((v, idx) => ({ v, idx }));
+                    let max = null, min = null;
+                    arr.forEach(({ v, idx }) => {
+                        if (max === null || v > arr[max].v) max = idx;
+                        if (min === null || v < arr[min].v) min = idx;
+                    });
+                    map[y] = { maxIdx: max, minIdx: min };
+                });
+                return map;
+            })(),
             timeline: {
                 axisType: 'category',
                 autoPlay: false,
@@ -2754,12 +2798,23 @@ async function loadOverallTimelineChart() {
                 extraCssText: isSmall ? 'max-width:92vw; white-space: normal; line-height:1.3;' : '',
                 axisPointer: { type: 'cross', label: { show: !isSmall } },
                 formatter: (params) => {
-                    let s = `<strong>${params[0]?.axisValueLabel || ''}</strong><br/>`;
+                    const label = params[0]?.axisValueLabel || '';
+                    const idx = params[0]?.dataIndex ?? 0;
+                    const yearIdx = chart?.getOption()?.timeline?.[0]?.currentIndex ?? (timelineYears.length - 1);
+                    const year = years[yearIdx];
+                    const extremes = chart?.getOption()?.baseOption?.__extremesByYear?.[year];
+                    let s = `<strong>${label}</strong><br/>`;
                     params.forEach(p => {
                         const val = `₹${Number(p.value || (p.data && p.data.value) || 0).toLocaleString('en-IN')}`;
                         const countSuffix = (p.seriesName === 'Sales (₹)' && p.data && typeof p.data.saleCount === 'number') ? ` (${p.data.saleCount} sales)` : '';
                         s += `${p.marker} ${p.seriesName}: ${val}${countSuffix}<br/>`;
                     });
+                    if (extremes) {
+                        const monthLabel = monthNamesShort[idx];
+                        const maxLine = (extremes.maxIdx === idx) ? `Highest this year` : '';
+                        const minLine = (extremes.minIdx === idx) ? `Lowest this year` : '';
+                        if (maxLine || minLine) s += `${maxLine}${maxLine && minLine ? '<br/>' : ''}${minLine}`;
+                    }
                     return s;
                 }
             },
