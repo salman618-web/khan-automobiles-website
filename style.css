@@ -544,12 +544,6 @@ body {
     background: #e74c3c;
 }
 
-/* Make the long invoice button span full width on very small screens */
-@media (max-width: 420px) {
-    #openInvoiceBtn {
-        grid-column: 1 / -1;
-    }
-}
 
 .admin-section {
     display: none;
