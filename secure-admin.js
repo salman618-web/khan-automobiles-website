@@ -419,7 +419,9 @@ const avgSaleValues = months.map(m => {
             grid: { left: isSmall ? 48 : 56, right: isSmall ? 28 : 40, top: isSmall ? 54 : 80, bottom: isSmall ? 72 : 50, containLabel: true },
             tooltip: {
                 trigger: 'axis',
-                axisPointer: { type: 'cross' },
+                confine: true,
+                extraCssText: isSmall ? 'max-width:92vw; white-space: normal; line-height:1.3;' : '',
+                axisPointer: { type: 'cross', label: { show: !isSmall } },
                 formatter: params => {
                     let s = `<strong>${params[0]?.axisValueLabel || ''}</strong><br/>`;
                     params.forEach(p => {
