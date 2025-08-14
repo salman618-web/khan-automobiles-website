@@ -2753,14 +2753,23 @@ async function loadOverallTimelineChart() {
         
         // Build monthly data per year for timeline
         const monthNamesShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const monthNamesFull = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        const ordinal = n => { const j=n%10,k=n%100; if(j===1&&k!==11) return 'st'; if(j===2&&k!==12) return 'nd'; if(j===3&&k!==13) return 'rd'; return 'th'; };
+        const formatDayMonth = dstr => { try { const d=new Date(dstr); if(Number.isNaN(d.getTime())) return ''; const day=d.getDate(); return `${day}${ordinal(day)} ${monthNamesFull[d.getMonth()]}`; } catch(_) { return ''; } };
         const initYearArrays = () => ({ sales: new Array(12).fill(0), purchases: new Array(12).fill(0), saleCount: new Array(12).fill(0) });
         const byYear = Object.fromEntries(years.map(y => [y, initYearArrays()]));
+        const extremesByYearMonth = {};
         const getYM = d => {
             if (!d) return null;
             if (/^\d{4}-\d{2}-\d{2}/.test(d)) return { y: Number(d.substring(0,4)), m: Number(d.substring(5,7)) - 1 };
             const dt = new Date(d); if (Number.isNaN(dt.getTime())) return null; return { y: dt.getFullYear(), m: dt.getMonth() };
         };
-        sales.forEach(s => { const ym = getYM(s.sale_date || s.date); if (!ym) return; if (byYear[ym.y]) { byYear[ym.y].sales[ym.m] += parseFloat(s.total||0)||0; byYear[ym.y].saleCount[ym.m] += 1; } });
+        sales.forEach(s => { const ym = getYM(s.sale_date || s.date); if (!ym) return; if (byYear[ym.y]) { byYear[ym.y].sales[ym.m] += parseFloat(s.total||0)||0; byYear[ym.y].saleCount[ym.m] += 1; }
+            const key = `${ym.y}-${ym.m}`; if (!extremesByYearMonth[key]) extremesByYearMonth[key] = { max: null, min: null };
+            const val = parseFloat(s.total||0)||0; const label = formatDayMonth(s.sale_date || s.date);
+            if (!extremesByYearMonth[key].max || val > extremesByYearMonth[key].max.value) extremesByYearMonth[key].max = { value: val, label };
+            if (!extremesByYearMonth[key].min || val < extremesByYearMonth[key].min.value) extremesByYearMonth[key].min = { value: val, label };
+        });
         purchases.forEach(p => { const ym = getYM(p.purchase_date || p.date); if (!ym) return; if (byYear[ym.y]) byYear[ym.y].purchases[ym.m] += parseFloat(p.total||0)||0; });
         
         if (!window._overallChart) window._overallChart = echarts.init(el);
@@ -2803,18 +2812,18 @@ async function loadOverallTimelineChart() {
                     const idx = params[0]?.dataIndex ?? 0;
                     const yearIdx = chart?.getOption()?.timeline?.[0]?.currentIndex ?? (timelineYears.length - 1);
                     const year = years[yearIdx];
-                    const extremes = chart?.getOption()?.baseOption?.__extremesByYear?.[year];
+                    const key = `${year}-${idx}`;
+                    const ex = extremesByYearMonth[key];
                     let s = `<strong>${label}</strong><br/>`;
                     params.forEach(p => {
                         const val = `₹${Number(p.value || (p.data && p.data.value) || 0).toLocaleString('en-IN')}`;
                         const countSuffix = (p.seriesName === 'Sales (₹)' && p.data && typeof p.data.saleCount === 'number') ? ` (${p.data.saleCount} sales)` : '';
                         s += `${p.marker} ${p.seriesName}: ${val}${countSuffix}<br/>`;
                     });
-                    if (extremes) {
-                        const monthLabel = monthNamesShort[idx];
-                        const maxLine = (extremes.maxIdx === idx) ? `Highest this year` : '';
-                        const minLine = (extremes.minIdx === idx) ? `Lowest this year` : '';
-                        if (maxLine || minLine) s += `${maxLine}${maxLine && minLine ? '<br/>' : ''}${minLine}`;
+                    if (ex) {
+                        const hi = ex.max ? `Highest: ₹${Number(ex.max.value).toLocaleString('en-IN')} (${ex.max.label})` : '';
+                        const lo = ex.min ? `Lowest: ₹${Number(ex.min.value).toLocaleString('en-IN')} (${ex.min.label})` : '';
+                        if (hi || lo) s += `${hi}${hi && lo ? '<br/>' : ''}${lo}`;
                     }
                     return s;
                 }
