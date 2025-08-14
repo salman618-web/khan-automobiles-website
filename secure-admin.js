@@ -2739,7 +2739,9 @@ async function loadOverallTimelineChart() {
             },
             tooltip: {
                 trigger: 'axis',
-                axisPointer: { type: 'cross' },
+                confine: true,
+                extraCssText: isSmall ? 'max-width:92vw; white-space: normal; line-height:1.3;' : '',
+                axisPointer: { type: 'cross', label: { show: !isSmall } },
                 formatter: (params) => {
                     let s = `<strong>${params[0]?.axisValueLabel || ''}</strong><br/>`;
                     params.forEach(p => {
@@ -2750,8 +2752,8 @@ async function loadOverallTimelineChart() {
                     return s;
                 }
             },
-            legend: { top: 34, left: 'center', data: ['Sales (₹)', 'Purchases (₹)', 'Net Profit (₹)', 'Avg Sale (₹)'], textStyle: { fontSize: isSmall ? 11 : 12 } },
-            grid: { left: isSmall ? 32 : 56, right: isSmall ? 18 : 40, top: isSmall ? 72 : 80, bottom: isSmall ? 80 : 100, containLabel: true },
+            legend: { top: isSmall ? 6 : 34, left: 'center', itemGap: isSmall ? 10 : 20, data: ['Sales (₹)', 'Purchases (₹)', 'Net Profit (₹)', 'Avg Sale (₹)'], textStyle: { fontSize: isSmall ? 11 : 12 }, padding: isSmall ? [2, 6, 2, 6] : 5, backgroundColor: isSmall ? 'rgba(255,255,255,0.7)' : 'transparent' },
+            grid: { left: isSmall ? 36 : 56, right: isSmall ? 20 : 40, top: isSmall ? 62 : 80, bottom: isSmall ? 86 : 100, containLabel: true },
             xAxis: [{ type: 'category', data: monthNamesShort, axisLabel: { fontSize: isSmall ? 10 : 12, hideOverlap: true } }],
             yAxis: [{ type: 'value', axisLabel: { formatter: v => `₹${Number(v).toLocaleString('en-IN')}` } }],
             series: [
