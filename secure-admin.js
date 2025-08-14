@@ -2754,9 +2754,6 @@ async function loadOverallTimelineChart() {
             grid: { left: isSmall ? 32 : 56, right: isSmall ? 18 : 40, top: isSmall ? 72 : 80, bottom: isSmall ? 80 : 100, containLabel: true },
             xAxis: [{ type: 'category', data: monthNamesShort, axisLabel: { fontSize: isSmall ? 10 : 12, hideOverlap: true } }],
             yAxis: [{ type: 'value', axisLabel: { formatter: v => `₹${Number(v).toLocaleString('en-IN')}` } }],
-            dataZoom: [
-                { type: 'inside', xAxisIndex: [0], filterMode: 'none' }
-            ],
             series: [
                 { name: 'Sales (₹)', type: 'bar', itemStyle: { color: '#22c55e' }, barWidth: isSmall ? 8 : 12, barGap: '30%', label: { show: !isSmall, position: 'top', formatter: (p) => (p.data && typeof p.data.saleCount === 'number' && p.data.saleCount > 0) ? `${p.data.saleCount}` : '' } },
                 { name: 'Purchases (₹)', type: 'bar', itemStyle: { color: '#ef4444' }, barWidth: isSmall ? 8 : 12, barGap: '30%' },
@@ -2777,14 +2774,6 @@ async function loadOverallTimelineChart() {
         
         const option = { baseOption, options };
         chart.setOption(option, true);
-        // Enable pinch zoom on mobile by toggling dataZoom only for small screens
-        try {
-            if (isSmall) {
-                chart.dispatchAction({ type: 'takeGlobalCursor', key: 'dataZoomSelect', dataZoomSelectActive: true });
-            } else {
-                chart.dispatchAction({ type: 'takeGlobalCursor', key: 'dataZoomSelect', dataZoomSelectActive: false });
-            }
-        } catch (_) {}
         // Jump to latest year by default
         try { chart.dispatchAction({ type: 'timelineChange', currentIndex: timelineYears.length - 1 }); } catch(_) {}
  
