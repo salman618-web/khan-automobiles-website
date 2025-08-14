@@ -1154,7 +1154,8 @@ function generateReportChart(salesData, purchaseData, reportType) {
                 data: purchaseValues,
                 backgroundColor: 'rgba(239, 68, 68, 0.8)',
                 borderColor: '#ef4444',
-                borderWidth: 1
+                borderWidth: 1,
+                hidden: true
             }]
         },
         options: {
