@@ -3013,7 +3013,7 @@ async function loadSeasonalHeatmap() {
         return;
     }
     
-    // Dispose existing chart if any
+    // Dispose existing chart if any ----
     if (container._chartInstance) {
         container._chartInstance.dispose();
     }
