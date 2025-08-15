@@ -1,6 +1,15 @@
 // Clean Secure Admin JavaScript - Works with simple server
 // No JWT tokens, no complex authentication - just working functionality
 
+// Initialize insights data globally at the top
+let insightsData = { sales: [], purchases: [], bucketByYear: {}, goalAmount: 0 };
+
+// Temporary showSection function until setupNavigation() is called
+window.showSection = function(sectionName) {
+    console.log('Temporary showSection called for:', sectionName);
+    // This will be replaced by setupNavigation()
+};
+
 // Global variables
 let currentUser = null;
 
@@ -2078,7 +2087,7 @@ async function deleteEntry(id, type) {
 window.logout = logout;
 window.populateEditForm = populateEditForm;
 window.closeEditModal = closeEditModal;
-window.showSection = showSection;
+// showSection is defined in setupNavigation()
 window.generateReport = generateReport;
 window.exportToExcel = exportToExcel;
 window.searchAndFilterEntries = searchAndFilterEntries;
@@ -2874,8 +2883,6 @@ async function loadOverallTimelineChart() {
 
 // Hook overall chart when user views reports or generates reports
 async function ensureOverallChart() { try { await loadOverallTimelineChart(); } catch(_){} }
-
-let insightsData = { sales: [], purchases: [], bucketByYear: {}, goalAmount: 0 };
 
 async function loadInsights() {
     try {
