@@ -3152,22 +3152,71 @@ async function loadMainChart() {
     };
     
     try {
+        // Validate the option structure before setting
+        if (!option.series || !Array.isArray(option.series) || option.series.length === 0) {
+            console.error('❌ Invalid chart option - no series data');
+            return;
+        }
+        
+        // Validate each series has required properties
+        for (let i = 0; i < option.series.length; i++) {
+            const series = option.series[i];
+            if (!series.data || !Array.isArray(series.data)) {
+                console.error(`❌ Series ${i} has invalid data:`, series);
+                return;
+            }
+        }
+        
         chart.setOption(option, true);
         console.log('🔍 Main chart option set successfully');
     } catch (error) {
         console.error('❌ Error setting main chart option:', error);
+        console.log('🔍 Chart option:', option);
         console.log('🔍 Chart data:', getSeries());
     }
 
     function refresh() { 
         console.log('🔍 Refresh called - YoY checked:', document.getElementById('toggleYoy')?.checked, 'SMA checked:', document.getElementById('toggleSma')?.checked);
         try {
+            // Validate chart still exists and is not disposed
+            if (!chart || chart.isDisposed()) {
+                console.error('❌ Chart is disposed, cannot refresh');
+                return;
+            }
+            
             const newSeries = getSeries();
-            chart.setOption({ series: newSeries }, true);
+            console.log('🔍 New series data:', newSeries.map(s => ({ name: s.name, dataLength: s.data?.length })));
+            
+            // Use merge: false to completely replace the series instead of merging
+            const newOption = {
+                backgroundColor: 'transparent',
+                xAxis: [{ 
+                    type:'category', 
+                    data: monthsShort, 
+                    axisLabel: { fontSize: isSmall?10:12 }
+                }],
+                series: newSeries
+            };
+            
+            chart.setOption(newOption, false); // false = merge mode off
             console.log('🔍 Chart refreshed successfully');
         } catch (error) {
             console.error('❌ Error refreshing chart:', error);
-            console.log('🔍 Chart instance:', chart);
+            console.log('🔍 Chart instance exists:', !!chart);
+            console.log('🔍 Chart disposed:', chart?.isDisposed?.());
+            
+            // Try to reinitialize the chart if it's in a bad state
+            try {
+                const container = document.getElementById('insightsChart');
+                if (container && chart) {
+                    console.log('🔍 Attempting to reinitialize chart...');
+                    chart.dispose();
+                    container._chartInstance = null;
+                    loadMainChart();
+                }
+            } catch (reinitError) {
+                console.error('❌ Failed to reinitialize chart:', reinitError);
+            }
         }
     }
     
@@ -3238,9 +3287,33 @@ async function loadMainChart() {
     });
 
     chart.on('brushSelected', function (params) {
-        const areas = params.batch?.[0]?.selected?.[0]; const idxs = areas?.dataIndex || [];
-        const selectedDates = []; idxs.forEach(m => { const map = insightsData.bucketByYear[new Date().getFullYear()]?.days[m]||{}; Object.keys(map).forEach(d => selectedDates.push(d)); });
-        updateInsightsTable(selectedDates, insightsData.sales, insightsData.purchases);
+        try {
+            if (!params || !params.batch || !Array.isArray(params.batch)) return;
+            
+            const batch = params.batch[0];
+            if (!batch || !batch.selected || !Array.isArray(batch.selected)) return;
+            
+            const areas = batch.selected[0];
+            if (!areas || !areas.dataIndex || !Array.isArray(areas.dataIndex)) return;
+            
+            const idxs = areas.dataIndex;
+            const selectedDates = [];
+            const currentYear = new Date().getFullYear();
+            const yearData = insightsData.bucketByYear[currentYear];
+            
+            if (yearData && yearData.days) {
+                idxs.forEach(m => {
+                    if (typeof m === 'number' && m >= 0 && m < 12 && yearData.days[m]) {
+                        const map = yearData.days[m];
+                        Object.keys(map).forEach(d => selectedDates.push(d));
+                    }
+                });
+            }
+            
+            updateInsightsTable(selectedDates, insightsData.sales, insightsData.purchases);
+        } catch (error) {
+            console.error('❌ Error handling brush selection:', error);
+        }
     });
 
     window.addEventListener('resize', () => chart.resize());
