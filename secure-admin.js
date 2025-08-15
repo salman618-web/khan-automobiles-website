@@ -3422,18 +3422,68 @@ async function loadGoalGauge() {
         const thisMonth = insightsData.bucketByYear[new Date().getFullYear()]?.values[new Date().getMonth()] || 0;
         const progress = insightsData.goalAmount > 0 ? (thisMonth / insightsData.goalAmount * 100) : 0;
         
+        // Responsive configuration based on screen size
+        const isSmall = window.innerWidth < 768;
+        const isVerySmall = window.innerWidth < 480;
+        
         const option = {
             series: [{
-                type: 'gauge', min: 0, max: 100, startAngle: 180, endAngle: 0,
-                axisLine: { lineStyle: { width: 20, color: [[0.3, '#ef4444'], [0.7, '#f59e0b'], [1, '#22c55e']] } },
-                pointer: { itemStyle: { color: '#3b82f6' } },
-                axisTick: { show: false }, axisLabel: { show: false }, splitLine: { show: false },
-                detail: { formatter: '{value}%', fontSize: 16, offsetCenter: [0, '20%'] },
-                data: [{ value: Math.min(progress, 100), name: 'Goal Progress' }]
+                type: 'gauge', 
+                min: 0, 
+                max: 100, 
+                startAngle: 180, 
+                endAngle: 0,
+                radius: isVerySmall ? '75%' : isSmall ? '80%' : '85%',
+                center: ['50%', isSmall ? '60%' : '55%'],
+                axisLine: { 
+                    lineStyle: { 
+                        width: isVerySmall ? 12 : isSmall ? 15 : 20, 
+                        color: [[0.3, '#ef4444'], [0.7, '#f59e0b'], [1, '#22c55e']] 
+                    } 
+                },
+                pointer: { 
+                    itemStyle: { color: '#3b82f6' },
+                    width: isSmall ? 4 : 6,
+                    length: isSmall ? '60%' : '70%'
+                },
+                axisTick: { show: false }, 
+                axisLabel: { show: false }, 
+                splitLine: { show: false },
+                detail: { 
+                    formatter: '{value}%', 
+                    fontSize: isVerySmall ? 12 : isSmall ? 14 : 16, 
+                    offsetCenter: [0, isSmall ? '25%' : '20%'],
+                    color: '#374151',
+                    fontWeight: 'bold'
+                },
+                data: [{ 
+                    value: Math.min(progress, 100), 
+                    name: 'Goal Progress' 
+                }]
             }]
         };
-        chart.setOption(option);
-        window.addEventListener('resize', () => chart.resize());
+        
+        try {
+            chart.setOption(option);
+            console.log('🔍 Goal gauge updated successfully');
+        } catch (error) {
+            console.error('❌ Error updating goal gauge:', error);
+        }
+        
+        // Add responsive resize handler
+        const resizeHandler = () => {
+            if (chart && !chart.isDisposed()) {
+                chart.resize();
+                // Update responsive settings on resize
+                const newIsSmall = window.innerWidth < 768;
+                const newIsVerySmall = window.innerWidth < 480;
+                if (newIsSmall !== isSmall || newIsVerySmall !== isVerySmall) {
+                    updateGoalGauge(); // Re-render with new responsive settings
+                }
+            }
+        };
+        
+        window.addEventListener('resize', resizeHandler);
     }
     updateGoalGauge();
 }

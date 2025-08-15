@@ -2748,4 +2748,55 @@ a:focus {
     background-color: #16a34a;
 }
 
+/* Goal Progress responsive styles */
+.goal-gauge-chart {
+    height: 180px;
+    width: 100%;
+    min-height: 150px;
+}
+
+.goal-progress-container {
+    min-width: 280px;
+}
+
+/* Mobile responsive styles for Goal Progress */
+@media (max-width: 767px) {
+    .goal-gauge-chart {
+        height: 160px;
+        min-height: 140px;
+    }
+    
+    .goal-progress-container {
+        padding: 12px !important;
+        min-width: 260px;
+    }
+    
+    .goal-progress-container h4 {
+        font-size: 0.9rem !important;
+        margin-bottom: 8px !important;
+    }
+    
+    .goal-progress-container input {
+        padding: 6px !important;
+        font-size: 0.85rem !important;
+    }
+    
+    .goal-progress-container button {
+        padding: 6px !important;
+        font-size: 0.85rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .goal-gauge-chart {
+        height: 140px;
+        min-height: 120px;
+    }
+    
+    .goal-progress-container {
+        padding: 10px !important;
+        min-width: 240px;
+    }
+}
+
 /* dummy change: no-op to trigger commit--------------- */
