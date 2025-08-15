@@ -2817,4 +2817,48 @@ a:focus {
     }
 }
 
+/* Insights info note responsive styles */
+.admin-section .info-note {
+    background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
+    border: 1px solid #0284c7;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+}
+
+@media (max-width: 767px) {
+    .admin-section .info-note {
+        padding: 12px;
+        margin-bottom: 16px;
+        font-size: 12px;
+    }
+    
+    .admin-section .info-note strong {
+        display: block;
+        margin-top: 8px;
+        margin-bottom: 2px;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-section .info-note {
+        padding: 10px;
+        margin-bottom: 12px;
+    }
+    
+    .admin-section .info-note div[style*="font-size: 20px"] {
+        font-size: 16px !important;
+    }
+    
+    .admin-section .info-note div[style*="font-size: 14px"] {
+        font-size: 12px !important;
+    }
+    
+    .admin-section .info-note div[style*="font-size: 13px"] {
+        font-size: 11px !important;
+        line-height: 1.4 !important;
+    }
+}
+
 /* dummy change: no-op to trigger commit--------------- */
