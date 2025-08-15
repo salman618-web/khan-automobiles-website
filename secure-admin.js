@@ -2970,19 +2970,35 @@ async function loadMainChart() {
 
     function getSeries() {
         const thisYearData = insightsData.bucketByYear[yThis]?.values || [];
+        const prevYearData = insightsData.bucketByYear[yPrev]?.values || [];
         console.log('🔍 Main Chart Debug: This year data:', thisYearData);
+        console.log('🔍 Main Chart Debug: Prev year data:', prevYearData);
+        
         const ser = [{ name: 'Sales (₹)', type: 'bar', itemStyle: {color:'#22c55e'}, data: thisYearData }];
-        if (document.getElementById('toggleYoy')?.checked) {
-            ser.push({ name: `Sales ${yPrev} (₹)`, type: 'bar', itemStyle: {color:'#94a3b8'}, data: insightsData.bucketByYear[yPrev]?.values || [], barGap:'30%' });
+        
+        const yoyChecked = document.getElementById('toggleYoy')?.checked;
+        const smaChecked = document.getElementById('toggleSma')?.checked;
+        console.log('🔍 getSeries: YoY checked:', yoyChecked, 'SMA checked:', smaChecked);
+        
+        if (yoyChecked) {
+            console.log('🔍 Adding YoY comparison data');
+            ser.push({ name: `Sales ${yPrev} (₹)`, type: 'bar', itemStyle: {color:'#94a3b8'}, data: prevYearData, barGap:'30%' });
         }
-        if (document.getElementById('toggleSma')?.checked) {
-            ser.push({ name: 'Forecast (SMA)', type: 'line', smooth: true, itemStyle:{color:'#3b82f6'}, lineStyle:{width:2}, data: sma(insightsData.bucketByYear[yThis]?.values || []) });
+        
+        if (smaChecked) {
+            const smaData = sma(thisYearData);
+            console.log('🔍 Adding SMA forecast data:', smaData);
+            ser.push({ name: 'Forecast (SMA)', type: 'line', smooth: true, itemStyle:{color:'#3b82f6'}, lineStyle:{width:2}, data: smaData });
         }
+        
         const growth = parseFloat(document.getElementById('whatIfGrowth')?.value || 0);
         if (growth && document.getElementById('whatIfGrowth')?.dataset.applied) {
-            const whatIfData = (insightsData.bucketByYear[yThis]?.values || []).map(v => v * (1 + growth/100));
+            const whatIfData = thisYearData.map(v => v * (1 + growth/100));
+            console.log('🔍 Adding What-if data with', growth, '% growth:', whatIfData);
             ser.push({ name: `What-if +${growth}%`, type: 'line', smooth: true, itemStyle:{color:'#f59e0b'}, lineStyle:{width:2, type:'dashed'}, data: whatIfData });
         }
+        
+        console.log('🔍 Final series:', ser.map(s => s.name));
         return ser;
     }
 
@@ -2998,12 +3014,44 @@ async function loadMainChart() {
     };
     chart.setOption(option);
 
-    function refresh() { chart.setOption({ series: getSeries() }, true); }
-    document.getElementById('toggleYoy')?.addEventListener('change', refresh);
-    document.getElementById('toggleSma')?.addEventListener('change', refresh);
-    document.getElementById('applyWhatIf')?.addEventListener('click', () => {
-        document.getElementById('whatIfGrowth').dataset.applied = 'true'; refresh();
-    });
+    function refresh() { 
+        console.log('🔍 Refresh called - YoY checked:', document.getElementById('toggleYoy')?.checked, 'SMA checked:', document.getElementById('toggleSma')?.checked);
+        chart.setOption({ series: getSeries() }, true); 
+    }
+    
+    // Add event listeners with better error handling
+    const toggleYoy = document.getElementById('toggleYoy');
+    const toggleSma = document.getElementById('toggleSma');
+    const applyWhatIf = document.getElementById('applyWhatIf');
+    const whatIfGrowth = document.getElementById('whatIfGrowth');
+    
+    if (toggleYoy) {
+        toggleYoy.addEventListener('change', (e) => {
+            console.log('🔍 YoY checkbox changed:', e.target.checked);
+            refresh();
+        });
+    } else {
+        console.error('❌ toggleYoy element not found');
+    }
+    
+    if (toggleSma) {
+        toggleSma.addEventListener('change', (e) => {
+            console.log('🔍 SMA checkbox changed:', e.target.checked);
+            refresh();
+        });
+    } else {
+        console.error('❌ toggleSma element not found');
+    }
+    
+    if (applyWhatIf && whatIfGrowth) {
+        applyWhatIf.addEventListener('click', () => {
+            console.log('🔍 What-if button clicked with value:', whatIfGrowth.value);
+            whatIfGrowth.dataset.applied = 'true'; 
+            refresh();
+        });
+    } else {
+        console.error('❌ What-if elements not found');
+    }
 
     chart.on('click', params => {
         if (params.componentType !== 'series' || params.seriesType === 'line') return;
