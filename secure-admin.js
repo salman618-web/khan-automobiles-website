@@ -3092,14 +3092,14 @@ async function loadMainChart() {
             try {
                 const whatIfData = thisYearData.map(v => (Number(v) || 0) * (1 + growth/100));
                 console.log('🔍 Adding What-if data with', growth, '% growth:', whatIfData);
-                ser.push({ 
-                    name: `What-if +${growth}%`, 
-                    type: 'line', 
-                    smooth: true, 
-                    itemStyle: {color:'#f59e0b'}, 
-                    lineStyle: {width:2, type:'dashed'}, 
-                    data: whatIfData.slice(0, 12)
-                });
+                            ser.push({ 
+                name: `What-if +${growth}%`, 
+                type: 'line', 
+                smooth: true, 
+                itemStyle: {color:'#ef4444'}, 
+                lineStyle: {width:2, type:'dashed'}, 
+                data: whatIfData.slice(0, 12)
+            });
             } catch (e) {
                 console.error('❌ Error calculating What-if data:', e);
             }
