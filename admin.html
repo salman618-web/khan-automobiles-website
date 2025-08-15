@@ -361,10 +361,11 @@
                 <div class="filter-container" style="flex-wrap:wrap;">
                     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
                         <select id="timeRangePicker" style="padding:8px;border-radius:6px;border:1px solid #ddd;">
+                            <option value="all">All data</option>
                             <option value="7">Last 7 days</option>
                             <option value="30">Last 30 days</option>
                             <option value="90">Last 90 days</option>
-                            <option value="365">Last year</option>
+                            <option value="365" selected>Last year</option>
                             <option value="custom">Custom range</option>
                         </select>
                         <input type="date" id="customStart" style="padding:8px;border-radius:6px;border:1px solid #ddd;display:none;">

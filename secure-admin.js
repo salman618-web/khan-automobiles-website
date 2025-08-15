@@ -3220,6 +3220,9 @@ async function loadMainChart() {
         }
     }
     
+    // Store the refresh function for external access
+    container._refreshFunction = refresh;
+    
     // Add event listeners with better error handling
     const toggleYoy = document.getElementById('toggleYoy');
     const toggleSma = document.getElementById('toggleSma');
@@ -3551,8 +3554,14 @@ async function setupInteractiveFilters() {
         } else {
             customStart.style.display = 'none';
             customEnd.style.display = 'none';
-            // Apply the selected time range filter
-            filterDataByTimeRange(e.target.value);
+            
+            if (e.target.value === 'all') {
+                // Clear any existing filter
+                clearTimeRangeFilter();
+            } else {
+                // Apply the selected time range filter
+                filterDataByTimeRange(e.target.value);
+            }
         }
     });
     
@@ -3586,22 +3595,191 @@ async function setupInteractiveFilters() {
 
 function filterDataByTimeRange(days) {
     console.log('🔍 Filtering data by', days, 'days');
-    // This would filter the main chart data based on the selected time range
-    // For now, just refresh the main chart
-    const mainChart = document.getElementById('insightsChart')?._chartInstance;
-    if (mainChart) {
-        // You could implement actual filtering logic here
+    
+    try {
+        // Calculate the date range
+        const now = new Date();
+        const startDate = new Date(now);
+        startDate.setDate(now.getDate() - parseInt(days));
+        
+        console.log('🔍 Date range:', startDate.toISOString().slice(0,10), 'to', now.toISOString().slice(0,10));
+        
+        // Filter sales data within the date range
+        const filteredSales = insightsData.sales.filter(sale => {
+            const saleDate = new Date(sale.sale_date || sale.date);
+            return saleDate >= startDate && saleDate <= now;
+        });
+        
+        console.log('🔍 Filtered sales:', filteredSales.length, 'out of', insightsData.sales.length);
+        
+        // Create filtered bucket data
+        const filteredBucketByYear = {};
+        const yThis = now.getFullYear();
+        const yPrev = yThis - 1;
+        
+        const makeBuckets = () => ({ 
+            values: Array(12).fill(0), 
+            days: Array.from({length:12}, ()=>({}))
+        });
+        
+        filteredBucketByYear[yThis] = makeBuckets();
+        filteredBucketByYear[yPrev] = makeBuckets();
+        
+        // Process filtered sales
+        filteredSales.forEach(s => {
+            const d = new Date(s.sale_date || s.date);
+            if (isNaN(d.getTime())) return;
+            
+            const y = d.getFullYear();
+            const m = d.getMonth();
+            
+            if (!filteredBucketByYear[y]) {
+                filteredBucketByYear[y] = makeBuckets();
+            }
+            
+            const val = parseFloat(s.total || 0) || 0;
+            if (val >= 0) {
+                filteredBucketByYear[y].values[m] += val;
+                const key = d.toISOString().slice(0,10);
+                if (!filteredBucketByYear[y].days[m]) {
+                    filteredBucketByYear[y].days[m] = {};
+                }
+                filteredBucketByYear[y].days[m][key] = (filteredBucketByYear[y].days[m][key] || 0) + val;
+            }
+        });
+        
+        // Temporarily replace the bucket data
+        const originalBucketData = insightsData.bucketByYear;
+        insightsData.bucketByYear = filteredBucketByYear;
+        
+        // Refresh the chart with filtered data
+        refreshMainChart();
+        
+        // Store original data for restoration
+        insightsData._originalBucketByYear = originalBucketData;
+        insightsData._isFiltered = true;
+        
         console.log('🔍 Time range filter applied:', days, 'days');
+        
+    } catch (error) {
+        console.error('❌ Error filtering by time range:', error);
     }
 }
 
-function filterDataByCustomRange(startDate, endDate) {
-    console.log('🔍 Filtering data from', startDate, 'to', endDate);
-    // This would filter the main chart data based on custom date range
-    const mainChart = document.getElementById('insightsChart')?._chartInstance;
-    if (mainChart) {
-        // You could implement actual filtering logic here
+function refreshMainChart() {
+    const container = document.getElementById('insightsChart');
+    const chart = container?._chartInstance;
+    
+    if (chart && !chart.isDisposed()) {
+        try {
+            // Get the refresh function from the chart's context
+            const refreshFn = container._refreshFunction;
+            if (typeof refreshFn === 'function') {
+                refreshFn();
+            } else {
+                // Fallback: reload the main chart
+                loadMainChart();
+            }
+        } catch (error) {
+            console.error('❌ Error refreshing main chart:', error);
+            // Fallback: reload the main chart
+            loadMainChart();
+        }
+    }
+}
+
+function clearTimeRangeFilter() {
+    console.log('🔍 Clearing time range filter');
+    
+    if (insightsData._isFiltered && insightsData._originalBucketByYear) {
+        // Restore original data
+        insightsData.bucketByYear = insightsData._originalBucketByYear;
+        insightsData._isFiltered = false;
+        delete insightsData._originalBucketByYear;
+        
+        // Reset dropdown to default
+        const timeRange = document.getElementById('timeRangePicker');
+        if (timeRange) {
+            timeRange.value = '365'; // Default to last year
+        }
+        
+        // Refresh chart with original data
+        refreshMainChart();
+        
+        console.log('🔍 Filter cleared, original data restored');
+    }
+}
+
+function filterDataByCustomRange(startDateStr, endDateStr) {
+    console.log('🔍 Filtering data from', startDateStr, 'to', endDateStr);
+    
+    try {
+        const startDate = new Date(startDateStr);
+        const endDate = new Date(endDateStr);
+        
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+            console.error('❌ Invalid date range');
+            return;
+        }
+        
+        // Filter sales data within the custom date range
+        const filteredSales = insightsData.sales.filter(sale => {
+            const saleDate = new Date(sale.sale_date || sale.date);
+            return saleDate >= startDate && saleDate <= endDate;
+        });
+        
+        console.log('🔍 Filtered sales:', filteredSales.length, 'out of', insightsData.sales.length);
+        
+        // Create filtered bucket data
+        const filteredBucketByYear = {};
+        const makeBuckets = () => ({ 
+            values: Array(12).fill(0), 
+            days: Array.from({length:12}, ()=>({}))
+        });
+        
+        // Initialize years that might be in the range
+        for (let year = startDate.getFullYear(); year <= endDate.getFullYear(); year++) {
+            filteredBucketByYear[year] = makeBuckets();
+        }
+        
+        // Process filtered sales
+        filteredSales.forEach(s => {
+            const d = new Date(s.sale_date || s.date);
+            if (isNaN(d.getTime())) return;
+            
+            const y = d.getFullYear();
+            const m = d.getMonth();
+            
+            if (!filteredBucketByYear[y]) {
+                filteredBucketByYear[y] = makeBuckets();
+            }
+            
+            const val = parseFloat(s.total || 0) || 0;
+            if (val >= 0) {
+                filteredBucketByYear[y].values[m] += val;
+                const key = d.toISOString().slice(0,10);
+                if (!filteredBucketByYear[y].days[m]) {
+                    filteredBucketByYear[y].days[m] = {};
+                }
+                filteredBucketByYear[y].days[m][key] = (filteredBucketByYear[y].days[m][key] || 0) + val;
+            }
+        });
+        
+        // Store original data and apply filter
+        const originalBucketData = insightsData.bucketByYear;
+        insightsData.bucketByYear = filteredBucketByYear;
+        
+        // Refresh the chart
+        refreshMainChart();
+        
+        // Store original data for restoration
+        insightsData._originalBucketByYear = originalBucketData;
+        insightsData._isFiltered = true;
+        
         console.log('🔍 Custom range filter applied');
+        
+    } catch (error) {
+        console.error('❌ Error filtering by custom range:', error);
     }
 }
 
