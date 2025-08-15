@@ -2974,12 +2974,23 @@ async function loadMainChart() {
     const sma = (arr, w=3) => arr.map((_,i)=>{ const start = Math.max(0, i-w+1); const slice = arr.slice(start, i+1); return slice.reduce((a,b)=>a+b,0)/slice.length; });
 
     function getSeries() {
-        const thisYearData = insightsData.bucketByYear[yThis]?.values || [];
-        const prevYearData = insightsData.bucketByYear[yPrev]?.values || [];
+        // Ensure data is properly formatted and contains valid numbers
+        const thisYearData = (insightsData.bucketByYear[yThis]?.values || []).map(v => Number(v) || 0);
+        const prevYearData = (insightsData.bucketByYear[yPrev]?.values || []).map(v => Number(v) || 0);
+        
         console.log('🔍 Main Chart Debug: This year data:', thisYearData);
         console.log('🔍 Main Chart Debug: Prev year data:', prevYearData);
         
-        const ser = [{ name: 'Sales (₹)', type: 'bar', itemStyle: {color:'#22c55e'}, data: thisYearData }];
+        // Ensure we have 12 months of data
+        while (thisYearData.length < 12) thisYearData.push(0);
+        while (prevYearData.length < 12) prevYearData.push(0);
+        
+        const ser = [{ 
+            name: 'Sales (₹)', 
+            type: 'bar', 
+            itemStyle: {color:'#22c55e'}, 
+            data: thisYearData.slice(0, 12) // Ensure exactly 12 data points
+        }];
         
         const yoyChecked = document.getElementById('toggleYoy')?.checked;
         const smaChecked = document.getElementById('toggleSma')?.checked;
@@ -2987,41 +2998,114 @@ async function loadMainChart() {
         
         if (yoyChecked) {
             console.log('🔍 Adding YoY comparison data');
-            ser.push({ name: `Sales ${yPrev} (₹)`, type: 'bar', itemStyle: {color:'#94a3b8'}, data: prevYearData, barGap:'30%' });
+            ser.push({ 
+                name: `Sales ${yPrev} (₹)`, 
+                type: 'bar', 
+                itemStyle: {color:'#94a3b8'}, 
+                data: prevYearData.slice(0, 12),
+                barGap: '30%'
+            });
         }
         
         if (smaChecked) {
-            const smaData = sma(thisYearData);
-            console.log('🔍 Adding SMA forecast data:', smaData);
-            ser.push({ name: 'Forecast (SMA)', type: 'line', smooth: true, itemStyle:{color:'#3b82f6'}, lineStyle:{width:2}, data: smaData });
+            try {
+                const smaData = sma(thisYearData).map(v => Number(v) || 0);
+                console.log('🔍 Adding SMA forecast data:', smaData);
+                ser.push({ 
+                    name: 'Forecast (SMA)', 
+                    type: 'line', 
+                    smooth: true, 
+                    itemStyle: {color:'#3b82f6'}, 
+                    lineStyle: {width:2}, 
+                    data: smaData.slice(0, 12)
+                });
+            } catch (e) {
+                console.error('❌ Error calculating SMA:', e);
+            }
         }
         
         const growth = parseFloat(document.getElementById('whatIfGrowth')?.value || 0);
         if (growth && document.getElementById('whatIfGrowth')?.dataset.applied) {
-            const whatIfData = thisYearData.map(v => v * (1 + growth/100));
-            console.log('🔍 Adding What-if data with', growth, '% growth:', whatIfData);
-            ser.push({ name: `What-if +${growth}%`, type: 'line', smooth: true, itemStyle:{color:'#f59e0b'}, lineStyle:{width:2, type:'dashed'}, data: whatIfData });
+            try {
+                const whatIfData = thisYearData.map(v => (Number(v) || 0) * (1 + growth/100));
+                console.log('🔍 Adding What-if data with', growth, '% growth:', whatIfData);
+                ser.push({ 
+                    name: `What-if +${growth}%`, 
+                    type: 'line', 
+                    smooth: true, 
+                    itemStyle: {color:'#f59e0b'}, 
+                    lineStyle: {width:2, type:'dashed'}, 
+                    data: whatIfData.slice(0, 12)
+                });
+            } catch (e) {
+                console.error('❌ Error calculating What-if data:', e);
+            }
         }
         
-        console.log('🔍 Final series:', ser.map(s => s.name));
+        console.log('🔍 Final series:', ser.map(s => ({ name: s.name, dataLength: s.data.length })));
         return ser;
     }
 
     const option = {
         backgroundColor: 'transparent',
-        tooltip: { trigger: 'axis', confine: true, extraCssText: isSmall ? 'max-width:92vw;' : '' },
+        tooltip: { 
+            trigger: 'axis', 
+            confine: true, 
+            extraCssText: isSmall ? 'max-width:92vw;' : '',
+            formatter: function(params) {
+                if (!params || params.length === 0) return '';
+                let result = params[0].name + '<br/>';
+                params.forEach(param => {
+                    if (param.value !== undefined && param.value !== null) {
+                        result += param.marker + ' ' + param.seriesName + ': ₹' + Number(param.value).toLocaleString('en-IN') + '<br/>';
+                    }
+                });
+                return result;
+            }
+        },
         grid: { left: isSmall?36:56, right: isSmall?20:40, top: isSmall?30:40, bottom: isSmall?60:60, containLabel: true },
         legend: { top: isSmall?0:6, textStyle: { fontSize: isSmall?10:12 } },
-        xAxis: [{ type:'category', data: monthsShort, axisLabel: { fontSize: isSmall?10:12 } }],
-        yAxis: [{ type:'value', axisLabel:{ formatter:v=>`₹${Number(v).toLocaleString('en-IN')}`, fontSize: isSmall?10:12 } }],
-        brush: { toolbox: ['rect','polygon','clear'], xAxisIndex: 'all' },
+        xAxis: [{ 
+            type:'category', 
+            data: monthsShort, 
+            axisLabel: { fontSize: isSmall?10:12 }
+        }],
+        yAxis: [{ 
+            type:'value', 
+            axisLabel:{ 
+                formatter: function(value) {
+                    return '₹' + Number(value || 0).toLocaleString('en-IN');
+                }, 
+                fontSize: isSmall?10:12 
+            }
+        }],
+        brush: { 
+            toolbox: ['rect','polygon','clear'], 
+            xAxisIndex: 'all',
+            throttleType: 'debounce',
+            throttleDelay: 300
+        },
         series: getSeries()
     };
-    chart.setOption(option);
+    
+    try {
+        chart.setOption(option, true);
+        console.log('🔍 Main chart option set successfully');
+    } catch (error) {
+        console.error('❌ Error setting main chart option:', error);
+        console.log('🔍 Chart data:', getSeries());
+    }
 
     function refresh() { 
         console.log('🔍 Refresh called - YoY checked:', document.getElementById('toggleYoy')?.checked, 'SMA checked:', document.getElementById('toggleSma')?.checked);
-        chart.setOption({ series: getSeries() }, true); 
+        try {
+            const newSeries = getSeries();
+            chart.setOption({ series: newSeries }, true);
+            console.log('🔍 Chart refreshed successfully');
+        } catch (error) {
+            console.error('❌ Error refreshing chart:', error);
+            console.log('🔍 Chart instance:', chart);
+        }
     }
     
     // Add event listeners with better error handling
