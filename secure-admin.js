@@ -2901,6 +2901,8 @@ async function loadInsights() {
         
         const [sales, purchases] = await Promise.all([salesRes.json(), purchasesRes.json()]);
         insightsData.sales = sales; insightsData.purchases = purchases;
+        console.log('🔍 Insights Debug: Sales data:', sales.length, 'records');
+        console.log('🔍 Insights Debug: Sample sale:', sales[0]);
 
         // Aggregate data
         const now = new Date(); const yThis = now.getFullYear(); const yPrev = yThis - 1;
@@ -2908,7 +2910,8 @@ async function loadInsights() {
         insightsData.bucketByYear = { [yThis]: makeBuckets(), [yPrev]: makeBuckets() };
 
         sales.forEach(s => {
-            const d = new Date(s.sale_date || s.date); if (isNaN(d)) return;
+            const d = new Date(s.sale_date || s.date); 
+            if (isNaN(d.getTime())) return;
             const y = d.getFullYear(); const m = d.getMonth();
             if (!insightsData.bucketByYear[y]) insightsData.bucketByYear[y] = makeBuckets();
             const val = parseFloat(s.total||0)||0;
@@ -2917,6 +2920,8 @@ async function loadInsights() {
             insightsData.bucketByYear[y].days[m][key] = (insightsData.bucketByYear[y].days[m][key]||0) + val;
         });
 
+        console.log('🔍 Insights Debug: Bucket data after processing:', insightsData.bucketByYear);
+        
         // Load all sub-sections with proper error handling
         const loadPromises = [
             loadMainChart(),
@@ -2929,7 +2934,8 @@ async function loadInsights() {
             setupInteractiveFilters()
         ];
         
-        await Promise.allSettled(loadPromises);
+        const results = await Promise.allSettled(loadPromises);
+        console.log('🔍 Insights Debug: Load results:', results.map(r => r.status));
     } catch (e) {
         console.error('Insights load error', e);
     }
@@ -2956,7 +2962,9 @@ async function loadMainChart() {
     const sma = (arr, w=3) => arr.map((_,i)=>{ const start = Math.max(0, i-w+1); const slice = arr.slice(start, i+1); return slice.reduce((a,b)=>a+b,0)/slice.length; });
 
     function getSeries() {
-        const ser = [{ name: 'Sales (₹)', type: 'bar', itemStyle: {color:'#22c55e'}, data: insightsData.bucketByYear[yThis]?.values || [] }];
+        const thisYearData = insightsData.bucketByYear[yThis]?.values || [];
+        console.log('🔍 Main Chart Debug: This year data:', thisYearData);
+        const ser = [{ name: 'Sales (₹)', type: 'bar', itemStyle: {color:'#22c55e'}, data: thisYearData }];
         if (document.getElementById('toggleYoy')?.checked) {
             ser.push({ name: `Sales ${yPrev} (₹)`, type: 'bar', itemStyle: {color:'#94a3b8'}, data: insightsData.bucketByYear[yPrev]?.values || [], barGap:'30%' });
         }
