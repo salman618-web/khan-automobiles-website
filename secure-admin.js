@@ -2911,21 +2911,54 @@ async function loadInsights() {
         console.log('🔍 Insights Debug: Sales data:', sales.length, 'records');
         console.log('🔍 Insights Debug: Sample sale:', sales[0]);
 
-        // Aggregate data
+        // Aggregate data with better validation
         const now = new Date(); const yThis = now.getFullYear(); const yPrev = yThis - 1;
-        const makeBuckets = () => ({ values: Array(12).fill(0), days: Array.from({length:12}, ()=>({})) });
-        insightsData.bucketByYear = { [yThis]: makeBuckets(), [yPrev]: makeBuckets() };
-
-        sales.forEach(s => {
-            const d = new Date(s.sale_date || s.date); 
-            if (isNaN(d.getTime())) return;
-            const y = d.getFullYear(); const m = d.getMonth();
-            if (!insightsData.bucketByYear[y]) insightsData.bucketByYear[y] = makeBuckets();
-            const val = parseFloat(s.total||0)||0;
-            insightsData.bucketByYear[y].values[m] += val;
-            const key = d.toISOString().slice(0,10);
-            insightsData.bucketByYear[y].days[m][key] = (insightsData.bucketByYear[y].days[m][key]||0) + val;
+        const makeBuckets = () => ({ 
+            values: Array(12).fill(0), 
+            days: Array.from({length:12}, ()=>({}))
         });
+        
+        // Initialize with safe defaults
+        insightsData.bucketByYear = { 
+            [yThis]: makeBuckets(), 
+            [yPrev]: makeBuckets() 
+        };
+
+        // Validate and process sales data
+        if (Array.isArray(sales)) {
+            sales.forEach(s => {
+                if (!s || typeof s !== 'object') return;
+                
+                const dateStr = s.sale_date || s.date;
+                if (!dateStr) return;
+                
+                const d = new Date(dateStr); 
+                if (isNaN(d.getTime())) return;
+                
+                const y = d.getFullYear(); 
+                const m = d.getMonth();
+                
+                // Validate year and month ranges
+                if (m < 0 || m > 11) return;
+                if (y < 2020 || y > 2030) return;
+                
+                if (!insightsData.bucketByYear[y]) {
+                    insightsData.bucketByYear[y] = makeBuckets();
+                }
+                
+                const val = parseFloat(s.total || 0) || 0;
+                if (val >= 0) { // Only add positive values
+                    insightsData.bucketByYear[y].values[m] += val;
+                    const key = d.toISOString().slice(0,10);
+                    if (!insightsData.bucketByYear[y].days[m]) {
+                        insightsData.bucketByYear[y].days[m] = {};
+                    }
+                    insightsData.bucketByYear[y].days[m][key] = (insightsData.bucketByYear[y].days[m][key] || 0) + val;
+                }
+            });
+        } else {
+            console.error('❌ Sales data is not an array:', sales);
+        }
 
         console.log('🔍 Insights Debug: Bucket data after processing:', insightsData.bucketByYear);
         
@@ -2962,10 +2995,27 @@ async function loadMainChart() {
     
     // Dispose existing chart if any
     if (container._chartInstance) {
-        container._chartInstance.dispose();
+        try {
+            container._chartInstance.dispose();
+        } catch (e) {
+            console.warn('Warning disposing chart:', e);
+        }
+        container._chartInstance = null;
+    }
+    
+    // Validate that we have data before initializing chart
+    if (!insightsData || !insightsData.bucketByYear) {
+        console.error('❌ No insights data available for chart');
+        container.innerHTML = '<p style="text-align:center;color:#666;padding:2rem;">No data available</p>';
+        return;
     }
     
     const chart = echarts.init(container);
+    if (!chart) {
+        console.error('❌ Failed to initialize ECharts');
+        return;
+    }
+    
     container._chartInstance = chart;
     const isSmall = window.innerWidth < 768;
     const monthsShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -2974,16 +3024,29 @@ async function loadMainChart() {
     const sma = (arr, w=3) => arr.map((_,i)=>{ const start = Math.max(0, i-w+1); const slice = arr.slice(start, i+1); return slice.reduce((a,b)=>a+b,0)/slice.length; });
 
     function getSeries() {
+        // Validate insights data structure
+        if (!insightsData || !insightsData.bucketByYear) {
+            console.error('❌ No insights data available');
+            return [{ name: 'No Data', type: 'bar', data: Array(12).fill(0) }];
+        }
+        
         // Ensure data is properly formatted and contains valid numbers
-        const thisYearData = (insightsData.bucketByYear[yThis]?.values || []).map(v => Number(v) || 0);
-        const prevYearData = (insightsData.bucketByYear[yPrev]?.values || []).map(v => Number(v) || 0);
+        const thisYearBucket = insightsData.bucketByYear[yThis];
+        const prevYearBucket = insightsData.bucketByYear[yPrev];
+        
+        const thisYearData = (thisYearBucket?.values || Array(12).fill(0)).map(v => Number(v) || 0);
+        const prevYearData = (prevYearBucket?.values || Array(12).fill(0)).map(v => Number(v) || 0);
         
         console.log('🔍 Main Chart Debug: This year data:', thisYearData);
         console.log('🔍 Main Chart Debug: Prev year data:', prevYearData);
         
-        // Ensure we have 12 months of data
+        // Ensure we have exactly 12 months of data
         while (thisYearData.length < 12) thisYearData.push(0);
         while (prevYearData.length < 12) prevYearData.push(0);
+        
+        // Trim to exactly 12 months
+        thisYearData.splice(12);
+        prevYearData.splice(12);
         
         const ser = [{ 
             name: 'Sales (₹)', 
@@ -3143,10 +3206,35 @@ async function loadMainChart() {
     }
 
     chart.on('click', params => {
-        if (params.componentType !== 'series' || params.seriesType === 'line') return;
-        const m = params.dataIndex; const daysMap = insightsData.bucketByYear[new Date().getFullYear()]?.days[m]||{};
-        const days = Object.keys(daysMap).sort(); if (days.length === 0) return;
-        chart.setOption({ xAxis: [{ type:'category', data: days }], series: [{ name:'Sales (₹)', type:'bar', itemStyle:{color:'#22c55e'}, data: days.map(k => daysMap[k]) }], legend: { data: ['Sales (₹)'] } });
+        try {
+            if (!params || params.componentType !== 'series' || params.seriesType === 'line') return;
+            
+            const m = params.dataIndex;
+            if (typeof m !== 'number' || m < 0 || m > 11) return;
+            
+            const currentYear = new Date().getFullYear();
+            const yearData = insightsData.bucketByYear[currentYear];
+            if (!yearData || !yearData.days || !yearData.days[m]) return;
+            
+            const daysMap = yearData.days[m];
+            const days = Object.keys(daysMap).sort();
+            if (days.length === 0) return;
+            
+            const dailyData = days.map(k => Number(daysMap[k]) || 0);
+            
+            chart.setOption({ 
+                xAxis: [{ type:'category', data: days }], 
+                series: [{ 
+                    name:'Sales (₹)', 
+                    type:'bar', 
+                    itemStyle:{color:'#22c55e'}, 
+                    data: dailyData 
+                }], 
+                legend: { data: ['Sales (₹)'] } 
+            });
+        } catch (error) {
+            console.error('❌ Error handling chart click:', error);
+        }
     });
 
     chart.on('brushSelected', function (params) {
