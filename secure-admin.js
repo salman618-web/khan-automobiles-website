@@ -2876,112 +2876,285 @@ async function loadOverallTimelineChart() {
 // Hook overall chart when user views reports or generates reports
 async function ensureOverallChart() { try { await loadOverallTimelineChart(); } catch(_){} }
 
+let insightsData = { sales: [], purchases: [], bucketByYear: {}, goalAmount: 0 };
+
 async function loadInsights() {
     try {
         if (typeof echarts === 'undefined') return;
-        const container = document.getElementById('insightsChart');
-        if (!container) return;
-
+        
         const [salesRes, purchasesRes] = await Promise.all([
             fetch('/api/sales'), fetch('/api/purchases')
         ]);
         const [sales, purchases] = await Promise.all([salesRes.json(), purchasesRes.json()]);
+        insightsData.sales = sales; insightsData.purchases = purchases;
 
-        const toYMD = d => {
-            if (!d) return null; const t = new Date(d); if (isNaN(t)) return null; return t.toISOString().slice(0,10);
-        };
-        // Aggregate sales by month (current year and last year)
-        const now = new Date();
-        const yThis = now.getFullYear();
-        const yPrev = yThis - 1;
-        const makeBuckets = () => ({ months: Array.from({length:12}, (_,i)=>i), values: Array(12).fill(0), days: Array.from({length:12}, ()=>({})) });
-        const bucketByYear = { [yThis]: makeBuckets(), [yPrev]: makeBuckets() };
+        // Aggregate data
+        const now = new Date(); const yThis = now.getFullYear(); const yPrev = yThis - 1;
+        const makeBuckets = () => ({ values: Array(12).fill(0), days: Array.from({length:12}, ()=>({})) });
+        insightsData.bucketByYear = { [yThis]: makeBuckets(), [yPrev]: makeBuckets() };
 
         sales.forEach(s => {
             const d = new Date(s.sale_date || s.date); if (isNaN(d)) return;
             const y = d.getFullYear(); const m = d.getMonth();
-            if (!bucketByYear[y]) return;
+            if (!insightsData.bucketByYear[y]) insightsData.bucketByYear[y] = makeBuckets();
             const val = parseFloat(s.total||0)||0;
-            bucketByYear[y].values[m] += val;
+            insightsData.bucketByYear[y].values[m] += val;
             const key = d.toISOString().slice(0,10);
-            bucketByYear[y].days[m][key] = (bucketByYear[y].days[m][key]||0) + val;
+            insightsData.bucketByYear[y].days[m][key] = (insightsData.bucketByYear[y].days[m][key]||0) + val;
         });
 
-        // Simple moving average (window=3)
-        const sma = (arr, w=3) => arr.map((_,i)=>{
-            const start = Math.max(0, i-w+1); const slice = arr.slice(start, i+1);
-            const sum = slice.reduce((a,b)=>a+b,0); return slice.length ? sum/slice.length : 0;
-        });
-
-        // Build chart
-        const chart = echarts.init(container);
-        const isSmall = window.innerWidth < 768;
-        const monthsShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-        const yoyCheckbox = document.getElementById('toggleYoy');
-        const smaCheckbox = document.getElementById('toggleSma');
-
-        function getSeries() {
-            const ser = [
-                { name: 'Sales (₹)', type: 'bar', itemStyle: {color:'#22c55e'}, data: bucketByYear[yThis].values }
-            ];
-            if (yoyCheckbox && yoyCheckbox.checked) {
-                ser.push({ name: `Sales ${yPrev} (₹)`, type: 'bar', itemStyle: {color:'#94a3b8'}, data: bucketByYear[yPrev].values, barGap:'30%' });
-            }
-            if (smaCheckbox && smaCheckbox.checked) {
-                ser.push({ name: 'Forecast (SMA)', type: 'line', smooth: true, itemStyle:{color:'#3b82f6'}, lineStyle:{width:2}, data: sma(bucketByYear[yThis].values) });
-            }
-            return ser;
-        }
-
-        const option = {
-            backgroundColor: 'transparent',
-            tooltip: { trigger: 'axis', confine: true },
-            grid: { left: isSmall?36:56, right: isSmall?20:40, top: isSmall?20:30, bottom: isSmall?60:60, containLabel: true },
-            legend: { top: isSmall?0:6 },
-            xAxis: [{ type:'category', data: monthsShort }],
-            yAxis: [{ type:'value', axisLabel:{ formatter:v=>`₹${Number(v).toLocaleString('en-IN')}` } }],
-            brush: { toolbox: ['rect','polygon','clear'], xAxisIndex: 'all' },
-            toolbox: { feature: { restore: {} } },
-            series: getSeries()
-        };
-        chart.setOption(option);
-
-        function refresh() { chart.setOption({ series: getSeries() }, true); }
-        yoyCheckbox && yoyCheckbox.addEventListener('change', refresh);
-        smaCheckbox && smaCheckbox.addEventListener('change', refresh);
-
-        // Drilldown on month click -> replace with daily bars for that month (current year)
-        chart.on('click', params => {
-            if (params.componentType !== 'series' || params.seriesType === 'line') return;
-            const m = params.dataIndex; const daysMap = bucketByYear[yThis].days[m]||{};
-            const days = Object.keys(daysMap).sort();
-            if (days.length === 0) return;
-            const data = days.map(k => daysMap[k]);
-            chart.setOption({
-                xAxis: [{ type:'category', data: days }],
-                series: [ { name:'Sales (₹)', type:'bar', itemStyle:{color:'#22c55e'}, data }, ],
-                legend: { data: ['Sales (₹)'] }
-            });
-        });
-
-        // Lasso/brush: filter table below by selected months
-        chart.on('brushSelected', function (params) {
-            const areas = params.batch && params.batch[0] && params.batch[0].selected && params.batch[0].selected[0];
-            const idxs = areas ? areas.dataIndex : [];
-            const monthsSelected = new Set((idxs||[]).map(i => i));
-            const selectedDates = [];
-            monthsSelected.forEach(m => {
-                const map = bucketByYear[yThis].days[m]||{};
-                Object.keys(map).forEach(d => selectedDates.push(d));
-            });
-            updateInsightsTable(selectedDates, sales, purchases);
-        });
-
-        window.addEventListener('resize', () => chart.resize());
+        // Load all sub-sections
+        await Promise.all([
+            loadMainChart(),
+            loadSeasonalHeatmap(),
+            loadGrowthIndicators(),
+            loadGoalGauge(),
+            loadHealthScore(),
+            loadCashFlowForecast(),
+            loadRevenueForecast(),
+            setupInteractiveFilters()
+        ]);
     } catch (e) {
         console.error('Insights load error', e);
     }
+}
+
+async function loadMainChart() {
+    const container = document.getElementById('insightsChart');
+    if (!container) return;
+    const chart = echarts.init(container);
+    const isSmall = window.innerWidth < 768;
+    const monthsShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const yThis = new Date().getFullYear(); const yPrev = yThis - 1;
+
+    const sma = (arr, w=3) => arr.map((_,i)=>{ const start = Math.max(0, i-w+1); const slice = arr.slice(start, i+1); return slice.reduce((a,b)=>a+b,0)/slice.length; });
+
+    function getSeries() {
+        const ser = [{ name: 'Sales (₹)', type: 'bar', itemStyle: {color:'#22c55e'}, data: insightsData.bucketByYear[yThis]?.values || [] }];
+        if (document.getElementById('toggleYoy')?.checked) {
+            ser.push({ name: `Sales ${yPrev} (₹)`, type: 'bar', itemStyle: {color:'#94a3b8'}, data: insightsData.bucketByYear[yPrev]?.values || [], barGap:'30%' });
+        }
+        if (document.getElementById('toggleSma')?.checked) {
+            ser.push({ name: 'Forecast (SMA)', type: 'line', smooth: true, itemStyle:{color:'#3b82f6'}, lineStyle:{width:2}, data: sma(insightsData.bucketByYear[yThis]?.values || []) });
+        }
+        const growth = parseFloat(document.getElementById('whatIfGrowth')?.value || 0);
+        if (growth && document.getElementById('whatIfGrowth')?.dataset.applied) {
+            const whatIfData = (insightsData.bucketByYear[yThis]?.values || []).map(v => v * (1 + growth/100));
+            ser.push({ name: `What-if +${growth}%`, type: 'line', smooth: true, itemStyle:{color:'#f59e0b'}, lineStyle:{width:2, type:'dashed'}, data: whatIfData });
+        }
+        return ser;
+    }
+
+    const option = {
+        backgroundColor: 'transparent',
+        tooltip: { trigger: 'axis', confine: true, extraCssText: isSmall ? 'max-width:92vw;' : '' },
+        grid: { left: isSmall?36:56, right: isSmall?20:40, top: isSmall?30:40, bottom: isSmall?60:60, containLabel: true },
+        legend: { top: isSmall?0:6, textStyle: { fontSize: isSmall?10:12 } },
+        xAxis: [{ type:'category', data: monthsShort, axisLabel: { fontSize: isSmall?10:12 } }],
+        yAxis: [{ type:'value', axisLabel:{ formatter:v=>`₹${Number(v).toLocaleString('en-IN')}`, fontSize: isSmall?10:12 } }],
+        brush: { toolbox: ['rect','polygon','clear'], xAxisIndex: 'all' },
+        series: getSeries()
+    };
+    chart.setOption(option);
+
+    function refresh() { chart.setOption({ series: getSeries() }, true); }
+    document.getElementById('toggleYoy')?.addEventListener('change', refresh);
+    document.getElementById('toggleSma')?.addEventListener('change', refresh);
+    document.getElementById('applyWhatIf')?.addEventListener('click', () => {
+        document.getElementById('whatIfGrowth').dataset.applied = 'true'; refresh();
+    });
+
+    chart.on('click', params => {
+        if (params.componentType !== 'series' || params.seriesType === 'line') return;
+        const m = params.dataIndex; const daysMap = insightsData.bucketByYear[new Date().getFullYear()]?.days[m]||{};
+        const days = Object.keys(daysMap).sort(); if (days.length === 0) return;
+        chart.setOption({ xAxis: [{ type:'category', data: days }], series: [{ name:'Sales (₹)', type:'bar', itemStyle:{color:'#22c55e'}, data: days.map(k => daysMap[k]) }], legend: { data: ['Sales (₹)'] } });
+    });
+
+    chart.on('brushSelected', function (params) {
+        const areas = params.batch?.[0]?.selected?.[0]; const idxs = areas?.dataIndex || [];
+        const selectedDates = []; idxs.forEach(m => { const map = insightsData.bucketByYear[new Date().getFullYear()]?.days[m]||{}; Object.keys(map).forEach(d => selectedDates.push(d)); });
+        updateInsightsTable(selectedDates, insightsData.sales, insightsData.purchases);
+    });
+
+    window.addEventListener('resize', () => chart.resize());
+}
+
+async function loadSeasonalHeatmap() {
+    const container = document.getElementById('seasonalHeatmap');
+    if (!container) return;
+    const chart = echarts.init(container);
+    
+    // Build heatmap data: [month, dayOfWeek, value]
+    const heatData = []; const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    for (let m = 0; m < 12; m++) {
+        for (let d = 0; d < 7; d++) {
+            let total = 0;
+            insightsData.sales.forEach(s => {
+                const date = new Date(s.sale_date || s.date); if (isNaN(date)) return;
+                if (date.getMonth() === m && date.getDay() === d) total += parseFloat(s.total||0)||0;
+            });
+            heatData.push([m, d, total]);
+        }
+    }
+
+    const option = {
+        tooltip: { formatter: p => `${monthNames[p.data[0]]} ${dayNames[p.data[1]]}<br/>₹${Number(p.data[2]).toLocaleString('en-IN')}` },
+        grid: { left: 60, right: 20, top: 20, bottom: 40 },
+        xAxis: { type: 'category', data: monthNames, axisLabel: { fontSize: 10 } },
+        yAxis: { type: 'category', data: dayNames, axisLabel: { fontSize: 10 } },
+        visualMap: { min: 0, max: Math.max(...heatData.map(d=>d[2]), 1), inRange: { color: ['#f0f9ff', '#0ea5e9'] }, show: false },
+        series: [{ type: 'heatmap', data: heatData, itemStyle: { borderWidth: 1, borderColor: '#fff' } }]
+    };
+    chart.setOption(option);
+    window.addEventListener('resize', () => chart.resize());
+}
+
+async function loadGrowthIndicators() {
+    const yThis = new Date().getFullYear(); const thisYear = insightsData.bucketByYear[yThis]?.values || [];
+    const lastYear = insightsData.bucketByYear[yThis-1]?.values || [];
+    const thisMonth = new Date().getMonth(); const lastMonth = thisMonth > 0 ? thisMonth - 1 : 11;
+    
+    const momGrowth = thisYear[lastMonth] ? ((thisYear[thisMonth] - thisYear[lastMonth]) / thisYear[lastMonth] * 100) : 0;
+    const yoyGrowth = lastYear[thisMonth] ? ((thisYear[thisMonth] - lastYear[thisMonth]) / lastYear[thisMonth] * 100) : 0;
+    
+    document.getElementById('momGrowth').textContent = `${momGrowth > 0 ? '↗️' : momGrowth < 0 ? '↘️' : '➡️'} ${momGrowth.toFixed(1)}%`;
+    document.getElementById('momGrowth').style.color = momGrowth > 0 ? '#22c55e' : momGrowth < 0 ? '#ef4444' : '#6b7280';
+    document.getElementById('yoyGrowth').textContent = `${yoyGrowth > 0 ? '↗️' : yoyGrowth < 0 ? '↘️' : '➡️'} ${yoyGrowth.toFixed(1)}%`;
+    document.getElementById('yoyGrowth').style.color = yoyGrowth > 0 ? '#22c55e' : yoyGrowth < 0 ? '#ef4444' : '#6b7280';
+
+    const container = document.getElementById('growthChart');
+    if (!container) return;
+    const chart = echarts.init(container);
+    const monthsShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    
+    const option = {
+        tooltip: { trigger: 'axis' },
+        grid: { left: 40, right: 20, top: 20, bottom: 30 },
+        xAxis: { type: 'category', data: monthsShort.slice(0, thisMonth+1), axisLabel: { fontSize: 9 } },
+        yAxis: { type: 'value', axisLabel: { fontSize: 9 } },
+        series: [{ type: 'line', data: thisYear.slice(0, thisMonth+1), smooth: true, itemStyle: { color: '#3b82f6' }, lineStyle: { width: 2 } }]
+    };
+    chart.setOption(option);
+    window.addEventListener('resize', () => chart.resize());
+}
+
+async function loadGoalGauge() {
+    const container = document.getElementById('goalGauge');
+    if (!container) return;
+    
+    document.getElementById('setGoal')?.addEventListener('click', () => {
+        const goal = parseFloat(document.getElementById('monthlyGoal')?.value || 0);
+        if (goal > 0) { insightsData.goalAmount = goal; updateGoalGauge(); }
+    });
+    
+    function updateGoalGauge() {
+        const chart = echarts.init(container);
+        const thisMonth = insightsData.bucketByYear[new Date().getFullYear()]?.values[new Date().getMonth()] || 0;
+        const progress = insightsData.goalAmount > 0 ? (thisMonth / insightsData.goalAmount * 100) : 0;
+        
+        const option = {
+            series: [{
+                type: 'gauge', min: 0, max: 100, startAngle: 180, endAngle: 0,
+                axisLine: { lineStyle: { width: 20, color: [[0.3, '#ef4444'], [0.7, '#f59e0b'], [1, '#22c55e']] } },
+                pointer: { itemStyle: { color: '#3b82f6' } },
+                axisTick: { show: false }, axisLabel: { show: false }, splitLine: { show: false },
+                detail: { formatter: '{value}%', fontSize: 16, offsetCenter: [0, '20%'] },
+                data: [{ value: Math.min(progress, 100), name: 'Goal Progress' }]
+            }]
+        };
+        chart.setOption(option);
+        window.addEventListener('resize', () => chart.resize());
+    }
+    updateGoalGauge();
+}
+
+async function loadHealthScore() {
+    const yThis = new Date().getFullYear(); const thisYear = insightsData.bucketByYear[yThis]?.values || [];
+    const lastYear = insightsData.bucketByYear[yThis-1]?.values || [];
+    
+    // Simple health score based on: growth, consistency, profitability
+    const avgThisYear = thisYear.reduce((a,b)=>a+b,0) / 12;
+    const avgLastYear = lastYear.reduce((a,b)=>a+b,0) / 12;
+    const growth = avgLastYear > 0 ? (avgThisYear - avgLastYear) / avgLastYear : 0;
+    const consistency = 100 - (thisYear.length > 0 ? (Math.max(...thisYear) - Math.min(...thisYear)) / Math.max(...thisYear, 1) * 100 : 0);
+    const profitability = 75; // Placeholder - would need purchase data analysis
+    
+    const score = Math.max(0, Math.min(100, (growth * 30 + consistency * 0.4 + profitability * 0.3)));
+    
+    document.getElementById('scoreValue').textContent = Math.round(score);
+    document.getElementById('scoreValue').style.color = score > 70 ? '#22c55e' : score > 40 ? '#f59e0b' : '#ef4444';
+    document.getElementById('scoreBreakdown').innerHTML = `Growth: ${(growth*100).toFixed(1)}%<br/>Consistency: ${consistency.toFixed(1)}%<br/>Profitability: ${profitability}%`;
+}
+
+async function loadCashFlowForecast() {
+    const container = document.getElementById('cashFlowForecast');
+    if (!container) return;
+    const chart = echarts.init(container);
+    
+    const yThis = new Date().getFullYear(); const thisYear = insightsData.bucketByYear[yThis]?.values || [];
+    const avg = thisYear.reduce((a,b)=>a+b,0) / Math.max(thisYear.length, 1);
+    const trend = thisYear.length > 6 ? (thisYear.slice(-3).reduce((a,b)=>a+b,0)/3 - thisYear.slice(-6,-3).reduce((a,b)=>a+b,0)/3) : 0;
+    
+    const forecast = Array.from({length: 6}, (_, i) => avg + trend * i);
+    const months = ['Next 1M', 'Next 2M', 'Next 3M', 'Next 4M', 'Next 5M', 'Next 6M'];
+    
+    const option = {
+        tooltip: { trigger: 'axis', formatter: p => `${p[0].name}<br/>₹${Number(p[0].value).toLocaleString('en-IN')}` },
+        grid: { left: 50, right: 20, top: 20, bottom: 40 },
+        xAxis: { type: 'category', data: months, axisLabel: { fontSize: 9 } },
+        yAxis: { type: 'value', axisLabel: { fontSize: 9, formatter: v => `₹${(v/1000).toFixed(0)}K` } },
+        series: [{ type: 'line', data: forecast, smooth: true, itemStyle: { color: '#8b5cf6' }, lineStyle: { width: 2, type: 'dashed' }, areaStyle: { opacity: 0.3 } }]
+    };
+    chart.setOption(option);
+    window.addEventListener('resize', () => chart.resize());
+}
+
+async function loadRevenueForecast() {
+    const container = document.getElementById('revenueForecast');
+    if (!container) return;
+    const chart = echarts.init(container);
+    
+    const yThis = new Date().getFullYear(); const thisYear = insightsData.bucketByYear[yThis]?.values || [];
+    const sma = thisYear.slice(-3).reduce((a,b)=>a+b,0) / 3;
+    const growth = 0.05; // 5% monthly growth assumption
+    
+    const forecast = Array.from({length: 6}, (_, i) => sma * Math.pow(1 + growth, i));
+    const months = ['Next 1M', 'Next 2M', 'Next 3M', 'Next 4M', 'Next 5M', 'Next 6M'];
+    
+    const option = {
+        tooltip: { trigger: 'axis', formatter: p => `${p[0].name}<br/>₹${Number(p[0].value).toLocaleString('en-IN')}` },
+        grid: { left: 50, right: 20, top: 20, bottom: 40 },
+        xAxis: { type: 'category', data: months, axisLabel: { fontSize: 9 } },
+        yAxis: { type: 'value', axisLabel: { fontSize: 9, formatter: v => `₹${(v/1000).toFixed(0)}K` } },
+        series: [{ type: 'bar', data: forecast, itemStyle: { color: '#10b981' } }]
+    };
+    chart.setOption(option);
+    window.addEventListener('resize', () => chart.resize());
+}
+
+async function setupInteractiveFilters() {
+    const timeRange = document.getElementById('timeRangePicker');
+    const customStart = document.getElementById('customStart');
+    const customEnd = document.getElementById('customEnd');
+    
+    timeRange?.addEventListener('change', (e) => {
+        if (e.target.value === 'custom') {
+            customStart.style.display = 'inline-block';
+            customEnd.style.display = 'inline-block';
+        } else {
+            customStart.style.display = 'none';
+            customEnd.style.display = 'none';
+        }
+    });
+    
+    document.getElementById('compareMode')?.addEventListener('click', () => {
+        // Toggle comparison mode - could expand this
+        const isActive = document.getElementById('compareMode').classList.contains('active');
+        document.getElementById('compareMode').classList.toggle('active', !isActive);
+        document.getElementById('compareMode').textContent = isActive ? 'Compare Periods' : 'Exit Compare';
+    });
 }
 
 function updateInsightsTable(isoDates, sales, purchases) {

@@ -353,22 +353,100 @@
 
         <!-- Insights Section -->
         <div id="insights" class="admin-section">
-            <h2>Insights</h2>
-            <div class="filter-container">
-                <label style="display:flex;align-items:center;gap:8px;">
-                    <input type="checkbox" id="toggleYoy"> <span>Compare with last year (YoY)</span>
-                </label>
-                <label style="display:flex;align-items:center;gap:8px;">
-                    <input type="checkbox" id="toggleSma"> <span>Show forecast (SMA)</span>
-                </label>
-                <small style="color:#6b7280">Tip: Drag on chart to lasso select a range; click a month to drill down to daily.</small>
-            </div>
+            <h2>📊 Business Insights</h2>
+            
+            <!-- Interactive Filters & Views -->
             <div class="chart-container">
-                <h3>📈 Monthly Sales Insights</h3>
-                <div style="height: 380px; position: relative;">
+                <h3>🎯 Interactive Filters & Views</h3>
+                <div class="filter-container" style="flex-wrap:wrap;">
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                        <select id="timeRangePicker" style="padding:8px;border-radius:6px;border:1px solid #ddd;">
+                            <option value="7">Last 7 days</option>
+                            <option value="30">Last 30 days</option>
+                            <option value="90">Last 90 days</option>
+                            <option value="365">Last year</option>
+                            <option value="custom">Custom range</option>
+                        </select>
+                        <input type="date" id="customStart" style="padding:8px;border-radius:6px;border:1px solid #ddd;display:none;">
+                        <input type="date" id="customEnd" style="padding:8px;border-radius:6px;border:1px solid #ddd;display:none;">
+                        <button id="compareMode" class="btn-secondary" style="padding:8px 12px;">Compare Periods</button>
+                    </div>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px;">
+                        <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="toggleYoy"> YoY Compare</label>
+                        <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="toggleSma"> Forecast</label>
+                        <input type="number" id="whatIfGrowth" placeholder="Growth %" style="width:80px;padding:6px;border-radius:4px;border:1px solid #ddd;">
+                        <button id="applyWhatIf" class="btn-primary" style="padding:6px 10px;font-size:12px;">What-if</button>
+                    </div>
+                </div>
+                <div style="height: 320px; position: relative;">
                     <div id="insightsChart" style="width:100%; height:100%;"></div>
                 </div>
             </div>
+
+            <!-- Advanced Analytics -->
+            <div class="chart-container">
+                <h3>📈 Advanced Analytics</h3>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:16px;">
+                    <div style="background:#f8fafc;padding:16px;border-radius:8px;border:1px solid #e2e8f0;">
+                        <h4 style="margin:0 0 12px 0;color:#374151;">📅 Seasonal Trends</h4>
+                        <div id="seasonalHeatmap" style="height:200px;"></div>
+                    </div>
+                    <div style="background:#f8fafc;padding:16px;border-radius:8px;border:1px solid #e2e8f0;">
+                        <h4 style="margin:0 0 12px 0;color:#374151;">📊 Growth Indicators</h4>
+                        <div id="growthIndicators" style="height:200px;">
+                            <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                                <span>Month-over-Month:</span>
+                                <span id="momGrowth" style="font-weight:bold;">--</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                                <span>Year-over-Year:</span>
+                                <span id="yoyGrowth" style="font-weight:bold;">--</span>
+                            </div>
+                            <div id="growthChart" style="height:140px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual Enhancements -->
+            <div class="chart-container">
+                <h3>🎨 Visual Enhancements</h3>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;margin-bottom:16px;">
+                    <div style="background:#f8fafc;padding:16px;border-radius:8px;border:1px solid #e2e8f0;">
+                        <h4 style="margin:0 0 12px 0;color:#374151;">🎯 Goal Progress</h4>
+                        <div style="margin-bottom:12px;">
+                            <input type="number" id="monthlyGoal" placeholder="Monthly goal (₹)" style="width:100%;padding:8px;border-radius:4px;border:1px solid #ddd;margin-bottom:8px;">
+                            <button id="setGoal" class="btn-primary" style="width:100%;padding:8px;">Set Goal</button>
+                        </div>
+                        <div id="goalGauge" style="height:180px;"></div>
+                    </div>
+                    <div style="background:#f8fafc;padding:16px;border-radius:8px;border:1px solid #e2e8f0;">
+                        <h4 style="margin:0 0 12px 0;color:#374151;">💯 Health Score</h4>
+                        <div id="healthScore" style="height:200px;display:flex;flex-direction:column;justify-content:center;align-items:center;">
+                            <div id="scoreValue" style="font-size:48px;font-weight:bold;color:#22c55e;">--</div>
+                            <div style="font-size:14px;color:#6b7280;margin-bottom:16px;">Overall Health</div>
+                            <div id="scoreBreakdown" style="font-size:12px;color:#374151;text-align:center;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Predictive & Forecasting -->
+            <div class="chart-container">
+                <h3>🔮 Predictive & Forecasting</h3>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;">
+                    <div style="background:#f8fafc;padding:16px;border-radius:8px;border:1px solid #e2e8f0;">
+                        <h4 style="margin:0 0 12px 0;color:#374151;">💰 Cash Flow Prediction</h4>
+                        <div id="cashFlowForecast" style="height:220px;"></div>
+                    </div>
+                    <div style="background:#f8fafc;padding:16px;border-radius:8px;border:1px solid #e2e8f0;">
+                        <h4 style="margin:0 0 12px 0;color:#374151;">📊 Revenue Forecast</h4>
+                        <div id="revenueForecast" style="height:220px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Selection Table (existing) -->
             <div class="chart-container">
                 <h3>📋 Transactions in Selection</h3>
                 <div id="insightsSelectionTable" class="table-responsive">
