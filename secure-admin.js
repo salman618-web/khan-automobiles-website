@@ -3539,9 +3539,12 @@ async function loadCashFlowForecast() {
     const chart = echarts.init(container);
     container._chartInstance = chart;
     
-    try {
-        const yThis = new Date().getFullYear();
-        const salesThisYear = insightsData.bucketByYear[yThis]?.values || Array(12).fill(0);
+            try {
+            const yThis = new Date().getFullYear();
+            const salesThisYear = insightsData.bucketByYear[yThis]?.values || Array(12).fill(0);
+            
+            // Responsive configuration
+            const isSmall = window.innerWidth < 768;
         
         // Calculate purchases by month for this year
         const purchasesByMonth = Array(12).fill(0);
@@ -3611,16 +3614,25 @@ async function loadCashFlowForecast() {
                     return `${params[0].name}<br/>${status} Cash Flow<br/>₹${Number(value).toLocaleString('en-IN')}`;
                 }
             },
-            grid: { left: 60, right: 20, top: 30, bottom: 40 },
+            grid: { 
+                left: isSmall ? 50 : 60, 
+                right: isSmall ? 15 : 30, 
+                top: isSmall ? 35 : 40, 
+                bottom: isSmall ? 50 : 45 
+            },
             xAxis: { 
                 type: 'category', 
                 data: months, 
-                axisLabel: { fontSize: 9, rotate: 15 } 
+                axisLabel: { 
+                    fontSize: isSmall ? 8 : 9, 
+                    rotate: isSmall ? 25 : 15,
+                    interval: 0
+                } 
             },
             yAxis: { 
                 type: 'value', 
                 axisLabel: { 
-                    fontSize: 9, 
+                    fontSize: isSmall ? 8 : 9, 
                     formatter: v => {
                         const absV = Math.abs(v);
                         return `₹${(absV/1000).toFixed(0)}K`;
@@ -3652,8 +3664,23 @@ async function loadCashFlowForecast() {
                     }
                 },
                 markLine: {
-                    data: [{ yAxis: 0, lineStyle: { color: '#6b7280', width: 1 } }],
-                    label: { formatter: 'Break-even', position: 'end' }
+                    data: [{ 
+                        yAxis: 0, 
+                        lineStyle: { color: '#6b7280', width: 1, type: 'dashed' },
+                        label: {
+                            formatter: 'Break-even',
+                            position: 'insideStartTop',
+                            fontSize: isSmall ? 8 : 10,
+                            color: '#6b7280',
+                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                            borderColor: '#6b7280',
+                            borderWidth: 1,
+                            borderRadius: 3,
+                            padding: isSmall ? [1, 3] : [2, 4],
+                            show: !isSmall || forecast.some(v => Math.abs(v) > 1000) // Hide on very small screens with small values
+                        }
+                    }],
+                    silent: true
                 }
             }]
         };
