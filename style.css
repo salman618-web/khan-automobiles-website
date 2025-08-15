@@ -2861,4 +2861,56 @@ a:focus {
     }
 }
 
+/* Logout button bright red styling */
+.btn-logout {
+    background-color: #dc2626;
+    color: white;
+    border: 2px solid #dc2626;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-logout:hover {
+    background-color: #b91c1c;
+    border-color: #b91c1c;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+}
+
+.btn-logout:active {
+    background-color: #991b1b;
+    border-color: #991b1b;
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+}
+
+.btn-logout:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.3);
+}
+
+/* Mobile responsive for logout button */
+@media (max-width: 767px) {
+    .btn-logout {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .btn-logout {
+        padding: 0.35rem 0.7rem;
+        font-size: 0.8rem;
+        gap: 0.4rem;
+    }
+}
+
 /* dummy change: no-op to trigger commit--------------- */
