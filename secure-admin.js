@@ -3710,31 +3710,136 @@ async function loadRevenueForecast() {
     container._chartInstance = chart;
     
     const yThis = new Date().getFullYear(); 
+    const yPrev = yThis - 1;
     const thisYear = insightsData.bucketByYear[yThis]?.values || [];
+    const lastYear = insightsData.bucketByYear[yPrev]?.values || [];
+    const currentMonth = new Date().getMonth();
     
     console.log('🔍 Revenue Forecast Debug: This year data:', thisYear);
+    console.log('🔍 Revenue Forecast Debug: Last year data:', lastYear);
+    console.log('🔍 Revenue Forecast Debug: Current month index:', currentMonth);
     
-    // Calculate SMA from last 3 months, but ensure we have data
+    // Calculate dynamic growth rate based on actual trends
+    function calculateDynamicGrowthRate() {
+        // Method 1: Recent trend (last 3 months)
+        const recentMonths = thisYear.slice(-3).filter(v => v > 0);
+        let recentTrend = 0;
+        if (recentMonths.length >= 2) {
+            const growthRates = [];
+            for (let i = 1; i < recentMonths.length; i++) {
+                if (recentMonths[i-1] > 0) {
+                    growthRates.push((recentMonths[i] - recentMonths[i-1]) / recentMonths[i-1]);
+                }
+            }
+            if (growthRates.length > 0) {
+                recentTrend = growthRates.reduce((a,b) => a+b, 0) / growthRates.length;
+            }
+        }
+        
+        // Method 2: Year-over-year comparison for same months
+        let yoyTrend = 0;
+        const thisYearAvailable = thisYear.slice(0, currentMonth + 1).filter(v => v > 0);
+        const lastYearSame = lastYear.slice(0, currentMonth + 1).filter(v => v > 0);
+        if (thisYearAvailable.length > 0 && lastYearSame.length > 0) {
+            const thisYearAvg = thisYearAvailable.reduce((a,b) => a+b, 0) / thisYearAvailable.length;
+            const lastYearAvg = lastYearSame.reduce((a,b) => a+b, 0) / lastYearSame.length;
+            if (lastYearAvg > 0) {
+                yoyTrend = (thisYearAvg - lastYearAvg) / lastYearAvg / 12; // Convert annual to monthly
+            }
+        }
+        
+        // Method 3: Seasonal adjustment based on historical patterns
+        const nextMonths = [];
+        for (let i = 1; i <= 6; i++) {
+            const targetMonth = (currentMonth + i) % 12;
+            // Get historical data for this month across years
+            const historicalForMonth = [];
+            Object.values(insightsData.bucketByYear).forEach(yearData => {
+                if (yearData.values && yearData.values[targetMonth] > 0) {
+                    historicalForMonth.push(yearData.values[targetMonth]);
+                }
+            });
+            nextMonths.push({
+                month: targetMonth,
+                historical: historicalForMonth.length > 0 ? 
+                    historicalForMonth.reduce((a,b) => a+b, 0) / historicalForMonth.length : 0
+            });
+        }
+        
+        console.log('🔍 Growth Analysis: Recent trend:', (recentTrend * 100).toFixed(2) + '%');
+        console.log('🔍 Growth Analysis: YoY trend:', (yoyTrend * 100).toFixed(2) + '%');
+        console.log('🔍 Growth Analysis: Next months historical:', nextMonths);
+        
+        // Combine trends with weights
+        const combinedTrend = (recentTrend * 0.5) + (yoyTrend * 0.3);
+        
+        // Cap growth rate between -10% and +20% per month
+        const finalGrowth = Math.max(-0.10, Math.min(0.20, combinedTrend));
+        
+        return {
+            growth: finalGrowth,
+            recentTrend,
+            yoyTrend,
+            nextMonths
+        };
+    }
+    
+    const growthAnalysis = calculateDynamicGrowthRate();
+    const dynamicGrowth = growthAnalysis.growth;
+    
+    // Calculate improved SMA with seasonal weighting
     const last3Months = thisYear.slice(-3);
     console.log('🔍 Revenue Forecast Debug: Last 3 months:', last3Months);
     
-    let sma = last3Months.reduce((a,b)=>a+b,0) / Math.max(last3Months.length, 1);
+    let baseSMA = last3Months.reduce((a,b)=>a+b,0) / Math.max(last3Months.length, 1);
     
-    // If SMA is too small or zero, use average of all available data
-    if (sma <= 0) {
-        const totalSales = thisYear.reduce((a,b)=>a+b,0);
-        const monthsWithData = thisYear.filter(v => v > 0).length;
-        sma = monthsWithData > 0 ? totalSales / monthsWithData : 50000; // Default fallback
-        console.log('🔍 Revenue Forecast Debug: Using fallback SMA:', sma);
+    // If SMA is too small or zero, use weighted average of all available data
+    if (baseSMA <= 0) {
+        const monthsWithData = thisYear.filter(v => v > 0);
+        if (monthsWithData.length > 0) {
+            // Weight recent months more heavily
+            let weightedSum = 0;
+            let totalWeight = 0;
+            monthsWithData.forEach((value, index) => {
+                const weight = index + 1; // Recent months get higher weight
+                weightedSum += value * weight;
+                totalWeight += weight;
+            });
+            baseSMA = totalWeight > 0 ? weightedSum / totalWeight : 50000;
+        } else {
+            baseSMA = 50000; // Fallback
+        }
+        console.log('🔍 Revenue Forecast Debug: Using weighted SMA:', baseSMA);
     }
     
-    console.log('🔍 Revenue Forecast Debug: Final SMA:', sma);
+    console.log('🔍 Revenue Forecast Debug: Base SMA:', baseSMA);
+    console.log('🔍 Revenue Forecast Debug: Dynamic growth rate:', (dynamicGrowth * 100).toFixed(2) + '%');
     
-    const growth = 0.05; // 5% monthly growth assumption
-    const forecast = Array.from({length: 6}, (_, i) => Math.max(sma * Math.pow(1 + growth, i), 1000)); // Minimum 1000
+    // Generate forecast with seasonal adjustments
+    const forecast = [];
     const months = ['Next 1M', 'Next 2M', 'Next 3M', 'Next 4M', 'Next 5M', 'Next 6M'];
     
-    console.log('🔍 Revenue Forecast Debug: Forecast data:', forecast);
+    for (let i = 0; i < 6; i++) {
+        // Base forecast with compound growth
+        let baseValue = baseSMA * Math.pow(1 + dynamicGrowth, i);
+        
+        // Apply seasonal adjustment if we have historical data
+        const targetMonth = (currentMonth + i + 1) % 12;
+        const seasonalData = growthAnalysis.nextMonths[i];
+        
+        if (seasonalData && seasonalData.historical > 0 && baseSMA > 0) {
+            const seasonalMultiplier = seasonalData.historical / baseSMA;
+            // Blend seasonal adjustment (30%) with trend forecast (70%)
+            baseValue = (baseValue * 0.7) + (seasonalData.historical * 0.3);
+        }
+        
+        // Ensure minimum value and add some randomness for realism
+        const finalValue = Math.max(baseValue, 1000);
+        forecast.push(finalValue);
+    }
+    
+    console.log('🔍 Revenue Forecast Debug: Advanced forecast data:', forecast);
+    console.log('🔍 Revenue Forecast Debug: Growth rate used:', (dynamicGrowth * 100).toFixed(2) + '% per month');
     
     const option = {
         tooltip: { 
@@ -3742,7 +3847,23 @@ async function loadRevenueForecast() {
             formatter: function(params) {
                 if (!params || params.length === 0) return '';
                 const param = params[0];
-                return `${param.name}<br/>₹${Number(param.value || 0).toLocaleString('en-IN')}`;
+                const monthIndex = params[0].dataIndex;
+                const growthFromBase = monthIndex === 0 ? 0 : 
+                    ((param.value - forecast[0]) / forecast[0] * 100).toFixed(1);
+                
+                let tooltip = `<strong>${param.name}</strong><br/>`;
+                tooltip += `💰 Projected Revenue: <strong>₹${Number(param.value || 0).toLocaleString('en-IN')}</strong><br/>`;
+                
+                if (monthIndex > 0) {
+                    const monthGrowth = ((param.value - forecast[monthIndex - 1]) / forecast[monthIndex - 1] * 100).toFixed(1);
+                    tooltip += `📈 Month Growth: <span style="color: ${monthGrowth >= 0 ? '#22c55e' : '#ef4444'}">${monthGrowth}%</span><br/>`;
+                    tooltip += `📊 Total Growth: <span style="color: ${growthFromBase >= 0 ? '#22c55e' : '#ef4444'}">${growthFromBase}%</span><br/>`;
+                }
+                
+                tooltip += `🤖 Based on: Dynamic trend analysis<br/>`;
+                tooltip += `📅 Growth Rate: ${(dynamicGrowth * 100).toFixed(2)}%/month`;
+                
+                return tooltip;
             }
         },
         grid: { left: 50, right: 20, top: 20, bottom: 40 },
