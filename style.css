@@ -2709,4 +2709,43 @@ a:focus {
     }
 }
 
+/* Insights section button styles */
+.btn-primary {
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.btn-primary:hover {
+    background-color: #2563eb;
+}
+
+.btn-secondary {
+    background-color: #6b7280;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.btn-secondary:hover {
+    background-color: #4b5563;
+}
+
+.btn-secondary.active {
+    background-color: #22c55e;
+}
+
+.btn-secondary.active:hover {
+    background-color: #16a34a;
+}
+
 /* dummy change: no-op to trigger commit--------------- */
