@@ -3539,22 +3539,132 @@ async function loadCashFlowForecast() {
     const chart = echarts.init(container);
     container._chartInstance = chart;
     
-    const yThis = new Date().getFullYear(); const thisYear = insightsData.bucketByYear[yThis]?.values || [];
-    const avg = thisYear.reduce((a,b)=>a+b,0) / Math.max(thisYear.length, 1);
-    const trend = thisYear.length > 6 ? (thisYear.slice(-3).reduce((a,b)=>a+b,0)/3 - thisYear.slice(-6,-3).reduce((a,b)=>a+b,0)/3) : 0;
-    
-    const forecast = Array.from({length: 6}, (_, i) => avg + trend * i);
-    const months = ['Next 1M', 'Next 2M', 'Next 3M', 'Next 4M', 'Next 5M', 'Next 6M'];
-    
-    const option = {
-        tooltip: { trigger: 'axis', formatter: p => `${p[0].name}<br/>₹${Number(p[0].value).toLocaleString('en-IN')}` },
-        grid: { left: 50, right: 20, top: 20, bottom: 40 },
-        xAxis: { type: 'category', data: months, axisLabel: { fontSize: 9 } },
-        yAxis: { type: 'value', axisLabel: { fontSize: 9, formatter: v => `₹${(v/1000).toFixed(0)}K` } },
-        series: [{ type: 'line', data: forecast, smooth: true, itemStyle: { color: '#8b5cf6' }, lineStyle: { width: 2, type: 'dashed' }, areaStyle: { opacity: 0.3 } }]
-    };
-    chart.setOption(option);
-    window.addEventListener('resize', () => chart.resize());
+    try {
+        const yThis = new Date().getFullYear();
+        const salesThisYear = insightsData.bucketByYear[yThis]?.values || Array(12).fill(0);
+        
+        // Calculate purchases by month for this year
+        const purchasesByMonth = Array(12).fill(0);
+        if (insightsData.purchases && Array.isArray(insightsData.purchases)) {
+            insightsData.purchases.forEach(p => {
+                const dateStr = p.purchase_date || p.date;
+                if (dateStr) {
+                    const d = new Date(dateStr);
+                    if (!isNaN(d.getTime()) && d.getFullYear() === yThis) {
+                        const month = d.getMonth();
+                        const amount = parseFloat(p.total || 0) || 0;
+                        if (month >= 0 && month < 12 && amount > 0) {
+                            purchasesByMonth[month] += amount;
+                        }
+                    }
+                }
+            });
+        }
+        
+        console.log('🔍 Cash Flow Debug: Sales by month:', salesThisYear);
+        console.log('🔍 Cash Flow Debug: Purchases by month:', purchasesByMonth);
+        
+        // Calculate net cash flow for each month (Sales - Purchases)
+        const netCashFlow = salesThisYear.map((sales, i) => sales - purchasesByMonth[i]);
+        console.log('🔍 Cash Flow Debug: Net cash flow by month:', netCashFlow);
+        
+        // Calculate average monthly cash flow from available data
+        const monthsWithData = netCashFlow.filter(cf => Math.abs(cf) > 0);
+        const avgCashFlow = monthsWithData.length > 0 ? 
+            monthsWithData.reduce((a,b) => a+b, 0) / monthsWithData.length : 
+            10000; // Default positive cash flow
+            
+        // Calculate trend from last 6 months vs previous 6 months
+        const recent6 = netCashFlow.slice(-6);
+        const previous6 = netCashFlow.slice(-12, -6);
+        
+        const recentAvg = recent6.length > 0 ? recent6.reduce((a,b) => a+b, 0) / recent6.length : avgCashFlow;
+        const previousAvg = previous6.length > 0 ? previous6.reduce((a,b) => a+b, 0) / previous6.length : avgCashFlow;
+        
+        // Conservative trend calculation (limit extreme changes)
+        let trend = recentAvg - previousAvg;
+        if (Math.abs(trend) > avgCashFlow * 0.1) { // Limit trend to 10% of average
+            trend = trend > 0 ? avgCashFlow * 0.1 : -avgCashFlow * 0.1;
+        }
+        
+        console.log('🔍 Cash Flow Debug: Average:', avgCashFlow, 'Trend:', trend);
+        
+        // Generate forecast for next 6 months
+        const forecast = Array.from({length: 6}, (_, i) => {
+            const projected = avgCashFlow + (trend * (i + 1));
+            return Math.max(projected, -avgCashFlow * 2); // Don't go below -200% of average
+        });
+        
+        console.log('🔍 Cash Flow Debug: Forecast:', forecast);
+        
+        const months = ['Next 1M', 'Next 2M', 'Next 3M', 'Next 4M', 'Next 5M', 'Next 6M'];
+        
+        // Determine colors based on positive/negative cash flow
+        const colors = forecast.map(value => value >= 0 ? '#22c55e' : '#ef4444');
+        
+        const option = {
+            tooltip: { 
+                trigger: 'axis', 
+                formatter: params => {
+                    const value = params[0].value;
+                    const status = value >= 0 ? '💰 Positive' : '⚠️ Negative';
+                    return `${params[0].name}<br/>${status} Cash Flow<br/>₹${Number(value).toLocaleString('en-IN')}`;
+                }
+            },
+            grid: { left: 60, right: 20, top: 30, bottom: 40 },
+            xAxis: { 
+                type: 'category', 
+                data: months, 
+                axisLabel: { fontSize: 9, rotate: 15 } 
+            },
+            yAxis: { 
+                type: 'value', 
+                axisLabel: { 
+                    fontSize: 9, 
+                    formatter: v => {
+                        const absV = Math.abs(v);
+                        return `₹${(absV/1000).toFixed(0)}K`;
+                    }
+                },
+                splitLine: { show: true, lineStyle: { color: '#e5e7eb' } }
+            },
+            series: [{
+                type: 'line',
+                data: forecast,
+                smooth: true,
+                itemStyle: { 
+                    color: params => colors[params.dataIndex] 
+                },
+                lineStyle: { 
+                    width: 3, 
+                    type: 'dashed',
+                    color: params => {
+                        // Use green if mostly positive, red if mostly negative
+                        const positiveCount = forecast.filter(v => v >= 0).length;
+                        return positiveCount >= 3 ? '#22c55e' : '#ef4444';
+                    }
+                },
+                areaStyle: { 
+                    opacity: 0.2,
+                    color: params => {
+                        const positiveCount = forecast.filter(v => v >= 0).length;
+                        return positiveCount >= 3 ? '#22c55e' : '#ef4444';
+                    }
+                },
+                markLine: {
+                    data: [{ yAxis: 0, lineStyle: { color: '#6b7280', width: 1 } }],
+                    label: { formatter: 'Break-even', position: 'end' }
+                }
+            }]
+        };
+        
+        chart.setOption(option);
+        window.addEventListener('resize', () => chart.resize());
+        
+    } catch (error) {
+        console.error('❌ Error in cash flow forecast:', error);
+        container.innerHTML = '<p style="text-align:center;color:#ef4444;padding:2rem;">Error loading cash flow forecast</p>';
+    }
 }
 
 async function loadRevenueForecast() {
