@@ -2750,20 +2750,28 @@ a:focus {
 
 /* Goal Progress responsive styles */
 .goal-gauge-chart {
-    height: 180px;
+    height: 200px;
     width: 100%;
-    min-height: 150px;
+    min-height: 170px;
+    margin-top: 8px;
 }
 
 .goal-progress-container {
     min-width: 280px;
 }
 
+.goal-progress-container h4 {
+    margin-bottom: 16px !important;
+    position: relative;
+    z-index: 2;
+}
+
 /* Mobile responsive styles for Goal Progress */
 @media (max-width: 767px) {
     .goal-gauge-chart {
-        height: 160px;
-        min-height: 140px;
+        height: 180px;
+        min-height: 160px;
+        margin-top: 10px;
     }
     
     .goal-progress-container {
@@ -2773,7 +2781,9 @@ a:focus {
     
     .goal-progress-container h4 {
         font-size: 0.9rem !important;
-        margin-bottom: 8px !important;
+        margin-bottom: 12px !important;
+        position: relative;
+        z-index: 2;
     }
     
     .goal-progress-container input {
@@ -2789,13 +2799,21 @@ a:focus {
 
 @media (max-width: 480px) {
     .goal-gauge-chart {
-        height: 140px;
-        min-height: 120px;
+        height: 160px;
+        min-height: 140px;
+        margin-top: 12px;
     }
     
     .goal-progress-container {
         padding: 10px !important;
         min-width: 240px;
+    }
+    
+    .goal-progress-container h4 {
+        font-size: 0.85rem !important;
+        margin-bottom: 10px !important;
+        position: relative;
+        z-index: 2;
     }
 }
 

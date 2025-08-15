@@ -3433,32 +3433,33 @@ async function loadGoalGauge() {
                 max: 100, 
                 startAngle: 180, 
                 endAngle: 0,
-                radius: isVerySmall ? '75%' : isSmall ? '80%' : '85%',
-                center: ['50%', isSmall ? '60%' : '55%'],
+                radius: isVerySmall ? '65%' : isSmall ? '70%' : '75%',
+                center: ['50%', isSmall ? '70%' : '65%'],
                 axisLine: { 
                     lineStyle: { 
-                        width: isVerySmall ? 12 : isSmall ? 15 : 20, 
+                        width: isVerySmall ? 10 : isSmall ? 12 : 15, 
                         color: [[0.3, '#ef4444'], [0.7, '#f59e0b'], [1, '#22c55e']] 
                     } 
                 },
                 pointer: { 
                     itemStyle: { color: '#3b82f6' },
-                    width: isSmall ? 4 : 6,
-                    length: isSmall ? '60%' : '70%'
+                    width: isSmall ? 3 : 4,
+                    length: isSmall ? '55%' : '60%'
                 },
                 axisTick: { show: false }, 
                 axisLabel: { show: false }, 
                 splitLine: { show: false },
                 detail: { 
                     formatter: '{value}%', 
-                    fontSize: isVerySmall ? 12 : isSmall ? 14 : 16, 
-                    offsetCenter: [0, isSmall ? '25%' : '20%'],
+                    fontSize: isVerySmall ? 11 : isSmall ? 12 : 14, 
+                    offsetCenter: [0, isSmall ? '35%' : '30%'],
                     color: '#374151',
                     fontWeight: 'bold'
                 },
+                title: { show: false }, // Hide the default title to prevent overlap
                 data: [{ 
                     value: Math.min(progress, 100), 
-                    name: 'Goal Progress' 
+                    name: '' // Remove the name to prevent overlap
                 }]
             }]
         };
