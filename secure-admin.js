@@ -3521,22 +3521,74 @@ async function loadRevenueForecast() {
     const chart = echarts.init(container);
     container._chartInstance = chart;
     
-    const yThis = new Date().getFullYear(); const thisYear = insightsData.bucketByYear[yThis]?.values || [];
-    const sma = thisYear.slice(-3).reduce((a,b)=>a+b,0) / 3;
-    const growth = 0.05; // 5% monthly growth assumption
+    const yThis = new Date().getFullYear(); 
+    const thisYear = insightsData.bucketByYear[yThis]?.values || [];
     
-    const forecast = Array.from({length: 6}, (_, i) => sma * Math.pow(1 + growth, i));
+    console.log('🔍 Revenue Forecast Debug: This year data:', thisYear);
+    
+    // Calculate SMA from last 3 months, but ensure we have data
+    const last3Months = thisYear.slice(-3);
+    console.log('🔍 Revenue Forecast Debug: Last 3 months:', last3Months);
+    
+    let sma = last3Months.reduce((a,b)=>a+b,0) / Math.max(last3Months.length, 1);
+    
+    // If SMA is too small or zero, use average of all available data
+    if (sma <= 0) {
+        const totalSales = thisYear.reduce((a,b)=>a+b,0);
+        const monthsWithData = thisYear.filter(v => v > 0).length;
+        sma = monthsWithData > 0 ? totalSales / monthsWithData : 50000; // Default fallback
+        console.log('🔍 Revenue Forecast Debug: Using fallback SMA:', sma);
+    }
+    
+    console.log('🔍 Revenue Forecast Debug: Final SMA:', sma);
+    
+    const growth = 0.05; // 5% monthly growth assumption
+    const forecast = Array.from({length: 6}, (_, i) => Math.max(sma * Math.pow(1 + growth, i), 1000)); // Minimum 1000
     const months = ['Next 1M', 'Next 2M', 'Next 3M', 'Next 4M', 'Next 5M', 'Next 6M'];
     
+    console.log('🔍 Revenue Forecast Debug: Forecast data:', forecast);
+    
     const option = {
-        tooltip: { trigger: 'axis', formatter: p => `${p[0].name}<br/>₹${Number(p[0].value).toLocaleString('en-IN')}` },
+        tooltip: { 
+            trigger: 'axis', 
+            formatter: function(params) {
+                if (!params || params.length === 0) return '';
+                const param = params[0];
+                return `${param.name}<br/>₹${Number(param.value || 0).toLocaleString('en-IN')}`;
+            }
+        },
         grid: { left: 50, right: 20, top: 20, bottom: 40 },
         xAxis: { type: 'category', data: months, axisLabel: { fontSize: 9 } },
-        yAxis: { type: 'value', axisLabel: { fontSize: 9, formatter: v => `₹${(v/1000).toFixed(0)}K` } },
-        series: [{ type: 'bar', data: forecast, itemStyle: { color: '#10b981' } }]
+        yAxis: { 
+            type: 'value', 
+            axisLabel: { 
+                fontSize: 9, 
+                formatter: function(v) {
+                    return '₹' + ((v || 0)/1000).toFixed(0) + 'K';
+                }
+            }
+        },
+        series: [{ 
+            type: 'bar', 
+            data: forecast, 
+            itemStyle: { color: '#10b981' },
+            barWidth: '60%'
+        }]
     };
-    chart.setOption(option);
-    window.addEventListener('resize', () => chart.resize());
+    
+    try {
+        chart.setOption(option);
+        console.log('🔍 Revenue Forecast chart set successfully');
+    } catch (error) {
+        console.error('❌ Error setting Revenue Forecast chart:', error);
+        console.log('🔍 Chart option:', option);
+    }
+    
+    window.addEventListener('resize', () => {
+        if (chart && !chart.isDisposed()) {
+            chart.resize();
+        }
+    });
 }
 
 async function setupInteractiveFilters() {
