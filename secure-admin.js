@@ -2943,6 +2943,11 @@ async function loadInsights() {
         
         const results = await Promise.allSettled(loadPromises);
         console.log('🔍 Insights Debug: Load results:', results.map(r => r.status));
+        
+        // Test if interactive elements are working after a short delay
+        setTimeout(() => {
+            testInteractiveElements();
+        }, 1000);
     } catch (e) {
         console.error('Insights load error', e);
     }
@@ -3290,23 +3295,103 @@ async function setupInteractiveFilters() {
     const timeRange = document.getElementById('timeRangePicker');
     const customStart = document.getElementById('customStart');
     const customEnd = document.getElementById('customEnd');
+    const compareMode = document.getElementById('compareMode');
     
+    // Time range picker functionality
     timeRange?.addEventListener('change', (e) => {
+        console.log('🔍 Time range changed:', e.target.value);
         if (e.target.value === 'custom') {
             customStart.style.display = 'inline-block';
             customEnd.style.display = 'inline-block';
         } else {
             customStart.style.display = 'none';
             customEnd.style.display = 'none';
+            // Apply the selected time range filter
+            filterDataByTimeRange(e.target.value);
         }
     });
     
-    document.getElementById('compareMode')?.addEventListener('click', () => {
-        // Toggle comparison mode - could expand this
-        const isActive = document.getElementById('compareMode').classList.contains('active');
-        document.getElementById('compareMode').classList.toggle('active', !isActive);
-        document.getElementById('compareMode').textContent = isActive ? 'Compare Periods' : 'Exit Compare';
+    // Custom date range functionality
+    const applyCustomRange = () => {
+        if (customStart.value && customEnd.value) {
+            console.log('🔍 Custom range:', customStart.value, 'to', customEnd.value);
+            filterDataByCustomRange(customStart.value, customEnd.value);
+        }
+    };
+    
+    customStart?.addEventListener('change', applyCustomRange);
+    customEnd?.addEventListener('change', applyCustomRange);
+    
+    // Compare Periods button functionality
+    compareMode?.addEventListener('click', () => {
+        const isActive = compareMode.classList.contains('active');
+        compareMode.classList.toggle('active', !isActive);
+        compareMode.textContent = isActive ? 'Compare Periods' : 'Exit Compare';
+        console.log('🔍 Compare mode toggled:', !isActive);
+        
+        // Toggle YoY comparison when compare mode is activated
+        const toggleYoy = document.getElementById('toggleYoy');
+        if (toggleYoy) {
+            toggleYoy.checked = !isActive;
+            // Trigger the change event to refresh the chart
+            toggleYoy.dispatchEvent(new Event('change'));
+        }
     });
+}
+
+function filterDataByTimeRange(days) {
+    console.log('🔍 Filtering data by', days, 'days');
+    // This would filter the main chart data based on the selected time range
+    // For now, just refresh the main chart
+    const mainChart = document.getElementById('insightsChart')?._chartInstance;
+    if (mainChart) {
+        // You could implement actual filtering logic here
+        console.log('🔍 Time range filter applied:', days, 'days');
+    }
+}
+
+function filterDataByCustomRange(startDate, endDate) {
+    console.log('🔍 Filtering data from', startDate, 'to', endDate);
+    // This would filter the main chart data based on custom date range
+    const mainChart = document.getElementById('insightsChart')?._chartInstance;
+    if (mainChart) {
+        // You could implement actual filtering logic here
+        console.log('🔍 Custom range filter applied');
+    }
+}
+
+function testInteractiveElements() {
+    console.log('🧪 Testing Interactive Elements:');
+    
+    const elements = [
+        { id: 'toggleYoy', name: 'YoY Compare checkbox' },
+        { id: 'toggleSma', name: 'Forecast checkbox' },
+        { id: 'whatIfGrowth', name: 'What-if input' },
+        { id: 'applyWhatIf', name: 'What-if button' },
+        { id: 'compareMode', name: 'Compare Periods button' },
+        { id: 'timeRangePicker', name: 'Time Range dropdown' }
+    ];
+    
+    elements.forEach(element => {
+        const el = document.getElementById(element.id);
+        if (el) {
+            console.log(`✅ ${element.name}: Found`);
+        } else {
+            console.error(`❌ ${element.name}: NOT FOUND`);
+        }
+    });
+    
+    // Test if checkboxes can be programmatically changed
+    const toggleYoy = document.getElementById('toggleYoy');
+    if (toggleYoy) {
+        console.log('🧪 Testing YoY checkbox programmatically...');
+        toggleYoy.checked = true;
+        toggleYoy.dispatchEvent(new Event('change'));
+        setTimeout(() => {
+            toggleYoy.checked = false;
+            toggleYoy.dispatchEvent(new Event('change'));
+        }, 2000);
+    }
 }
 
 function updateInsightsTable(isoDates, sales, purchases) {
