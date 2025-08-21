@@ -731,6 +731,28 @@
             #todaySales, #todayPurchases {
                 cursor: default !important;
                 text-decoration: none !important;
+                color: inherit !important;
+            }
+            
+            /* Remove hover effects from the numbers specifically */
+            #todaySales:hover, #todayPurchases:hover {
+                cursor: default !important;
+                text-decoration: none !important;
+                color: inherit !important;
+                transform: none !important;
+                box-shadow: none !important;
+                background-color: transparent !important;
+            }
+            
+            /* Force non-clickable behavior on Today's numbers - highest specificity */
+            h3#todaySales, h3#todayPurchases,
+            h3#todaySales:hover, h3#todayPurchases:hover,
+            #todaySales *, #todayPurchases *,
+            #todaySales *:hover, #todayPurchases *:hover {
+                cursor: default !important;
+                pointer-events: none !important;
+                text-decoration: none !important;
+                color: inherit !important;
             }
             
             /* Ensure Today's cards don't have hover effects */
