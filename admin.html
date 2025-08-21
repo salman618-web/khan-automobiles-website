@@ -52,59 +52,64 @@
         <div id="dashboard" class="admin-section active">
             <h2>Dashboard Overview</h2>
             
-            <!-- Year Filter -->
-            <div class="year-filter" style="margin-bottom: 1.5rem; text-align: center;">
-                <label for="yearFilter" style="margin-right: 0.5rem; font-weight: bold;">Filter by Year:</label>
-                <select id="yearFilter" style="padding: 0.5rem 1rem; border: 2px solid #ddd; border-radius: 5px; font-size: 1rem; background-color: white; cursor: pointer;">
-                    <option value="all">All Years</option>
-                </select>
+
+
+            <!-- Today's Sale/Purchase Section -->
+            <div style="margin-bottom: 2rem;">
+                <h3 style="text-align: center; margin-bottom: 1.5rem; color: #2c3e50; font-size: 1.5rem;">📅 Today's Sale/Purchase</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; max-width: 800px; margin: 0 auto;">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color: #f39c12;">
+                            <i class="fas fa-calendar-day"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="todaySales">₹0</h3>
+                            <p>Today's Sales</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color: #9b59b6;">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="todayPurchases">₹0</h3>
+                            <p>Today's Purchases</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-            
-            <!-- Quick Stats -->
-            <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; margin-bottom: 2rem;">
-                <div class="stat-card">
-                    <div class="stat-icon" style="color: #27ae60;">
-                        <i class="fas fa-money-bill-wave"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3 id="totalSales">₹0</h3>
-                        <p>Total Sales</p>
-                    </div>
+
+            <!-- Year wise Sale/Purchase Section -->
+            <div style="margin-bottom: 2rem;">
+                <h3 style="text-align: center; margin-bottom: 1.5rem; color: #2c3e50; font-size: 1.5rem;">📈 Year wise Sale/Purchase</h3>
+                
+                <!-- Year Filter -->
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <label for="yearwiseFilter" style="margin-right: 0.5rem; font-weight: bold;">Select Year:</label>
+                    <select id="yearwiseFilter" style="padding: 0.5rem 1rem; border: 2px solid #ddd; border-radius: 5px; font-size: 1rem; background-color: white; cursor: pointer;" onchange="updateYearwiseData()">
+                        <option value="">All Years</option>
+                    </select>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="color: #e74c3c;">
-                        <i class="fas fa-shopping-cart"></i>
+
+                <!-- Year-wise Stats Cards -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; max-width: 800px; margin: 0 auto;">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color: #27ae60;">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="yearwiseSales">₹0</h3>
+                            <p id="yearwiseSalesLabel">Total Sales</p>
+                        </div>
                     </div>
-                    <div class="stat-info">
-                        <h3 id="totalPurchases">₹0</h3>
-                        <p>Total Purchases</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="color: #3498db;">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3 id="netProfit">₹0</h3>
-                        <p>Net Profit</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="color: #f39c12;">
-                        <i class="fas fa-calendar-day"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3 id="todaySales">₹0</h3>
-                        <p>Today's Sales</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="color: #9b59b6;">
-                        <i class="fas fa-calendar-check"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3 id="todayPurchases">₹0</h3>
-                        <p>Today's Purchases</p>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color: #e74c3c;">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="yearwisePurchases">₹0</h3>
+                            <p id="yearwisePurchasesLabel">Total Purchases</p>
+                        </div>
                     </div>
                 </div>
             </div>

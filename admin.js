@@ -41,7 +41,70 @@ window.debugYearFilter = async function() {
     console.log('🔍 Options after manual init:', Array.from(yearSelect.options).map(opt => ({value: opt.value, text: opt.textContent})));
 };
 
-// Simple, direct function to populate year dropdown
+// SIMPLE, FOOLPROOF year filter setup
+function setupYearFilter() {
+    console.log('🔧 SETTING UP YEAR FILTER...');
+    
+    const yearSelect = document.getElementById('yearFilter');
+    if (!yearSelect) {
+        console.error('❌ YEAR FILTER NOT FOUND!');
+        return;
+    }
+    
+    console.log('✅ Year filter found, adding years manually first...');
+    
+    // Add years manually as fallback
+    const currentYear = new Date().getFullYear();
+    const years = [currentYear, currentYear - 1, currentYear - 2];
+    
+    // Clear and add years
+    while (yearSelect.children.length > 1) {
+        yearSelect.removeChild(yearSelect.lastChild);
+    }
+    
+    years.forEach(year => {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year;
+        yearSelect.appendChild(option);
+        console.log(`✅ Added year: ${year}`);
+    });
+    
+    // Add event listener
+    yearSelect.onchange = function() {
+        console.log('🔄 Year changed to:', yearSelect.value);
+        loadDashboard().catch(err => console.error('Dashboard error:', err));
+    };
+    
+    console.log('✅ Year filter setup complete with', yearSelect.children.length, 'options');
+    
+    // Now try to get real years from API
+    fetch('/api/dashboard/years')
+        .then(response => response.json())
+        .then(apiYears => {
+            console.log('📡 Got API years:', apiYears);
+            
+            // Replace with API years
+            while (yearSelect.children.length > 1) {
+                yearSelect.removeChild(yearSelect.lastChild);
+            }
+            
+            apiYears.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                yearSelect.appendChild(option);
+                console.log(`🌐 Added API year: ${year}`);
+            });
+            
+            console.log('🎉 YEAR FILTER FULLY POPULATED!');
+        })
+        .catch(error => {
+            console.log('📡 API failed, keeping manual years:', error);
+        });
+}
+
+// OLD function - keeping for backup
 function populateYearDropdown() {
     console.log('🔄 Populating year dropdown directly...');
     
@@ -115,6 +178,8 @@ function populateYearDropdown() {
         });
 }
 
+
+
 // Check authentication on page load
 document.addEventListener('DOMContentLoaded', function() {
     checkAuthentication();
@@ -124,11 +189,8 @@ document.addEventListener('DOMContentLoaded', function() {
     setDefaultDates();
     
     // Load dashboard with a small delay to ensure Chart.js is fully loaded
-    setTimeout(async function() {
-        // First populate the year dropdown immediately
-        populateYearDropdown();
-        
-        await loadDashboard().catch(error => console.error('Error loading dashboard on startup:', error));
+    setTimeout(function() {
+        loadDashboard();
         updateDataCountInfo();
         setSalesDefaults(); // Set default values for sales form
         setPurchaseDefaults(); // Set default values for purchase form
@@ -190,7 +252,7 @@ function showSection(sectionName) {
     
     // Load section-specific data
     if (sectionName === 'dashboard') {
-        loadDashboard().catch(error => console.error('Error loading dashboard:', error));
+        loadDashboard();
     } else if (sectionName === 'sales') {
         setSalesDefaults(); // Set default values when navigating to sales section
     } else if (sectionName === 'purchase') {
@@ -299,6 +361,12 @@ function addSale() {
     
     // Always refresh dashboard data (will update when user navigates to dashboard)
     loadDashboard();
+    
+    // Refresh year-wise section if it's visible
+    if (document.getElementById('yearwiseFilter')) {
+        populateYearwiseFilter();
+        updateYearwiseData();
+    }
 }
 
 // Add new purchase
@@ -342,6 +410,12 @@ function addPurchase() {
     // Always refresh dashboard data (will update when user navigates to dashboard)
     loadDashboard();
     updateDataCountInfo();
+    
+    // Refresh year-wise section if it's visible
+    if (document.getElementById('yearwiseFilter')) {
+        populateYearwiseFilter();
+        updateYearwiseData();
+    }
 }
 
 // Extract unique years from sales and purchase data
@@ -449,76 +523,269 @@ function filterDataByYear(data, dateField) {
     });
 }
 
-// Load dashboard data
-async function loadDashboard() {
+// Load data from server into localStorage
+async function syncDataFromServer() {
     try {
-        console.log('📊 Loading dashboard data...');
+        console.log('🔄 Syncing data from server...');
         
-        // Initialize year filter if not already done
-        await initializeYearFilterBasic();
+        const [salesResponse, purchasesResponse] = await Promise.all([
+            fetch('/api/sales'),
+            fetch('/api/purchases')
+        ]);
         
-        // Get selected year
-        const selectedYear = document.getElementById('yearFilter')?.value || 'all';
-        
-        // Build API URL with year parameter
-        let apiUrl = '/api/dashboard';
-        if (selectedYear && selectedYear !== 'all') {
-            apiUrl += `?year=${selectedYear}`;
+        if (salesResponse.ok && purchasesResponse.ok) {
+            const salesData = await salesResponse.json();
+            const purchaseData = await purchasesResponse.json();
+            
+            // Save to localStorage
+            localStorage.setItem('salesData', JSON.stringify(salesData));
+            localStorage.setItem('purchaseData', JSON.stringify(purchaseData));
+            
+            console.log(`✅ Synced ${salesData.length} sales and ${purchaseData.length} purchases from server`);
+            return true;
+        } else {
+            console.error('Failed to sync data from server');
+            return false;
         }
-        
-        console.log('🌐 Fetching dashboard data from:', apiUrl);
-        const response = await fetch(apiUrl);
-        const dashboardData = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        console.log('📊 Dashboard data received:', dashboardData);
-        
-        // Check if we have error in response
-        if (dashboardData.error) {
-            throw new Error(dashboardData.message || dashboardData.error);
-        }
-        
-        // Update dashboard stats with server data
-        if (document.getElementById('totalSales')) {
-            document.getElementById('totalSales').textContent = `₹${dashboardData.totalSales.toLocaleString('en-IN')}`;
-            document.getElementById('totalPurchases').textContent = `₹${dashboardData.totalPurchases.toLocaleString('en-IN')}`;
-            document.getElementById('netProfit').textContent = `₹${dashboardData.netProfit.toLocaleString('en-IN')}`;
-            document.getElementById('todaySales').textContent = `₹${dashboardData.todaySales.toLocaleString('en-IN')}`;
-            console.log('✅ Dashboard stats updated successfully with year filter:', selectedYear);
-        }
-        
     } catch (error) {
-        console.error('❌ Dashboard loading error:', error);
-        showNotification(`Error loading dashboard data: ${error.message}`, 'error');
-        
-        // Show fallback message
-        if (document.getElementById('totalSales')) {
-            document.getElementById('totalSales').textContent = 'Error';
-            document.getElementById('totalPurchases').textContent = 'Error';
-            document.getElementById('netProfit').textContent = 'Error';
-            document.getElementById('todaySales').textContent = 'Error';
-        }
+        console.error('Error syncing data from server:', error);
+        return false;
+    }
+}
+
+// Load dashboard data
+function loadDashboard() {
+    // Check if Chart.js is loaded
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js library not loaded');
         return;
     }
     
-    // Load quick chart (with error handling)
-    try {
-        loadQuickChart();
-    } catch (error) {
-        console.error('Error loading quick chart:', error);
-        // Show fallback message
-        const chartContainer = document.getElementById('quickChart').parentElement;
-        if (chartContainer) {
-            chartContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 2rem;">Chart loading failed. Data totals are shown above.</p>';
+    // First, sync data from server
+    syncDataFromServer().then((success) => {
+        if (success) {
+            // Refresh year-wise section after syncing
+            setTimeout(() => {
+                populateYearwiseFilter();
+                updateYearwiseData();
+            }, 100);
         }
-    }
+    });
+    
+    const salesData = JSON.parse(localStorage.getItem('salesData') || '[]');
+    const purchaseData = JSON.parse(localStorage.getItem('purchaseData') || '[]');
+    
+    // Calculate today's sales only
+    const today = new Date().toISOString().split('T')[0];
+    const todaySales = salesData
+        .filter(sale => sale.sale_date === today)
+        .reduce((sum, sale) => sum + (sale.total || 0), 0);
+    
+    const todayPurchases = purchaseData
+        .filter(purchase => purchase.purchase_date === today)
+        .reduce((sum, purchase) => sum + (purchase.total || 0), 0);
+    
+    // Update today's stats only
+    document.getElementById('todaySales').textContent = `₹${todaySales.toLocaleString('en-IN')}`;
+    document.getElementById('todayPurchases').textContent = `₹${todayPurchases.toLocaleString('en-IN')}`;
+    
+    // Load quick chart
+    loadQuickChart();
     
     // Load recent transactions
     loadRecentTransactions();
+    
+    // Initialize year-wise section after a delay to ensure localStorage is populated
+    setTimeout(() => {
+        console.log('⏰ Initializing year-wise section after delay...');
+        populateYearwiseFilter();
+        updateYearwiseData();
+    }, 500);
 }
+
+// Populate year filter dropdown for year-wise section
+function populateYearwiseFilter() {
+    console.log('🔧 Populating year-wise filter...');
+    
+    const yearSelect = document.getElementById('yearwiseFilter');
+    if (!yearSelect) {
+        console.error('❌ yearwiseFilter dropdown not found!');
+        return;
+    }
+    
+    console.log('✅ Found yearwiseFilter dropdown');
+    
+    // Get data from localStorage
+    const salesData = JSON.parse(localStorage.getItem('salesData') || '[]');
+    const purchaseData = JSON.parse(localStorage.getItem('purchaseData') || '[]');
+    
+    console.log('📊 Data loaded:', {
+        salesCount: salesData.length,
+        purchasesCount: purchaseData.length
+    });
+    
+    // Extract unique years from both sales and purchase data
+    const allYears = new Set();
+    
+    salesData.forEach(sale => {
+        if (sale.sale_date) {
+            const year = new Date(sale.sale_date).getFullYear();
+            console.log(`Sale date: ${sale.sale_date} → Year: ${year}`);
+            if (!isNaN(year)) allYears.add(year);
+        }
+    });
+    
+    purchaseData.forEach(purchase => {
+        if (purchase.purchase_date) {
+            const year = new Date(purchase.purchase_date).getFullYear();
+            console.log(`Purchase date: ${purchase.purchase_date} → Year: ${year}`);
+            if (!isNaN(year)) allYears.add(year);
+        }
+    });
+    
+    console.log('📅 Unique years found:', Array.from(allYears));
+    
+    // Clear existing options except "All Years"
+    while (yearSelect.children.length > 1) {
+        yearSelect.removeChild(yearSelect.lastChild);
+    }
+    
+    // Sort years in descending order and add to dropdown
+    const sortedYears = Array.from(allYears).sort((a, b) => b - a);
+    sortedYears.forEach(year => {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year;
+        yearSelect.appendChild(option);
+        console.log(`✅ Added year option: ${year}`);
+    });
+    
+    console.log(`🎯 Total options in dropdown: ${yearSelect.children.length}`);
+}
+
+// Update year-wise data based on selected year
+function updateYearwiseData() {
+    console.log('🔄 Updating year-wise data...');
+    
+    const yearSelect = document.getElementById('yearwiseFilter');
+    const selectedYear = yearSelect?.value;
+    
+    console.log('📅 Selected year:', selectedYear || 'All Years');
+    
+    // Get data from localStorage
+    const salesData = JSON.parse(localStorage.getItem('salesData') || '[]');
+    const purchaseData = JSON.parse(localStorage.getItem('purchaseData') || '[]');
+    
+    console.log('📊 Raw data:', {
+        salesCount: salesData.length,
+        purchasesCount: purchaseData.length
+    });
+    
+    let filteredSales = salesData;
+    let filteredPurchases = purchaseData;
+    
+    // Filter data by selected year if a year is selected
+    if (selectedYear) {
+        console.log('🔍 Filtering by year:', selectedYear);
+        
+        filteredSales = salesData.filter(sale => {
+            if (!sale.sale_date) return false;
+            const saleYear = new Date(sale.sale_date).getFullYear();
+            const match = saleYear.toString() === selectedYear;
+            console.log(`Sale: ${sale.sale_date} → Year: ${saleYear} → Match: ${match}`);
+            return match;
+        });
+        
+        filteredPurchases = purchaseData.filter(purchase => {
+            if (!purchase.purchase_date) return false;
+            const purchaseYear = new Date(purchase.purchase_date).getFullYear();
+            const match = purchaseYear.toString() === selectedYear;
+            console.log(`Purchase: ${purchase.purchase_date} → Year: ${purchaseYear} → Match: ${match}`);
+            return match;
+        });
+    }
+    
+    console.log('🎯 Filtered data:', {
+        salesCount: filteredSales.length,
+        purchasesCount: filteredPurchases.length
+    });
+    
+    // Calculate totals
+    const totalSales = filteredSales.reduce((sum, sale) => sum + (sale.total || 0), 0);
+    const totalPurchases = filteredPurchases.reduce((sum, purchase) => sum + (purchase.total || 0), 0);
+    
+    console.log('💰 Calculated totals:', {
+        totalSales: totalSales,
+        totalPurchases: totalPurchases
+    });
+    
+    // Update the cards
+    const salesElement = document.getElementById('yearwiseSales');
+    const purchasesElement = document.getElementById('yearwisePurchases');
+    const salesLabelElement = document.getElementById('yearwiseSalesLabel');
+    const purchasesLabelElement = document.getElementById('yearwisePurchasesLabel');
+    
+    if (salesElement) {
+        salesElement.textContent = `₹${totalSales.toLocaleString('en-IN')}`;
+        console.log('✅ Updated sales element:', salesElement.textContent);
+    } else {
+        console.error('❌ yearwiseSales element not found!');
+    }
+    
+    if (purchasesElement) {
+        purchasesElement.textContent = `₹${totalPurchases.toLocaleString('en-IN')}`;
+        console.log('✅ Updated purchases element:', purchasesElement.textContent);
+    } else {
+        console.error('❌ yearwisePurchases element not found!');
+    }
+    
+    // Update labels to show the selected year
+    const yearLabel = selectedYear ? ` (${selectedYear})` : '';
+    if (salesLabelElement) {
+        salesLabelElement.textContent = `Total Sales${yearLabel}`;
+        console.log('✅ Updated sales label:', salesLabelElement.textContent);
+    }
+    
+    if (purchasesLabelElement) {
+        purchasesLabelElement.textContent = `Total Purchases${yearLabel}`;
+        console.log('✅ Updated purchases label:', purchasesLabelElement.textContent);
+    }
+}
+
+// Test function for debugging year-wise section
+window.testYearwiseSection = function() {
+    console.log('🧪 TESTING YEAR-WISE SECTION...');
+    
+    // Check if elements exist
+    const yearSelect = document.getElementById('yearwiseFilter');
+    const salesElement = document.getElementById('yearwiseSales');
+    const purchasesElement = document.getElementById('yearwisePurchases');
+    
+    console.log('🔍 Element check:', {
+        yearSelect: !!yearSelect,
+        salesElement: !!salesElement,
+        purchasesElement: !!purchasesElement
+    });
+    
+    if (yearSelect) {
+        console.log('📊 Current dropdown options:', Array.from(yearSelect.options).map(opt => opt.value));
+    }
+    
+    // Check localStorage data
+    const salesData = JSON.parse(localStorage.getItem('salesData') || '[]');
+    const purchaseData = JSON.parse(localStorage.getItem('purchaseData') || '[]');
+    
+    console.log('💾 LocalStorage data:', {
+        salesCount: salesData.length,
+        purchasesCount: purchaseData.length,
+        sampleSale: salesData[0],
+        samplePurchase: purchaseData[0]
+    });
+    
+    // Try to populate and update
+    populateYearwiseFilter();
+    updateYearwiseData();
+};
 
 // Load quick chart for dashboard
 function loadQuickChart() {
@@ -1067,7 +1334,7 @@ function generateReportTable(salesData, purchaseData, reportType) {
     container.innerHTML = tableHTML;
 }
 
-// Populate year options
+// Populate year options for Reports
 function populateYearOptions() {
     const yearSelect = document.getElementById('reportYear');
     const currentYear = new Date().getFullYear();
@@ -1079,6 +1346,12 @@ function populateYearOptions() {
         yearSelect.appendChild(option);
     }
 }
+
+
+
+
+
+
 
 // Export data function (JSON format)
 function exportData() {
@@ -1548,6 +1821,12 @@ function updateTransaction() {
             generateReport();
         }
         
+        // Refresh year-wise section if it's visible
+        if (document.getElementById('yearwiseFilter')) {
+            populateYearwiseFilter();
+            updateYearwiseData();
+        }
+        
         // Restore button state
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
@@ -1591,6 +1870,12 @@ function deleteTransaction(transactionId, transactionType) {
     updateDataCountInfo();
     if (document.getElementById('reports').classList.contains('active')) {
         generateReport();
+    }
+    
+    // Refresh year-wise section if it's visible
+    if (document.getElementById('yearwiseFilter')) {
+        populateYearwiseFilter();
+        updateYearwiseData();
     }
 }
 
