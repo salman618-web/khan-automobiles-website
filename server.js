@@ -575,7 +575,7 @@ app.delete('/api/purchases/:id', async (req, res) => {
 	}
 });
 
-// Dashboard endpoint (unchanged)
+// Dashboard endpoint with year filtering
 app.get('/api/dashboard', async (req, res) => {
 	try {
 		let currentSales = sales;
@@ -589,6 +589,26 @@ app.get('/api/dashboard', async (req, res) => {
 				console.error('Firestore dashboard error:', error);
 				// Use local data as fallback
 			}
+		}
+		
+		// Get year filter from query parameters
+		const filterYear = req.query.year;
+		
+		// Filter data by year if specified
+		if (filterYear && filterYear !== 'all') {
+			currentSales = currentSales.filter(sale => {
+				const dateToCheck = sale.sale_date || sale.date || '';
+				if (!dateToCheck) return false;
+				const year = dateToCheck.substring(0, 4);
+				return year === filterYear;
+			});
+			
+			currentPurchases = currentPurchases.filter(purchase => {
+				const dateToCheck = purchase.purchase_date || purchase.date || '';
+				if (!dateToCheck) return false;
+				const year = dateToCheck.substring(0, 4);
+				return year === filterYear;
+			});
 		}
 		
 		const totalSales = currentSales.reduce((sum, sale) => sum + parseFloat(sale.total_amount || sale.total || 0), 0);
@@ -628,6 +648,56 @@ app.get('/api/dashboard', async (req, res) => {
 	} catch (error) {
 		console.error('Dashboard error:', error);
 		res.status(500).json({ error: 'Failed to get dashboard data' });
+	}
+});
+
+// Get available years endpoint
+app.get('/api/dashboard/years', async (req, res) => {
+	try {
+		let currentSales = sales;
+		let currentPurchases = purchases;
+		
+		if (firestoreService.isAvailable()) {
+			try {
+				currentSales = await firestoreService.getSales();
+				currentPurchases = await firestoreService.getPurchases();
+			} catch (error) {
+				console.error('Firestore years error:', error);
+				// Use local data as fallback
+			}
+		}
+		
+		const years = new Set();
+		
+		// Extract years from sales data
+		currentSales.forEach(sale => {
+			const dateToCheck = sale.sale_date || sale.date || '';
+			if (dateToCheck) {
+				const year = dateToCheck.substring(0, 4);
+				if (/^\d{4}$/.test(year)) {
+					years.add(year);
+				}
+			}
+		});
+		
+		// Extract years from purchase data
+		currentPurchases.forEach(purchase => {
+			const dateToCheck = purchase.purchase_date || purchase.date || '';
+			if (dateToCheck) {
+				const year = dateToCheck.substring(0, 4);
+				if (/^\d{4}$/.test(year)) {
+					years.add(year);
+				}
+			}
+		});
+		
+		// Return sorted years (newest first)
+		const sortedYears = Array.from(years).sort((a, b) => b.localeCompare(a));
+		res.json(sortedYears);
+		
+	} catch (error) {
+		console.error('Years endpoint error:', error);
+		res.status(500).json({ error: 'Failed to get available years' });
 	}
 });
 

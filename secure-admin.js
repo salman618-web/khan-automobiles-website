@@ -274,11 +274,58 @@ async function showDashboard() {
     }
 }
 
+// Initialize year filter dropdown for secure admin
+async function initializeYearFilterSecure() {
+    const yearSelect = document.getElementById('yearFilter');
+    if (!yearSelect) return;
+    
+    try {
+        // Get available years from server
+        const response = await fetch('/api/dashboard/years');
+        const years = await response.json();
+        
+        // Clear existing options except "All Years"
+        while (yearSelect.children.length > 1) {
+            yearSelect.removeChild(yearSelect.lastChild);
+        }
+        
+        // Add year options
+        years.forEach(year => {
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = year;
+            yearSelect.appendChild(option);
+        });
+        
+        // Add event listener for year changes if not already added
+        if (!yearSelect.dataset.listenerAdded) {
+            yearSelect.addEventListener('change', loadDashboard);
+            yearSelect.dataset.listenerAdded = 'true';
+        }
+        
+    } catch (error) {
+        console.error('Error loading years:', error);
+    }
+}
+
 // Load dashboard data
 async function loadDashboard() {
     try {
         console.log('📊 Loading dashboard data...');
-        const response = await fetch('/api/dashboard');
+        
+        // Initialize year filter if not already done
+        await initializeYearFilterSecure();
+        
+        // Get selected year
+        const selectedYear = document.getElementById('yearFilter')?.value || 'all';
+        
+        // Build API URL with year parameter
+        let apiUrl = '/api/dashboard';
+        if (selectedYear && selectedYear !== 'all') {
+            apiUrl += `?year=${selectedYear}`;
+        }
+        
+        const response = await fetch(apiUrl);
         const dashboardData = await response.json();
         
         if (!response.ok) {

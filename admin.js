@@ -1,3 +1,120 @@
+// Debug function for testing year filter (can be called from browser console)
+window.debugYearFilter = async function() {
+    console.log('🔍 DEBUG: Testing year filter...');
+    
+    const yearSelect = document.getElementById('yearFilter');
+    console.log('🔍 Year filter element:', yearSelect);
+    
+    if (!yearSelect) {
+        console.error('❌ Year filter element not found!');
+        return;
+    }
+    
+    console.log('🔍 Current options:', Array.from(yearSelect.options).map(opt => ({value: opt.value, text: opt.textContent})));
+    console.log('🔍 Selected value:', yearSelect.value);
+    console.log('🔍 Event listeners:', yearSelect.dataset.listenerAdded);
+    
+    // Test API directly
+    try {
+        console.log('🔍 Testing /api/dashboard/years...');
+        const response = await fetch('/api/dashboard/years');
+        const years = await response.json();
+        console.log('🔍 API response:', years);
+        
+        console.log('🔍 Testing /api/dashboard...');
+        const dashResponse = await fetch('/api/dashboard');
+        const dashData = await dashResponse.json();
+        console.log('🔍 Dashboard API response:', dashData);
+        
+    } catch (error) {
+        console.error('❌ API test failed:', error);
+    }
+    
+    // Try to manually populate years
+    console.log('🔍 Trying to manually populate years...');
+    try {
+        await initializeYearFilterBasic();
+    } catch (error) {
+        console.error('❌ Manual initialization failed:', error);
+    }
+    
+    console.log('🔍 Options after manual init:', Array.from(yearSelect.options).map(opt => ({value: opt.value, text: opt.textContent})));
+};
+
+// Simple, direct function to populate year dropdown
+function populateYearDropdown() {
+    console.log('🔄 Populating year dropdown directly...');
+    
+    const yearSelect = document.getElementById('yearFilter');
+    if (!yearSelect) {
+        console.error('❌ Year filter dropdown not found');
+        return;
+    }
+    
+    console.log('✅ Found year dropdown element');
+    
+    // Make direct API call
+    fetch('/api/dashboard/years')
+        .then(response => response.json())
+        .then(years => {
+            console.log('📅 Received years from API:', years);
+            
+            // Clear existing options except "All Years"
+            while (yearSelect.children.length > 1) {
+                yearSelect.removeChild(yearSelect.lastChild);
+            }
+            console.log('🗑️ Cleared existing options');
+            
+            // Add year options
+            years.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                yearSelect.appendChild(option);
+                console.log(`✅ Added year option: ${year}`);
+            });
+            
+            console.log(`🎯 Dropdown now has ${yearSelect.children.length} total options`);
+            
+            // Add event listener if not already added
+            if (!yearSelect.dataset.listenerAdded) {
+                yearSelect.addEventListener('change', function() {
+                    console.log('🔄 Year filter changed to:', yearSelect.value);
+                    loadDashboard().catch(error => console.error('Error loading dashboard:', error));
+                });
+                yearSelect.dataset.listenerAdded = 'true';
+                console.log('🎧 Event listener added to year dropdown');
+            }
+            
+            console.log('✅ Year dropdown populated successfully!');
+        })
+        .catch(error => {
+            console.error('❌ Failed to populate year dropdown:', error);
+            
+            // Fallback: Add common years manually
+            console.log('🔄 Adding fallback years...');
+            const currentYear = new Date().getFullYear();
+            const fallbackYears = [currentYear, currentYear - 1, currentYear - 2];
+            
+            fallbackYears.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                yearSelect.appendChild(option);
+                console.log(`✅ Added fallback year: ${year}`);
+            });
+            
+            // Add event listener
+            if (!yearSelect.dataset.listenerAdded) {
+                yearSelect.addEventListener('change', function() {
+                    console.log('🔄 Year filter changed to:', yearSelect.value);
+                    loadDashboard().catch(error => console.error('Error loading dashboard:', error));
+                });
+                yearSelect.dataset.listenerAdded = 'true';
+            }
+        });
+}
+
 // Check authentication on page load
 document.addEventListener('DOMContentLoaded', function() {
     checkAuthentication();
@@ -7,8 +124,11 @@ document.addEventListener('DOMContentLoaded', function() {
     setDefaultDates();
     
     // Load dashboard with a small delay to ensure Chart.js is fully loaded
-    setTimeout(function() {
-        loadDashboard();
+    setTimeout(async function() {
+        // First populate the year dropdown immediately
+        populateYearDropdown();
+        
+        await loadDashboard().catch(error => console.error('Error loading dashboard on startup:', error));
         updateDataCountInfo();
         setSalesDefaults(); // Set default values for sales form
         setPurchaseDefaults(); // Set default values for purchase form
@@ -70,7 +190,7 @@ function showSection(sectionName) {
     
     // Load section-specific data
     if (sectionName === 'dashboard') {
-        loadDashboard();
+        loadDashboard().catch(error => console.error('Error loading dashboard:', error));
     } else if (sectionName === 'sales') {
         setSalesDefaults(); // Set default values when navigating to sales section
     } else if (sectionName === 'purchase') {
@@ -224,32 +344,165 @@ function addPurchase() {
     updateDataCountInfo();
 }
 
-// Load dashboard data
-function loadDashboard() {
+// Extract unique years from sales and purchase data
+function getAvailableYears() {
     const salesData = JSON.parse(localStorage.getItem('salesData') || '[]');
     const purchaseData = JSON.parse(localStorage.getItem('purchaseData') || '[]');
     
-    console.log('Loading dashboard - Sales data:', salesData.length, 'items');
-    console.log('Loading dashboard - Purchase data:', purchaseData.length, 'items');
+    const years = new Set();
     
-    // Calculate totals
-    const totalSales = salesData.reduce((sum, sale) => sum + sale.total, 0);
-    const totalPurchases = purchaseData.reduce((sum, purchase) => sum + purchase.total, 0);
-    const netProfit = totalSales - totalPurchases;
+    // Extract years from sales data
+    salesData.forEach(sale => {
+        if (sale.date) {
+            const year = new Date(sale.date).getFullYear();
+            if (!isNaN(year)) {
+                years.add(year);
+            }
+        }
+    });
     
-    console.log('Dashboard totals - Sales:', totalSales, 'Purchases:', totalPurchases, 'Profit:', netProfit);
+    // Extract years from purchase data
+    purchaseData.forEach(purchase => {
+        if (purchase.date) {
+            const year = new Date(purchase.date).getFullYear();
+            if (!isNaN(year)) {
+                years.add(year);
+            }
+        }
+    });
     
-    // Calculate today's sales
-    const today = new Date().toISOString().split('T')[0];
-    const todaySales = salesData
-        .filter(sale => sale.date === today)
-        .reduce((sum, sale) => sum + sale.total, 0);
+    return Array.from(years).sort((a, b) => b - a); // Sort descending (newest first)
+}
+
+// Initialize year filter dropdown for basic admin
+async function initializeYearFilterBasic() {
+    const yearSelect = document.getElementById('yearFilter');
+    if (!yearSelect) {
+        console.log('❌ Year filter dropdown not found');
+        return;
+    }
     
-    // Update dashboard stats
-    document.getElementById('totalSales').textContent = `₹${totalSales.toLocaleString('en-IN')}`;
-    document.getElementById('totalPurchases').textContent = `₹${totalPurchases.toLocaleString('en-IN')}`;
-    document.getElementById('netProfit').textContent = `₹${netProfit.toLocaleString('en-IN')}`;
-    document.getElementById('todaySales').textContent = `₹${todaySales.toLocaleString('en-IN')}`;
+    console.log('🔄 Initializing year filter dropdown...');
+    
+    try {
+        // Get available years from server
+        console.log('🌐 Fetching years from /api/dashboard/years...');
+        const response = await fetch('/api/dashboard/years');
+        const years = await response.json();
+        
+        console.log('📅 Years received:', years);
+        
+        // Clear existing options except "All Years"
+        while (yearSelect.children.length > 1) {
+            yearSelect.removeChild(yearSelect.lastChild);
+        }
+        
+        // Add year options
+        years.forEach(year => {
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = year;
+            yearSelect.appendChild(option);
+            console.log(`✅ Added year option: ${year}`);
+        });
+        
+        console.log(`🎯 Dropdown now has ${yearSelect.children.length} options`);
+        
+        // Add event listener for year changes if not already added
+        if (!yearSelect.dataset.listenerAdded) {
+            yearSelect.addEventListener('change', loadDashboard);
+            yearSelect.dataset.listenerAdded = 'true';
+            console.log('🎧 Event listener added to year dropdown');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error loading years:', error);
+        // Fallback to localStorage-based years if server fails
+        const years = getAvailableYears();
+        console.log('🔄 Fallback to localStorage years:', years);
+        years.forEach(year => {
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = year;
+            yearSelect.appendChild(option);
+        });
+        
+        if (!yearSelect.dataset.listenerAdded) {
+            yearSelect.addEventListener('change', loadDashboard);
+            yearSelect.dataset.listenerAdded = 'true';
+        }
+    }
+}
+
+// Filter data by selected year
+function filterDataByYear(data, dateField) {
+    const selectedYear = document.getElementById('yearFilter')?.value;
+    
+    if (!selectedYear || selectedYear === 'all') {
+        return data;
+    }
+    
+    return data.filter(item => {
+        if (!item[dateField]) return false;
+        const itemYear = new Date(item[dateField]).getFullYear();
+        return itemYear.toString() === selectedYear;
+    });
+}
+
+// Load dashboard data
+async function loadDashboard() {
+    try {
+        console.log('📊 Loading dashboard data...');
+        
+        // Initialize year filter if not already done
+        await initializeYearFilterBasic();
+        
+        // Get selected year
+        const selectedYear = document.getElementById('yearFilter')?.value || 'all';
+        
+        // Build API URL with year parameter
+        let apiUrl = '/api/dashboard';
+        if (selectedYear && selectedYear !== 'all') {
+            apiUrl += `?year=${selectedYear}`;
+        }
+        
+        console.log('🌐 Fetching dashboard data from:', apiUrl);
+        const response = await fetch(apiUrl);
+        const dashboardData = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        console.log('📊 Dashboard data received:', dashboardData);
+        
+        // Check if we have error in response
+        if (dashboardData.error) {
+            throw new Error(dashboardData.message || dashboardData.error);
+        }
+        
+        // Update dashboard stats with server data
+        if (document.getElementById('totalSales')) {
+            document.getElementById('totalSales').textContent = `₹${dashboardData.totalSales.toLocaleString('en-IN')}`;
+            document.getElementById('totalPurchases').textContent = `₹${dashboardData.totalPurchases.toLocaleString('en-IN')}`;
+            document.getElementById('netProfit').textContent = `₹${dashboardData.netProfit.toLocaleString('en-IN')}`;
+            document.getElementById('todaySales').textContent = `₹${dashboardData.todaySales.toLocaleString('en-IN')}`;
+            console.log('✅ Dashboard stats updated successfully with year filter:', selectedYear);
+        }
+        
+    } catch (error) {
+        console.error('❌ Dashboard loading error:', error);
+        showNotification(`Error loading dashboard data: ${error.message}`, 'error');
+        
+        // Show fallback message
+        if (document.getElementById('totalSales')) {
+            document.getElementById('totalSales').textContent = 'Error';
+            document.getElementById('totalPurchases').textContent = 'Error';
+            document.getElementById('netProfit').textContent = 'Error';
+            document.getElementById('todaySales').textContent = 'Error';
+        }
+        return;
+    }
     
     // Load quick chart (with error handling)
     try {
