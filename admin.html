@@ -726,6 +726,26 @@
             .stat-icon i {
                 font-size: 1.5rem !important;
             }
+            
+            /* Remove link behavior from Today's Sale/Purchase cards */
+            #todaySales, #todayPurchases {
+                cursor: default !important;
+                text-decoration: none !important;
+            }
+            
+            /* Ensure Today's cards don't have hover effects */
+            div.stat-card:has(#todaySales), div.stat-card:has(#todayPurchases) {
+                cursor: default !important;
+                pointer-events: auto !important;
+            }
+            
+            div.stat-card:has(#todaySales):hover, div.stat-card:has(#todayPurchases):hover {
+                transform: none !important;
+                box-shadow: none !important;
+                background-color: inherit !important;
+                cursor: default !important;
+            }
+            
             .invoice-table th:nth-child(3), .invoice-table td:nth-child(3) { display: none; } /* hide HSN on very small screens */
             .invoice-table th:nth-child(7), .invoice-table td:nth-child(7) { width: 60px; }
         }
