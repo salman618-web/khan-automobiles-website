@@ -2041,7 +2041,7 @@ async function populateYearOptions() {
 // Initialize everything
 document.addEventListener('DOMContentLoaded', function() {
     setupNavigation();
-    setTimeout(makeTodayStatsClickable, 1000);
+    // setTimeout(makeTodayStatsClickable, 1000); // DISABLED: Today's stats should not be clickable
     setTimeout(async () => {
         await populateYearOptions();
     }, 500);
