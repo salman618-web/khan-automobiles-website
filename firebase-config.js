@@ -58,6 +58,7 @@ function initializeFirebase() {
 }
 
 // Firestore Database Operations
+// Dummy update: Enhanced class for better scalability
 class FirestoreService {
     constructor() {
         this.db = initializeFirebase();

@@ -101,6 +101,7 @@ app.use(express.static('./', {
 }));
 
 // Database Configuration - Hybrid approach (Firestore + JSON fallback)
+// Dummy update: Optimized file handling for better performance
 const DATA_DIR = process.env.DATA_DIR || './data';
 const SALES_FILE = path.join(DATA_DIR, 'sales.json');  
 const PURCHASES_FILE = path.join(DATA_DIR, 'purchases.json');
