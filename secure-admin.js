@@ -4506,17 +4506,39 @@ async function loadMainChart() {
     const option = {
         backgroundColor: 'transparent',
         tooltip: { 
-            trigger: 'axis', 
-            confine: true, 
-            extraCssText: isSmall ? 'max-width:92vw;' : '',
+            trigger: 'axis',
+            confine: true,
+            appendToBody: true,
+            borderWidth: 1,
+            borderColor: '#e5e7eb',
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            textStyle: {
+                color: '#374151',
+                fontSize: isSmall ? 12 : 14
+            },
+            extraCssText: `
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+                border-radius: 8px;
+                padding: 12px;
+                max-width: ${isSmall ? '90vw' : '350px'};
+                word-wrap: break-word;
+                z-index: 9999;
+            `,
             formatter: function(params) {
                 if (!params || params.length === 0) return '';
-                let result = params[0].name + '<br/>';
-                params.forEach(param => {
+                let result = `<div style="line-height: 1.6;">`;
+                result += `<div style="font-weight: 600; color: #1f2937; margin-bottom: 8px; font-size: ${isSmall ? '14px' : '16px'};">${params[0].name}</div>`;
+                
+                params.forEach((param, index) => {
                     if (param.value !== undefined && param.value !== null) {
-                        result += param.marker + ' ' + param.seriesName + ': ₹' + Number(param.value).toLocaleString('en-IN') + '<br/>';
+                        const value = Number(param.value).toLocaleString('en-IN');
+                        const marginBottom = index === params.length - 1 ? '0' : '4px';
+                        result += `<div style="margin-bottom: ${marginBottom};">`;
+                        result += `${param.marker} <strong>${param.seriesName}:</strong> <span style="font-weight: 600; color: #111827;">₹${value}</span>`;
+                        result += `</div>`;
                     }
                 });
+                result += `</div>`;
                 return result;
             }
         },
@@ -4746,7 +4768,32 @@ async function loadSeasonalHeatmap() {
     }
 
     const option = {
-        tooltip: { formatter: p => `${monthNames[p.data[0]]} ${dayNames[p.data[1]]}<br/>₹${Number(p.data[2]).toLocaleString('en-IN')}` },
+        tooltip: { 
+            confine: true,
+            appendToBody: true,
+            borderWidth: 1,
+            borderColor: '#e5e7eb',
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            textStyle: {
+                color: '#374151',
+                fontSize: 14
+            },
+            extraCssText: `
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+                border-radius: 8px;
+                padding: 12px;
+                max-width: 280px;
+                word-wrap: break-word;
+                z-index: 9999;
+            `,
+            formatter: p => {
+                const value = Number(p.data[2]).toLocaleString('en-IN');
+                return `<div style="line-height: 1.6;">
+                    <div style="font-weight: 600; color: #1f2937; margin-bottom: 6px;">${monthNames[p.data[0]]} ${dayNames[p.data[1]]}</div>
+                    <div>📈 <strong>Sales:</strong> <span style="font-weight: 600; color: #111827;">₹${value}</span></div>
+                </div>`;
+            }
+        },
         grid: { left: 60, right: 20, top: 20, bottom: 40 },
         xAxis: { type: 'category', data: monthNames, axisLabel: { fontSize: 10 } },
         yAxis: { type: 'category', data: dayNames, axisLabel: { fontSize: 10 } },
@@ -4786,7 +4833,26 @@ async function loadGrowthIndicators() {
     const monthsShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     
     const option = {
-        tooltip: { trigger: 'axis' },
+        tooltip: { 
+            trigger: 'axis',
+            confine: true,
+            appendToBody: true,
+            borderWidth: 1,
+            borderColor: '#e5e7eb',
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            textStyle: {
+                color: '#374151',
+                fontSize: 12
+            },
+            extraCssText: `
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+                border-radius: 8px;
+                padding: 10px;
+                max-width: 250px;
+                word-wrap: break-word;
+                z-index: 9999;
+            `
+        },
         grid: { left: 40, right: 20, top: 20, bottom: 30 },
         xAxis: { type: 'category', data: monthsShort.slice(0, thisMonth+1), axisLabel: { fontSize: 9 } },
         yAxis: { type: 'value', axisLabel: { fontSize: 9 } },
@@ -5001,11 +5067,32 @@ async function loadCashFlowForecast() {
         
         const option = {
             tooltip: { 
-                trigger: 'axis', 
+                trigger: 'axis',
+                confine: true,
+                appendToBody: true,
+                borderWidth: 1,
+                borderColor: '#e5e7eb',
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                textStyle: {
+                    color: '#374151',
+                    fontSize: isSmall ? 12 : 14
+                },
+                extraCssText: `
+                    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+                    border-radius: 8px;
+                    padding: 12px;
+                    max-width: ${isSmall ? '90vw' : '320px'};
+                    word-wrap: break-word;
+                `,
                 formatter: params => {
                     const value = params[0].value;
                     const status = value >= 0 ? '💰 Positive' : '⚠️ Negative';
-                    return `${params[0].name}<br/>${status} Cash Flow<br/>₹${Number(value).toLocaleString('en-IN')}`;
+                    const formattedValue = Number(value).toLocaleString('en-IN');
+                    return `<div style="line-height: 1.5;">
+                        <strong style="color: #1f2937;">${params[0].name}</strong><br/>
+                        <span style="color: ${value >= 0 ? '#059669' : '#dc2626'};">${status} Cash Flow</span><br/>
+                        <strong style="font-size: ${isSmall ? '14px' : '16px'}; color: #111827;">₹${formattedValue}</strong>
+                    </div>`;
                 }
             },
             grid: { 
@@ -5237,7 +5324,24 @@ async function loadRevenueForecast() {
     
     const option = {
         tooltip: { 
-            trigger: 'axis', 
+            trigger: 'axis',
+            confine: true,
+            appendToBody: true,
+            borderWidth: 1,
+            borderColor: '#e5e7eb',
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            textStyle: {
+                color: '#374151',
+                fontSize: isSmall ? 12 : 14
+            },
+            extraCssText: `
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+                border-radius: 8px;
+                padding: 12px;
+                max-width: ${isSmall ? '90vw' : '380px'};
+                word-wrap: break-word;
+                z-index: 9999;
+            `,
             formatter: function(params) {
                 if (!params || params.length === 0) return '';
                 const param = params[0];
@@ -5245,17 +5349,20 @@ async function loadRevenueForecast() {
                 const growthFromBase = monthIndex === 0 ? 0 : 
                     ((param.value - forecast[0]) / forecast[0] * 100).toFixed(1);
                 
-                let tooltip = `<strong>${param.name}</strong><br/>`;
-                tooltip += `💰 Projected Revenue: <strong>₹${Number(param.value || 0).toLocaleString('en-IN')}</strong><br/>`;
+                let tooltip = `<div style="line-height: 1.6;">`;
+                tooltip += `<div style="font-weight: 600; color: #1f2937; margin-bottom: 8px; font-size: ${isSmall ? '14px' : '16px'};">${param.name}</div>`;
+                tooltip += `<div style="margin-bottom: 6px;">💰 <strong style="color: #059669;">Projected Revenue:</strong> <span style="font-weight: 600; color: #111827;">₹${Number(param.value || 0).toLocaleString('en-IN')}</span></div>`;
                 
                 if (monthIndex > 0) {
                     const monthGrowth = ((param.value - forecast[monthIndex - 1]) / forecast[monthIndex - 1] * 100).toFixed(1);
-                    tooltip += `📈 Month Growth: <span style="color: ${monthGrowth >= 0 ? '#22c55e' : '#ef4444'}">${monthGrowth}%</span><br/>`;
-                    tooltip += `📊 Total Growth: <span style="color: ${growthFromBase >= 0 ? '#22c55e' : '#ef4444'}">${growthFromBase}%</span><br/>`;
+                    tooltip += `<div style="margin-bottom: 4px;">📈 <strong>Month Growth:</strong> <span style="color: ${monthGrowth >= 0 ? '#059669' : '#dc2626'}; font-weight: 600;">${monthGrowth}%</span></div>`;
+                    tooltip += `<div style="margin-bottom: 6px;">📊 <strong>Total Growth:</strong> <span style="color: ${growthFromBase >= 0 ? '#059669' : '#dc2626'}; font-weight: 600;">${growthFromBase}%</span></div>`;
                 }
                 
-                tooltip += `🤖 Based on: Dynamic trend analysis<br/>`;
-                tooltip += `📅 Growth Rate: ${(dynamicGrowth * 100).toFixed(2)}%/month`;
+                tooltip += `<div style="border-top: 1px solid #e5e7eb; margin-top: 8px; padding-top: 6px; font-size: ${isSmall ? '11px' : '12px'}; color: #6b7280;">`;
+                tooltip += `🤖 <strong>Analysis:</strong> Dynamic trend<br/>`;
+                tooltip += `📅 <strong>Growth Rate:</strong> ${(dynamicGrowth * 100).toFixed(2)}%/month`;
+                tooltip += `</div></div>`;
                 
                 return tooltip;
             }
