@@ -2068,7 +2068,138 @@ let bulkSalesRowCounter = 0;
 // Initialize bulk sales section
 function initializeBulkSales() {
     bulkSalesRowCounter = 0;
+    addBulkSalesResponsiveCSS(); // Add responsive CSS
     addBulkSaleRow(); // Add initial row
+}
+
+// Add responsive CSS for bulk sales table
+function addBulkSalesResponsiveCSS() {
+    // Check if CSS is already added
+    if (document.getElementById('bulk-sales-responsive-css')) {
+        return;
+    }
+    
+    const style = document.createElement('style');
+    style.id = 'bulk-sales-responsive-css';
+    style.textContent = `
+        /* Mobile info banner for bulk sales */
+        .bulk-sales-mobile-info {
+            background: #e1f5fe;
+            border: 1px solid #0288d1;
+            border-radius: 6px;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            font-size: 13px;
+            color: #01579b;
+            display: none;
+        }
+        
+        .bulk-sales-mobile-info strong {
+            color: #006064;
+        }
+        
+        /* Responsive bulk sales table - hide columns on portrait mobile and very small screens */
+        @media only screen and (max-width: 768px), 
+               only screen and (max-height: 900px) and (max-width: 600px),
+               only screen and (orientation: portrait) and (max-width: 600px) {
+            
+            .bulk-hide-mobile {
+                display: none !important;
+            }
+            
+            .bulk-sales-mobile-info {
+                display: block !important;
+            }
+            
+            /* Make remaining columns take full width */
+            .bulk-date-col {
+                width: 25%;
+                min-width: 100px;
+            }
+            
+            .bulk-description-col {
+                width: 40%;
+                min-width: 150px;
+            }
+            
+            .bulk-amount-col {
+                width: 25%;
+                min-width: 100px;
+            }
+            
+            .bulk-actions-col {
+                width: 10%;
+                min-width: 50px;
+            }
+            
+            /* Also hide header columns if they exist */
+            .bulk-customer-header,
+            .bulk-category-header,
+            .bulk-payment-header,
+            .bulk-notes-header {
+                display: none !important;
+            }
+        }
+        
+        /* For very small screens (phones in portrait) - additional optimizations */
+        @media only screen and (max-width: 480px) {
+            .bulk-date-col input,
+            .bulk-description-col input,
+            .bulk-amount-col input {
+                padding: 0.3rem !important;
+                font-size: 14px !important;
+            }
+            
+            .bulk-description-col input {
+                font-size: 12px !important;
+            }
+            
+            .bulk-actions-col button {
+                padding: 0.2rem 0.4rem !important;
+                font-size: 12px !important;
+            }
+            
+            /* Reduce table cell padding on very small screens */
+            .bulk-date-col,
+            .bulk-description-col,
+            .bulk-amount-col,
+            .bulk-actions-col {
+                padding: 0.25rem !important;
+            }
+            
+            .bulk-sales-mobile-info {
+                font-size: 12px !important;
+                padding: 0.5rem !important;
+            }
+        }
+    `;
+    
+    document.head.appendChild(style);
+    
+    // Add mobile info banner to bulk sales section if it doesn't exist
+    addMobileInfoBanner();
+    
+    console.log('✅ Bulk sales responsive CSS added');
+}
+
+// Add mobile info banner
+function addMobileInfoBanner() {
+    // Find bulk sales section container (look for the table container)
+    const bulkSalesTable = document.getElementById('bulkSalesTableBody')?.closest('table');
+    if (!bulkSalesTable || document.getElementById('bulk-sales-mobile-info')) {
+        return; // Already exists or can't find table
+    }
+    
+    const infoBanner = document.createElement('div');
+    infoBanner.id = 'bulk-sales-mobile-info';
+    infoBanner.className = 'bulk-sales-mobile-info';
+    infoBanner.innerHTML = `
+        <strong>📱 Mobile View:</strong> Some fields are hidden for better viewing. 
+        <br><strong>Auto-filled values:</strong> Customer: "All Customers", Category: "Bike Parts", Payment: "Cash & Online Both"
+    `;
+    
+    // Insert before the table
+    bulkSalesTable.parentNode.insertBefore(infoBanner, bulkSalesTable);
 }
 
 // Add a new row to bulk sales table
@@ -2080,48 +2211,51 @@ function addBulkSaleRow() {
     const row = document.createElement('tr');
     row.id = `bulkSaleRow_${bulkSalesRowCounter}`;
     row.innerHTML = `
-        <td style="padding: 0.5rem; border: 1px solid #dee2e6;">
+        <td class="bulk-date-col" style="padding: 0.5rem; border: 1px solid #dee2e6;">
             <input type="date" id="bulkDate_${bulkSalesRowCounter}" 
                    style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 3px;" 
-                   value="${new Date().toISOString().split('T')[0]}">
+                   value="${getTodayLocalDate()}" required>
         </td>
-        <td style="padding: 0.5rem; border: 1px solid #dee2e6;">
+        <td class="bulk-customer-col bulk-hide-mobile" style="padding: 0.5rem; border: 1px solid #dee2e6;">
             <input type="text" id="bulkCustomer_${bulkSalesRowCounter}" 
                    placeholder="Customer Name" 
-                   style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 3px;">
+                   value="All Customers"
+                   style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 3px;" required>
         </td>
-        <td style="padding: 0.5rem; border: 1px solid #dee2e6;">
+        <td class="bulk-category-col bulk-hide-mobile" style="padding: 0.5rem; border: 1px solid #dee2e6;">
             <select id="bulkCategory_${bulkSalesRowCounter}" 
-                    style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 3px;">
+                    style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 3px;" required>
                 <option value="">Select Category</option>
-                <option value="bike-parts">Bike Parts</option>
+                <option value="bike-parts" selected>Bike Parts</option>
                 <option value="car-parts">Car Parts</option>
                 <option value="bike-service">Bike Service</option>
                 <option value="car-service">Car Service</option>
             </select>
         </td>
-        <td style="padding: 0.5rem; border: 1px solid #dee2e6;">
+        <td class="bulk-description-col" style="padding: 0.5rem; border: 1px solid #dee2e6;">
             <input type="text" id="bulkDescription_${bulkSalesRowCounter}" 
                    placeholder="Item/Service Description" 
-                   style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 3px;">
+                   value="Todays total sale including everything"
+                   style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 3px;" required>
         </td>
-        <td style="padding: 0.5rem; border: 1px solid #dee2e6;">
+        <td class="bulk-amount-col" style="padding: 0.5rem; border: 1px solid #dee2e6;">
             <input type="number" id="bulkAmount_${bulkSalesRowCounter}" 
-                   placeholder="Amount" min="0" step="0.01" 
+                   placeholder="Total Amount (₹)" min="0" step="0.01" 
                    style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 3px;"
-                   onchange="updateBulkSalesTotal()">
+                   onchange="updateBulkSalesTotal()" required>
         </td>
-        <td style="padding: 0.5rem; border: 1px solid #dee2e6;">
+        <td class="bulk-payment-col bulk-hide-mobile" style="padding: 0.5rem; border: 1px solid #dee2e6;">
             <input type="text" id="bulkPayment_${bulkSalesRowCounter}" 
                    placeholder="Payment Method" 
-                   style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 3px;">
+                   value="Cash & Online Both"
+                   style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 3px;" required>
         </td>
-        <td style="padding: 0.5rem; border: 1px solid #dee2e6;">
+        <td class="bulk-notes-col bulk-hide-mobile" style="padding: 0.5rem; border: 1px solid #dee2e6;">
             <textarea id="bulkNotes_${bulkSalesRowCounter}" 
                    placeholder="Notes (optional)" 
                    style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 3px; resize: none; height: 2rem;"></textarea>
         </td>
-        <td style="padding: 0.5rem; border: 1px solid #dee2e6; text-align: center;">
+        <td class="bulk-actions-col" style="padding: 0.5rem; border: 1px solid #dee2e6; text-align: center;">
             <button type="button" onclick="removeBulkSaleRow(${bulkSalesRowCounter})" 
                     style="background: #dc3545; color: white; border: none; padding: 0.3rem 0.6rem; border-radius: 3px; cursor: pointer;">
                 <i class="fas fa-trash"></i>
@@ -2213,10 +2347,21 @@ async function submitBulkSales() {
         const paymentInput = row.querySelector('input[id^="bulkPayment_"]');
         const notesInput = row.querySelector('textarea[id^="bulkNotes_"]');
         
-        // Basic validation
+        // Ensure hidden fields have default values (mobile responsiveness support)
+        if (!customerInput.value.trim()) {
+            customerInput.value = 'All Customers';
+        }
+        if (!categoryInput.value) {
+            categoryInput.value = 'bike-parts';
+        }
+        if (!paymentInput.value.trim()) {
+            paymentInput.value = 'Cash & Online Both';
+        }
+        
+        // Basic validation - same as regular Add Sale form (Notes is optional)
         if (!dateInput.value || !customerInput.value || !categoryInput.value || 
             !descriptionInput.value || !amountInput.value || !paymentInput.value) {
-            showNotification(`Row ${rowNumber}: Please fill all required fields (Date, Customer, Category, Description, Amount, Payment Method).`, 'error');
+            showNotification(`Row ${rowNumber}: Please fill all required fields (Date, Customer, Category, Description, Amount, Payment Method). Notes are optional.`, 'error');
             hasErrors = true;
             return;
         }
@@ -2231,11 +2376,11 @@ async function submitBulkSales() {
         
         salesData.push({
             sale_date: dateInput.value,
-            customer_name: customerInput.value.trim(),
+            customer: customerInput.value.trim(),
             category: categoryInput.value,
             description: descriptionInput.value.trim(),
             total: amount,
-            payment_method: paymentInput.value.trim(),
+            paymentMethod: paymentInput.value.trim(),
             notes: notesInput.value.trim()
         });
     });
@@ -2284,12 +2429,21 @@ async function submitBulkSales() {
         if (errorCount === 0) {
             showNotification(`✅ Successfully submitted all ${successCount} sales!`, 'success');
             clearBulkSales(); // Clear the form
-            // Update dashboard if visible
+            
+            // Refresh dashboard data in background (same as regular Add Sale form)
+            Promise.all([
+                loadDashboard(),
+                populateYearOptions()
+            ]).catch(error => {
+                console.error('Background refresh error:', error);
+            });
+            
+            // Update year-wise filter if visible
             if (document.getElementById('yearwiseFilter')) {
+                await syncDataFromServer(); // Sync fresh data
                 populateYearwiseFilter();
                 updateYearwiseData();
             }
-            loadDashboard(); // Refresh dashboard data
         } else {
             showNotification(`⚠️ Submitted ${successCount} sales successfully, ${errorCount} failed. Check console for details.`, 'warning');
         }
