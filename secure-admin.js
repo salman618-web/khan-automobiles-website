@@ -5248,6 +5248,9 @@ async function loadRevenueForecast() {
     const yThis = new Date().getFullYear(); 
     const yPrev = yThis - 1;
     
+    // Responsive configuration
+    const isSmall = window.innerWidth < 768;
+    
     console.log('🔍 Revenue Forecast Debug: Full insights data:', insightsData);
     console.log('🔍 Revenue Forecast Debug: bucketByYear structure:', insightsData.bucketByYear);
     
