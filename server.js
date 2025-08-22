@@ -95,6 +95,24 @@ app.get('/admin', (req, res) => {
 app.get('/admin.html', (req, res) => res.redirect(301, '/admin'));
 app.get('/index.html', (req, res) => res.redirect(301, '/'));
 
+// 🚀 HTTP Cache Headers for Static Files
+app.use((req, res, next) => {
+    // Set cache headers for static assets
+    if (req.url.match(/\.(css|js|jpg|jpeg|png|gif|ico|woff|woff2|ttf|svg)$/)) {
+        // Cache static assets for 1 hour in browser, 1 day in CDN
+        res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400');
+        res.setHeader('ETag', Date.now().toString()); // Simple ETag
+    }
+    
+    // Set cache headers for HTML files (shorter cache)
+    if (req.url.match(/\.(html|htm)$/)) {
+        // Cache HTML for 5 minutes
+        res.setHeader('Cache-Control', 'public, max-age=300');
+    }
+    
+    next();
+});
+
 // Serve static files
 app.use(express.static('./', {
 	index: 'index.html'
@@ -413,6 +431,10 @@ app.use((req, res, next) => {
 // Sales endpoints
 app.get('/api/sales', async (req, res) => {
 	try {
+		// 📦 Set cache headers for API responses (2 minutes for dynamic data)
+		res.setHeader('Cache-Control', 'public, max-age=120');
+		res.setHeader('Vary', 'Accept-Encoding, Accept');
+		
 		const { page, limit, search, category, customer } = req.query;
 		
 		if (firestoreService.isAvailable()) {
@@ -590,6 +612,10 @@ app.delete('/api/sales/year/:year', async (req, res) => {
 // Purchases endpoints
 app.get('/api/purchases', async (req, res) => {
 	try {
+		// 📦 Set cache headers for API responses (2 minutes for dynamic data)
+		res.setHeader('Cache-Control', 'public, max-age=120');
+		res.setHeader('Vary', 'Accept-Encoding, Accept');
+		
 		const { page, limit, search, category, supplier } = req.query;
 		
 		if (firestoreService.isAvailable()) {

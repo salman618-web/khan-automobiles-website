@@ -331,10 +331,25 @@ async function loadDashboard() {
     }
 }
 
-// Load data from server into localStorage
+// Load data from server with intelligent caching
 async function syncDataFromServer() {
     try {
-        console.log('🔄 Syncing data from server...');
+        // Check cache first
+        const salesCacheKey = CacheManager.generateKey('sales');
+        const purchasesCacheKey = CacheManager.generateKey('purchases');
+        
+        const cachedSales = CacheManager.get(salesCacheKey);
+        const cachedPurchases = CacheManager.get(purchasesCacheKey);
+        
+        if (cachedSales && cachedPurchases) {
+            console.log('🚀 Using cached data - skipping Firebase reads!');
+            // Still save to localStorage for compatibility
+            localStorage.setItem('salesData', JSON.stringify(cachedSales));
+            localStorage.setItem('purchaseData', JSON.stringify(cachedPurchases));
+            return true;
+        }
+        
+        console.log('🔄 Cache miss - fetching fresh data from server...');
         
         const [salesResponse, purchasesResponse] = await Promise.all([
             fetch('/api/sales'),
@@ -345,11 +360,15 @@ async function syncDataFromServer() {
             const salesData = await salesResponse.json();
             const purchaseData = await purchasesResponse.json();
             
-            // Save to localStorage
+            // Cache data with intelligent TTL
+            CacheManager.set(salesCacheKey, salesData, CacheManager.getTTL('dashboard'));
+            CacheManager.set(purchasesCacheKey, purchaseData, CacheManager.getTTL('dashboard'));
+            
+            // Save to localStorage for compatibility & offline fallback
             localStorage.setItem('salesData', JSON.stringify(salesData));
             localStorage.setItem('purchaseData', JSON.stringify(purchaseData));
             
-            console.log(`✅ Synced ${salesData.length} sales and ${purchaseData.length} purchases from server`);
+            console.log(`✅ Fresh data cached: ${salesData.length} sales, ${purchaseData.length} purchases`);
             return true;
         } else {
             console.error('Failed to sync data from server');
@@ -357,6 +376,25 @@ async function syncDataFromServer() {
         }
     } catch (error) {
         console.error('Error syncing data from server:', error);
+        
+        // Try to use expired cache as fallback
+        const salesCacheKey = CacheManager.generateKey('sales');
+        const purchasesCacheKey = CacheManager.generateKey('purchases');
+        
+        try {
+            const staleCache = localStorage.getItem(salesCacheKey);
+            if (staleCache) {
+                const parsed = JSON.parse(staleCache);
+                if (parsed.data) {
+                    console.log('📱 Using stale cache as emergency fallback');
+                    localStorage.setItem('salesData', JSON.stringify(parsed.data));
+                    return true;
+                }
+            }
+        } catch (e) {
+            console.warn('Could not use stale cache');
+        }
+        
         return false;
     }
 }
@@ -1616,6 +1654,10 @@ async function handleAddSale(e) {
         if (result.success) {
             showNotification('Sale added successfully!', 'success');
             
+            // 🔄 Invalidate cache when new data is added
+            CacheManager.invalidatePattern('sales');
+            CacheManager.invalidatePattern('dashboard');
+            
             // Reset form immediately for better UX
             e.target.reset();
             setSalesDefaults();
@@ -1748,7 +1790,12 @@ async function handleEditTransaction(e) {
         if (result.success) {
             showNotification(`${type === 'sale' ? 'Sale' : 'Purchase'} updated successfully!`, 'success');
             closeEditModal();
-        await loadDashboard();
+            
+            // 🔄 Invalidate cache when data changes
+            CacheManager.invalidatePattern(type === 'sale' ? 'sales' : 'purchases');
+            CacheManager.invalidatePattern('dashboard');
+            
+            await loadDashboard();
         
             // Update year options in case the date was changed to a new year
             populateYearOptions();
@@ -3129,6 +3176,228 @@ setTimeout(() => {
     }
 }, 1500);
 
+// 🚀 CACHE MANAGEMENT SYSTEM
+const CacheManager = {
+    // Cache configuration
+    config: {
+        defaultTTL: 5 * 60 * 1000, // 5 minutes
+        dashboardTTL: 3 * 60 * 1000, // 3 minutes for dashboard
+        entriesTTL: 10 * 60 * 1000, // 10 minutes for entries list
+        maxCacheSize: 10 * 1024 * 1024, // 10MB max cache size
+        mobileMultiplier: 0.5 // Reduce cache time on mobile by 50%
+    },
+    
+    // Detect if user is on mobile
+    isMobile() {
+        return window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    },
+    
+    // Get adjusted TTL for mobile
+    getTTL(type = 'default') {
+        let ttl = this.config.defaultTTL;
+        switch(type) {
+            case 'dashboard': ttl = this.config.dashboardTTL; break;
+            case 'entries': ttl = this.config.entriesTTL; break;
+        }
+        return this.isMobile() ? ttl * this.config.mobileMultiplier : ttl;
+    },
+    
+    // Generate cache key
+    generateKey(endpoint, params = {}) {
+        const paramString = Object.keys(params).length > 0 ? 
+            '_' + Object.entries(params).map(([k,v]) => `${k}:${v}`).join('_') : '';
+        return `cache_${endpoint}${paramString}`;
+    },
+    
+    // Store data in cache
+    set(key, data, ttl = null) {
+        try {
+            const cacheEntry = {
+                data: data,
+                timestamp: Date.now(),
+                ttl: ttl || this.getTTL(),
+                size: JSON.stringify(data).length
+            };
+            
+            // Check cache size limits
+            if (this.getCurrentCacheSize() + cacheEntry.size > this.config.maxCacheSize) {
+                this.cleanup();
+            }
+            
+            localStorage.setItem(key, JSON.stringify(cacheEntry));
+            console.log(`📦 Cached: ${key} (${(cacheEntry.size/1024).toFixed(1)}KB, TTL: ${Math.round(cacheEntry.ttl/60000)}min)`);
+            return true;
+        } catch (error) {
+            console.warn('Cache storage failed:', error);
+            return false;
+        }
+    },
+    
+    // Retrieve data from cache
+    get(key) {
+        try {
+            const cached = localStorage.getItem(key);
+            if (!cached) return null;
+            
+            const cacheEntry = JSON.parse(cached);
+            const age = Date.now() - cacheEntry.timestamp;
+            
+            if (age > cacheEntry.ttl) {
+                this.delete(key);
+                console.log(`⏰ Cache expired: ${key} (age: ${Math.round(age/60000)}min)`);
+                return null;
+            }
+            
+            console.log(`✅ Cache hit: ${key} (age: ${Math.round(age/1000)}s)`);
+            return cacheEntry.data;
+        } catch (error) {
+            console.warn('Cache retrieval failed:', error);
+            this.delete(key);
+            return null;
+        }
+    },
+    
+    // Delete specific cache entry
+    delete(key) {
+        localStorage.removeItem(key);
+    },
+    
+    // Clear all cache
+    clear() {
+        const keys = Object.keys(localStorage).filter(key => key.startsWith('cache_'));
+        keys.forEach(key => localStorage.removeItem(key));
+        console.log(`🗑️ Cleared ${keys.length} cache entries`);
+    },
+    
+    // Get current cache size
+    getCurrentCacheSize() {
+        const keys = Object.keys(localStorage).filter(key => key.startsWith('cache_'));
+        return keys.reduce((size, key) => {
+            try {
+                return size + localStorage.getItem(key).length;
+            } catch { return size; }
+        }, 0);
+    },
+    
+    // Cleanup old entries
+    cleanup() {
+        const keys = Object.keys(localStorage).filter(key => key.startsWith('cache_'));
+        let cleaned = 0;
+        
+        keys.forEach(key => {
+            try {
+                const cached = JSON.parse(localStorage.getItem(key));
+                const age = Date.now() - cached.timestamp;
+                if (age > cached.ttl) {
+                    localStorage.removeItem(key);
+                    cleaned++;
+                }
+            } catch {
+                localStorage.removeItem(key);
+                cleaned++;
+            }
+        });
+        
+        if (cleaned > 0) {
+            console.log(`🧹 Cleaned ${cleaned} expired cache entries`);
+        }
+    },
+    
+    // Invalidate cache on data changes
+    invalidatePattern(pattern) {
+        const keys = Object.keys(localStorage).filter(key => 
+            key.startsWith('cache_') && key.includes(pattern));
+        keys.forEach(key => localStorage.removeItem(key));
+        if (keys.length > 0) {
+            console.log(`🔄 Invalidated ${keys.length} cache entries matching: ${pattern}`);
+        }
+    },
+    
+    // Get cache statistics
+    getStats() {
+        const keys = Object.keys(localStorage).filter(key => key.startsWith('cache_'));
+        let totalSize = 0;
+        let totalEntries = 0;
+        let hits = 0;
+        let expired = 0;
+        
+        const now = Date.now();
+        keys.forEach(key => {
+            try {
+                const cached = JSON.parse(localStorage.getItem(key));
+                totalSize += cached.size || 0;
+                totalEntries++;
+                
+                if (now - cached.timestamp > cached.ttl) {
+                    expired++;
+                } else {
+                    hits++;
+                }
+            } catch {}
+        });
+        
+        return {
+            entries: totalEntries,
+            size: (totalSize / 1024).toFixed(1) + 'KB',
+            sizeBytes: totalSize,
+            hits: hits,
+            expired: expired,
+            efficiency: totalEntries > 0 ? Math.round((hits / totalEntries) * 100) : 0
+        };
+    },
+    
+    // Show cache status in console (for debugging)
+    logStats() {
+        const stats = this.getStats();
+        console.log(`📊 Cache Stats: ${stats.entries} entries, ${stats.size}, ${stats.efficiency}% efficiency`);
+        return stats;
+    }
+};
+
+// 🔧 Initialize cache system and mobile optimizations
+// Auto-cleanup expired cache entries every 5 minutes
+setInterval(() => {
+    CacheManager.cleanup();
+}, 5 * 60 * 1000);
+
+// 📱 Mobile-specific optimizations
+if (CacheManager.isMobile()) {
+    console.log('📱 Mobile device detected - using optimized cache settings');
+    
+    // Reduce cache size limit for mobile
+    CacheManager.config.maxCacheSize = 5 * 1024 * 1024; // 5MB instead of 10MB
+    
+    // Clear cache when app goes to background (mobile memory management)
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            setTimeout(() => {
+                if (document.hidden) {
+                    CacheManager.cleanup();
+                    console.log('📱 Background cleanup completed');
+                }
+            }, 30000); // Clean after 30 seconds in background
+        }
+    });
+    
+    // Listen for memory pressure events (modern browsers)
+    if ('memory' in performance) {
+        const checkMemory = () => {
+            if (performance.memory.usedJSHeapSize > 50 * 1024 * 1024) { // 50MB
+                CacheManager.clear();
+                console.log('🧹 Memory pressure cache clear');
+            }
+        };
+        setInterval(checkMemory, 60000); // Check every minute
+    }
+}
+
+// 🐛 Debug: Log cache stats every 2 minutes (only in development)
+if (window.location.hostname === 'localhost') {
+    setInterval(() => {
+        CacheManager.logStats();
+    }, 2 * 60 * 1000);
+}
+
 // Manage Entries functionality
 let allEntries = [];
 let filteredEntries = [];
@@ -3151,6 +3420,24 @@ async function searchAndFilterEntries() {
         const filterType = document.getElementById('filterType')?.value || 'all';
         const filterCategory = document.getElementById('filterCategory')?.value || '';
         
+        // 🚀 Check cache first for manage entries (saves tons of Firebase reads!)
+        const entriesCacheKey = CacheManager.generateKey('manage_entries', { 
+            search: searchTerm, 
+            type: filterType, 
+            category: filterCategory,
+            page: currentPage 
+        });
+        
+        const cachedResults = CacheManager.get(entriesCacheKey);
+        if (cachedResults) {
+            console.log('🚀 Cache hit for manage entries - Firebase reads saved!');
+            allEntries = cachedResults.allEntries || [];
+            filteredEntries = cachedResults.filteredEntries || [];
+            displayEntries();
+            updatePagination();
+            return;
+        }
+        
         // For large datasets (detected by checking localStorage size), use server-side search
         const salesDataSize = localStorage.getItem('salesData')?.length || 0;
         const purchaseDataSize = localStorage.getItem('purchaseData')?.length || 0;
@@ -3164,6 +3451,14 @@ async function searchAndFilterEntries() {
             console.log('📊 Using client-side filtering for smaller dataset');
             await searchEntriesClientSide(searchTerm, filterType, filterCategory);
         }
+        
+        // 📦 Cache the search results
+        const cacheData = { 
+            allEntries: allEntries, 
+            filteredEntries: filteredEntries,
+            timestamp: Date.now()
+        };
+        CacheManager.set(entriesCacheKey, cacheData, CacheManager.getTTL('entries'));
         
     } catch (error) {
         console.error('Error searching entries:', error);
