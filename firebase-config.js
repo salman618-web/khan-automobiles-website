@@ -318,6 +318,44 @@ class FirestoreService {
         return this.add(this.collections.sales, saleData);
     }
 
+    async deleteSalesByYear(year) {
+        try {
+            if (!this.db) throw new Error('Firestore not initialized');
+            
+            console.log(`🗑️ Starting bulk deletion of sales for year ${year}...`);
+            
+            // Query all sales for the specific year
+            const snapshot = await this.db.collection(this.collections.sales)
+                .where('sale_date', '>=', `${year}-01-01`)
+                .where('sale_date', '<=', `${year}-12-31`)
+                .get();
+            
+            if (snapshot.empty) {
+                console.log(`📭 No sales found for year ${year}`);
+                return { deleted: 0, message: `No sales found for year ${year}` };
+            }
+            
+            // Delete in batches (Firestore batch limit is 500)
+            const batch = this.db.batch();
+            let deleteCount = 0;
+            
+            snapshot.docs.forEach(doc => {
+                batch.delete(doc.ref);
+                deleteCount++;
+            });
+            
+            // Execute the batch deletion
+            await batch.commit();
+            
+            console.log(`✅ Successfully deleted ${deleteCount} sales records for year ${year}`);
+            return { deleted: deleteCount, message: `Successfully deleted ${deleteCount} sales records for year ${year}` };
+            
+        } catch (error) {
+            console.error(`❌ Error deleting sales for year ${year}:`, error.message);
+            throw error;
+        }
+    }
+
     async updateSale(id, saleData) {
         return this.update(this.collections.sales, id, saleData);
     }
@@ -340,6 +378,44 @@ class FirestoreService {
 
     async addPurchase(purchaseData) {
         return this.add(this.collections.purchases, purchaseData);
+    }
+
+    async deletePurchasesByYear(year) {
+        try {
+            if (!this.db) throw new Error('Firestore not initialized');
+            
+            console.log(`🗑️ Starting bulk deletion of purchases for year ${year}...`);
+            
+            // Query all purchases for the specific year
+            const snapshot = await this.db.collection(this.collections.purchases)
+                .where('purchase_date', '>=', `${year}-01-01`)
+                .where('purchase_date', '<=', `${year}-12-31`)
+                .get();
+            
+            if (snapshot.empty) {
+                console.log(`📭 No purchases found for year ${year}`);
+                return { deleted: 0, message: `No purchases found for year ${year}` };
+            }
+            
+            // Delete in batches (Firestore batch limit is 500)
+            const batch = this.db.batch();
+            let deleteCount = 0;
+            
+            snapshot.docs.forEach(doc => {
+                batch.delete(doc.ref);
+                deleteCount++;
+            });
+            
+            // Execute the batch deletion
+            await batch.commit();
+            
+            console.log(`✅ Successfully deleted ${deleteCount} purchases records for year ${year}`);
+            return { deleted: deleteCount, message: `Successfully deleted ${deleteCount} purchases records for year ${year}` };
+            
+        } catch (error) {
+            console.error(`❌ Error deleting purchases for year ${year}:`, error.message);
+            throw error;
+        }
     }
 
     async updatePurchase(id, purchaseData) {

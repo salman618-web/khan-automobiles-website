@@ -495,6 +495,16 @@ function populateYearwiseFilter() {
     }
     
     console.log(`🎯 Total options in dropdown: ${yearSelect.children.length}`);
+    
+    // Add event listener for year changes if not already added
+    if (!yearSelect.dataset.listenerAdded) {
+        yearSelect.addEventListener('change', () => {
+            console.log('🔄 Year-wise filter changed, updating data and bulk delete options...');
+            updateYearwiseData();
+        });
+        yearSelect.dataset.listenerAdded = 'true';
+        console.log('🎧 Event listener added to year-wise filter dropdown');
+    }
 }
 
 // Update year-wise data based on selected year
@@ -583,6 +593,290 @@ function updateYearwiseData() {
     if (purchasesLabelElement) {
         purchasesLabelElement.textContent = `Total Purchases${yearLabel}`;
         console.log('✅ Updated purchases label:', purchasesLabelElement.textContent);
+    }
+    
+    // Show/hide bulk delete buttons based on year selection
+    updateBulkDeleteButtons(selectedYear, filteredSales.length, filteredPurchases.length);
+}
+
+// Show or hide bulk delete buttons based on selected year and available data
+function updateBulkDeleteButtons(selectedYear, salesCount, purchasesCount) {
+    const deleteButtonsContainer = document.getElementById('bulkDeleteButtons');
+    
+    if (!deleteButtonsContainer) {
+        // Create the buttons container if it doesn't exist
+        const container = document.createElement('div');
+        container.id = 'bulkDeleteButtons';
+        container.style.cssText = `
+            margin-top: 1rem;
+            padding: 1rem;
+            border: 2px dashed #ef4444;
+            border-radius: 8px;
+            background: #fef2f2;
+            display: none;
+        `;
+        
+        container.innerHTML = `
+            <div style="margin-bottom: 0.5rem;">
+                <strong style="color: #dc2626;">⚠️ Danger Zone - Bulk Delete Records</strong>
+            </div>
+            <div style="margin-bottom: 1rem; font-size: 14px; color: #7f1d1d;">
+                <span id="bulkDeleteInfo">Select a specific year to enable bulk deletion</span>
+            </div>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <button id="bulkDeleteSales" onclick="confirmBulkDeleteSales()" 
+                        style="background: #dc2626; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                    <i class="fas fa-trash-alt"></i> Delete All Sales
+                </button>
+                <button id="bulkDeletePurchases" onclick="confirmBulkDeletePurchases()" 
+                        style="background: #dc2626; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                    <i class="fas fa-trash-alt"></i> Delete All Purchases
+                </button>
+                <button id="bulkDeleteBoth" onclick="confirmBulkDeleteBoth()" 
+                        style="background: #991b1b; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold;">
+                    <i class="fas fa-exclamation-triangle"></i> Delete All Records
+                </button>
+            </div>
+        `;
+        
+        // Add to yearwise section (find a good location)
+        const yearwiseSection = document.querySelector('.yearwise-stats');
+        if (yearwiseSection) {
+            yearwiseSection.appendChild(container);
+        }
+    }
+    
+    const container = document.getElementById('bulkDeleteButtons');
+    const infoElement = document.getElementById('bulkDeleteInfo');
+    const salesButton = document.getElementById('bulkDeleteSales');
+    const purchasesButton = document.getElementById('bulkDeletePurchases');
+    const bothButton = document.getElementById('bulkDeleteBoth');
+    
+    if (selectedYear && (salesCount > 0 || purchasesCount > 0)) {
+        // Show the danger zone with specific year information
+        container.style.display = 'block';
+        infoElement.textContent = `Year ${selectedYear}: ${salesCount} sales, ${purchasesCount} purchases will be permanently deleted.`;
+        
+        // Enable/disable buttons based on available data
+        salesButton.disabled = salesCount === 0;
+        purchasesButton.disabled = purchasesCount === 0;
+        bothButton.disabled = salesCount === 0 && purchasesCount === 0;
+        
+        // Update button text with counts
+        salesButton.innerHTML = `<i class="fas fa-trash-alt"></i> Delete ${salesCount} Sales`;
+        purchasesButton.innerHTML = `<i class="fas fa-trash-alt"></i> Delete ${purchasesCount} Purchases`;
+        bothButton.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Delete All ${salesCount + purchasesCount} Records`;
+        
+        // Style disabled buttons
+        salesButton.style.opacity = salesCount === 0 ? '0.5' : '1';
+        purchasesButton.style.opacity = purchasesCount === 0 ? '0.5' : '1';
+        bothButton.style.opacity = (salesCount === 0 && purchasesCount === 0) ? '0.5' : '1';
+        
+    } else {
+        // Hide the danger zone
+        container.style.display = 'none';
+    }
+}
+
+// Bulk delete confirmation and execution functions
+async function confirmBulkDeleteSales() {
+    const yearSelect = document.getElementById('yearwiseFilter');
+    const selectedYear = yearSelect?.value;
+    
+    if (!selectedYear) {
+        showNotification('Please select a specific year first', 'error');
+        return;
+    }
+    
+    const salesCount = getRecordCountForYear(selectedYear, 'sales');
+    
+    if (salesCount === 0) {
+        showNotification(`No sales records found for year ${selectedYear}`, 'info');
+        return;
+    }
+    
+    const confirmMessage = `⚠️ DANGER: You are about to permanently delete ALL ${salesCount} sales records from year ${selectedYear}.\n\nThis action CANNOT be undone!\n\nType "DELETE ${selectedYear}" to confirm:`;
+    
+    const userInput = prompt(confirmMessage);
+    
+    if (userInput === `DELETE ${selectedYear}`) {
+        try {
+            showNotification('Deleting sales records... Please wait', 'info');
+            const result = await bulkDeleteSalesByYear(selectedYear);
+            
+            if (result.success) {
+                showNotification(`✅ Successfully deleted ${result.deleted} sales records for year ${selectedYear}`, 'success');
+                
+                // Refresh data
+                await Promise.all([
+                    syncDataFromServer(),
+                    loadDashboard()
+                ]);
+                
+                // Update year-wise view
+                populateYearwiseFilter();
+                updateYearwiseData();
+                
+            } else {
+                showNotification('Failed to delete sales records', 'error');
+            }
+        } catch (error) {
+            console.error('Error during bulk delete:', error);
+            showNotification('Error deleting sales records', 'error');
+        }
+    } else if (userInput !== null) {
+        showNotification('Deletion cancelled - confirmation text did not match', 'info');
+    }
+}
+
+async function confirmBulkDeletePurchases() {
+    const yearSelect = document.getElementById('yearwiseFilter');
+    const selectedYear = yearSelect?.value;
+    
+    if (!selectedYear) {
+        showNotification('Please select a specific year first', 'error');
+        return;
+    }
+    
+    const purchasesCount = getRecordCountForYear(selectedYear, 'purchases');
+    
+    if (purchasesCount === 0) {
+        showNotification(`No purchase records found for year ${selectedYear}`, 'info');
+        return;
+    }
+    
+    const confirmMessage = `⚠️ DANGER: You are about to permanently delete ALL ${purchasesCount} purchase records from year ${selectedYear}.\n\nThis action CANNOT be undone!\n\nType "DELETE ${selectedYear}" to confirm:`;
+    
+    const userInput = prompt(confirmMessage);
+    
+    if (userInput === `DELETE ${selectedYear}`) {
+        try {
+            showNotification('Deleting purchase records... Please wait', 'info');
+            const result = await bulkDeletePurchasesByYear(selectedYear);
+            
+            if (result.success) {
+                showNotification(`✅ Successfully deleted ${result.deleted} purchase records for year ${selectedYear}`, 'success');
+                
+                // Refresh data
+                await Promise.all([
+                    syncDataFromServer(),
+                    loadDashboard()
+                ]);
+                
+                // Update year-wise view
+                populateYearwiseFilter();
+                updateYearwiseData();
+                
+            } else {
+                showNotification('Failed to delete purchase records', 'error');
+            }
+        } catch (error) {
+            console.error('Error during bulk delete:', error);
+            showNotification('Error deleting purchase records', 'error');
+        }
+    } else if (userInput !== null) {
+        showNotification('Deletion cancelled - confirmation text did not match', 'info');
+    }
+}
+
+async function confirmBulkDeleteBoth() {
+    const yearSelect = document.getElementById('yearwiseFilter');
+    const selectedYear = yearSelect?.value;
+    
+    if (!selectedYear) {
+        showNotification('Please select a specific year first', 'error');
+        return;
+    }
+    
+    const salesCount = getRecordCountForYear(selectedYear, 'sales');
+    const purchasesCount = getRecordCountForYear(selectedYear, 'purchases');
+    const totalCount = salesCount + purchasesCount;
+    
+    if (totalCount === 0) {
+        showNotification(`No records found for year ${selectedYear}`, 'info');
+        return;
+    }
+    
+    const confirmMessage = `🚨 EXTREME DANGER: You are about to permanently delete ALL records from year ${selectedYear}:\n\n• ${salesCount} sales records\n• ${purchasesCount} purchase records\n• Total: ${totalCount} records\n\nThis action CANNOT be undone!\n\nType "DELETE ALL ${selectedYear}" to confirm:`;
+    
+    const userInput = prompt(confirmMessage);
+    
+    if (userInput === `DELETE ALL ${selectedYear}`) {
+        try {
+            showNotification('Deleting all records... Please wait', 'info');
+            
+            // Delete both sales and purchases in parallel
+            const [salesResult, purchasesResult] = await Promise.all([
+                salesCount > 0 ? bulkDeleteSalesByYear(selectedYear) : Promise.resolve({ success: true, deleted: 0 }),
+                purchasesCount > 0 ? bulkDeletePurchasesByYear(selectedYear) : Promise.resolve({ success: true, deleted: 0 })
+            ]);
+            
+            if (salesResult.success && purchasesResult.success) {
+                const totalDeleted = (salesResult.deleted || 0) + (purchasesResult.deleted || 0);
+                showNotification(`✅ Successfully deleted all ${totalDeleted} records for year ${selectedYear}`, 'success');
+                
+                // Refresh data
+                await Promise.all([
+                    syncDataFromServer(),
+                    loadDashboard()
+                ]);
+                
+                // Update year-wise view
+                populateYearwiseFilter();
+                updateYearwiseData();
+                
+            } else {
+                showNotification('Failed to delete all records', 'error');
+            }
+        } catch (error) {
+            console.error('Error during bulk delete:', error);
+            showNotification('Error deleting records', 'error');
+        }
+    } else if (userInput !== null) {
+        showNotification('Deletion cancelled - confirmation text did not match', 'info');
+    }
+}
+
+// Helper function to get record count for a specific year
+function getRecordCountForYear(year, type) {
+    const dataKey = type === 'sales' ? 'salesData' : 'purchaseData';
+    const dateField = type === 'sales' ? 'sale_date' : 'purchase_date';
+    
+    const data = JSON.parse(localStorage.getItem(dataKey) || '[]');
+    
+    return data.filter(record => {
+        if (!record[dateField]) return false;
+        const recordYear = new Date(record[dateField]).getFullYear();
+        return recordYear.toString() === year;
+    }).length;
+}
+
+// API call functions for bulk deletion
+async function bulkDeleteSalesByYear(year) {
+    try {
+        const response = await fetch(`/api/sales/year/${year}`, {
+            method: 'DELETE'
+        });
+        
+        const result = await response.json();
+        return result;
+    } catch (error) {
+        console.error('Error deleting sales by year:', error);
+        throw error;
+    }
+}
+
+async function bulkDeletePurchasesByYear(year) {
+    try {
+        const response = await fetch(`/api/purchases/year/${year}`, {
+            method: 'DELETE'
+        });
+        
+        const result = await response.json();
+        return result;
+    } catch (error) {
+        console.error('Error deleting purchases by year:', error);
+        throw error;
     }
 }
 
@@ -2882,6 +3176,10 @@ window.previousPage = previousPage;
 window.nextPage = nextPage;
 window.editEntry = editEntry;
 window.deleteEntry = deleteEntry;
+// Bulk delete functions
+window.confirmBulkDeleteSales = confirmBulkDeleteSales;
+window.confirmBulkDeletePurchases = confirmBulkDeletePurchases;
+window.confirmBulkDeleteBoth = confirmBulkDeleteBoth;
 
 // Invoice / PO Modal Helpers
 function openInvoiceModal() {

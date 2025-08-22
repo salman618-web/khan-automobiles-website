@@ -549,6 +549,44 @@ app.delete('/api/sales/:id', async (req, res) => {
 	}
 });
 
+// Bulk deletion endpoint for sales by year
+app.delete('/api/sales/year/:year', async (req, res) => {
+	try {
+		const { year } = req.params;
+		
+		// Validate year parameter
+		const yearNum = parseInt(year);
+		if (!year || isNaN(yearNum) || yearNum < 2000 || yearNum > 2100) {
+			return res.status(400).json({ error: 'Invalid year. Please provide a valid year between 2000 and 2100.' });
+		}
+		
+		if (firestoreService.isAvailable()) {
+			const result = await firestoreService.deleteSalesByYear(year);
+			res.json({ success: true, ...result });
+		} else {
+			// Fallback: Delete from local array
+			const originalLength = sales.length;
+			sales = sales.filter(sale => {
+				if (!sale.sale_date) return true;
+				const saleYear = new Date(sale.sale_date).getFullYear();
+				return saleYear.toString() !== year;
+			});
+			
+			const deleted = originalLength - sales.length;
+			saveSales();
+			
+			res.json({ 
+				success: true, 
+				deleted: deleted, 
+				message: `Successfully deleted ${deleted} sales records for year ${year}` 
+			});
+		}
+	} catch (error) {
+		console.error('Error deleting sales by year:', error);
+		res.status(500).json({ error: 'Failed to delete sales records' });
+	}
+});
+
 // Purchases endpoints
 app.get('/api/purchases', async (req, res) => {
 	try {
@@ -685,6 +723,44 @@ app.delete('/api/purchases/:id', async (req, res) => {
 	} catch (error) {
 		console.error('Error deleting purchase:', error);
 		res.status(500).json({ error: 'Failed to delete purchase' });
+	}
+});
+
+// Bulk deletion endpoint for purchases by year
+app.delete('/api/purchases/year/:year', async (req, res) => {
+	try {
+		const { year } = req.params;
+		
+		// Validate year parameter
+		const yearNum = parseInt(year);
+		if (!year || isNaN(yearNum) || yearNum < 2000 || yearNum > 2100) {
+			return res.status(400).json({ error: 'Invalid year. Please provide a valid year between 2000 and 2100.' });
+		}
+		
+		if (firestoreService.isAvailable()) {
+			const result = await firestoreService.deletePurchasesByYear(year);
+			res.json({ success: true, ...result });
+		} else {
+			// Fallback: Delete from local array
+			const originalLength = purchases.length;
+			purchases = purchases.filter(purchase => {
+				if (!purchase.purchase_date) return true;
+				const purchaseYear = new Date(purchase.purchase_date).getFullYear();
+				return purchaseYear.toString() !== year;
+			});
+			
+			const deleted = originalLength - purchases.length;
+			savePurchases();
+			
+			res.json({ 
+				success: true, 
+				deleted: deleted, 
+				message: `Successfully deleted ${deleted} purchases records for year ${year}` 
+			});
+		}
+	} catch (error) {
+		console.error('Error deleting purchases by year:', error);
+		res.status(500).json({ error: 'Failed to delete purchases records' });
 	}
 });
 
