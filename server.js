@@ -412,11 +412,67 @@ app.use((req, res, next) => {
 // Sales endpoints
 app.get('/api/sales', async (req, res) => {
 	try {
+		const { page, limit, search, category, customer } = req.query;
+		
 		if (firestoreService.isAvailable()) {
-			const salesData = await firestoreService.getSales();
-			res.json(salesData);
+			// If pagination parameters provided, use paginated endpoint
+			if (page || limit || search || category || customer) {
+				const pageNum = parseInt(page) || 1;
+				const limitNum = parseInt(limit) || 50;
+				const filters = {};
+				if (category) filters.category = category;
+				if (customer) filters.customer = customer;
+				
+				const result = await firestoreService.searchSales(search || '', filters, pageNum, limitNum);
+				res.json(result);
+			} else {
+				// Default behavior - return all data (backward compatibility)
+				const salesData = await firestoreService.getSales();
+				res.json(salesData);
+			}
 		} else {
-			res.json(sales);
+			// Fallback to local data with optional client-side filtering
+			let filteredSales = sales;
+			
+			if (search) {
+				const searchTerm = search.toLowerCase();
+				filteredSales = sales.filter(sale => 
+					Object.values(sale).some(value => 
+						value && value.toString().toLowerCase().includes(searchTerm)
+					)
+				);
+			}
+			
+			if (category) {
+				filteredSales = filteredSales.filter(sale => sale.category === category);
+			}
+			
+			if (customer) {
+				filteredSales = filteredSales.filter(sale => sale.customer === customer);
+			}
+			
+			// Apply pagination if requested
+			if (page || limit) {
+				const pageNum = parseInt(page) || 1;
+				const limitNum = parseInt(limit) || 50;
+				const offset = (pageNum - 1) * limitNum;
+				const paginatedSales = filteredSales.slice(offset, offset + limitNum);
+				
+				res.json({
+					data: paginatedSales,
+					pagination: {
+						page: pageNum,
+						limit: limitNum,
+						total: filteredSales.length,
+						totalPages: Math.ceil(filteredSales.length / limitNum),
+						hasNext: (pageNum * limitNum) < filteredSales.length,
+						hasPrev: pageNum > 1
+					}
+				});
+			} else {
+				// Default behavior - return all filtered data
+				res.json(filteredSales);
+			}
 		}
 	} catch (error) {
 		console.error('Error getting sales:', error);
@@ -495,11 +551,67 @@ app.delete('/api/sales/:id', async (req, res) => {
 // Purchases endpoints
 app.get('/api/purchases', async (req, res) => {
 	try {
+		const { page, limit, search, category, supplier } = req.query;
+		
 		if (firestoreService.isAvailable()) {
-			const purchasesData = await firestoreService.getPurchases();
-			res.json(purchasesData);
+			// If pagination parameters provided, use paginated endpoint
+			if (page || limit || search || category || supplier) {
+				const pageNum = parseInt(page) || 1;
+				const limitNum = parseInt(limit) || 50;
+				const filters = {};
+				if (category) filters.category = category;
+				if (supplier) filters.supplier = supplier;
+				
+				const result = await firestoreService.searchPurchases(search || '', filters, pageNum, limitNum);
+				res.json(result);
+			} else {
+				// Default behavior - return all data (backward compatibility)
+				const purchasesData = await firestoreService.getPurchases();
+				res.json(purchasesData);
+			}
 		} else {
-			res.json(purchases);
+			// Fallback to local data with optional client-side filtering
+			let filteredPurchases = purchases;
+			
+			if (search) {
+				const searchTerm = search.toLowerCase();
+				filteredPurchases = purchases.filter(purchase => 
+					Object.values(purchase).some(value => 
+						value && value.toString().toLowerCase().includes(searchTerm)
+					)
+				);
+			}
+			
+			if (category) {
+				filteredPurchases = filteredPurchases.filter(purchase => purchase.category === category);
+			}
+			
+			if (supplier) {
+				filteredPurchases = filteredPurchases.filter(purchase => purchase.supplier === supplier);
+			}
+			
+			// Apply pagination if requested
+			if (page || limit) {
+				const pageNum = parseInt(page) || 1;
+				const limitNum = parseInt(limit) || 50;
+				const offset = (pageNum - 1) * limitNum;
+				const paginatedPurchases = filteredPurchases.slice(offset, offset + limitNum);
+				
+				res.json({
+					data: paginatedPurchases,
+					pagination: {
+						page: pageNum,
+						limit: limitNum,
+						total: filteredPurchases.length,
+						totalPages: Math.ceil(filteredPurchases.length / limitNum),
+						hasNext: (pageNum * limitNum) < filteredPurchases.length,
+						hasPrev: pageNum > 1
+					}
+				});
+			} else {
+				// Default behavior - return all filtered data
+				res.json(filteredPurchases);
+			}
 		}
 	} catch (error) {
 		console.error('Error getting purchases:', error);

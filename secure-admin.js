@@ -361,6 +361,70 @@ async function syncDataFromServer() {
     }
 }
 
+// Optional: Enhanced data loading with pagination support
+// Usage: const result = await loadSalesData({ page: 1, limit: 50, search: 'term' });
+async function loadSalesData(options = {}) {
+    try {
+        const { page, limit, search, category, customer } = options;
+        
+        // Build query parameters
+        const params = new URLSearchParams();
+        if (page) params.append('page', page);
+        if (limit) params.append('limit', limit);
+        if (search) params.append('search', search);
+        if (category) params.append('category', category);
+        if (customer) params.append('customer', customer);
+        
+        const queryString = params.toString();
+        const url = queryString ? `/api/sales?${queryString}` : '/api/sales';
+        
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        console.log('📊 Sales data loaded:', Array.isArray(result) ? `${result.length} records` : `Page ${result.pagination?.page} of ${result.pagination?.totalPages}`);
+        
+        return result;
+    } catch (error) {
+        console.error('Error loading sales data:', error);
+        throw error;
+    }
+}
+
+// Optional: Enhanced purchases loading with pagination support
+// Usage: const result = await loadPurchasesData({ page: 1, limit: 50, search: 'term' });
+async function loadPurchasesData(options = {}) {
+    try {
+        const { page, limit, search, category, supplier } = options;
+        
+        // Build query parameters
+        const params = new URLSearchParams();
+        if (page) params.append('page', page);
+        if (limit) params.append('limit', limit);
+        if (search) params.append('search', search);
+        if (category) params.append('category', category);
+        if (supplier) params.append('supplier', supplier);
+        
+        const queryString = params.toString();
+        const url = queryString ? `/api/purchases?${queryString}` : '/api/purchases';
+        
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        console.log('📊 Purchases data loaded:', Array.isArray(result) ? `${result.length} records` : `Page ${result.pagination?.page} of ${result.pagination?.totalPages}`);
+        
+        return result;
+    } catch (error) {
+        console.error('Error loading purchases data:', error);
+        throw error;
+    }
+}
+
 // Populate year filter dropdown for year-wise section
 function populateYearwiseFilter() {
     console.log('🔧 Populating year-wise filter...');
@@ -2479,14 +2543,57 @@ async function loadManageEntries() {
 
 async function searchAndFilterEntries() {
     try {
-        // Get all data
-        const salesResponse = await fetch('/api/sales');
-        const salesData = await salesResponse.json();
+        const searchTerm = document.getElementById('searchEntries')?.value || '';
+        const filterType = document.getElementById('filterType')?.value || 'all';
+        const filterCategory = document.getElementById('filterCategory')?.value || '';
         
-        const purchasesResponse = await fetch('/api/purchases');
-        const purchaseData = await purchasesResponse.json();
+        // For large datasets (detected by checking localStorage size), use server-side search
+        const salesDataSize = localStorage.getItem('salesData')?.length || 0;
+        const purchaseDataSize = localStorage.getItem('purchaseData')?.length || 0;
+        const totalDataSize = salesDataSize + purchaseDataSize;
         
-        // Combine all entries
+        // If data is large (>1MB) or search term provided, use server-side pagination
+        if (totalDataSize > 1000000 || searchTerm) {
+            console.log('📊 Using server-side search for large dataset or search query');
+            await searchEntriesWithPagination(searchTerm, filterType, filterCategory);
+        } else {
+            console.log('📊 Using client-side filtering for smaller dataset');
+            await searchEntriesClientSide(searchTerm, filterType, filterCategory);
+        }
+        
+    } catch (error) {
+        console.error('Error searching entries:', error);
+        showNotification('Error searching entries', 'error');
+    }
+}
+
+// Server-side search with pagination (for large datasets)
+async function searchEntriesWithPagination(searchTerm, filterType, filterCategory) {
+    try {
+        // Prepare search options for both sales and purchases
+        const salesOptions = { page: 1, limit: 25 };
+        const purchasesOptions = { page: 1, limit: 25 };
+        
+        if (searchTerm) {
+            salesOptions.search = searchTerm;
+            purchasesOptions.search = searchTerm;
+        }
+        if (filterCategory) {
+            salesOptions.category = filterCategory;
+            purchasesOptions.category = filterCategory;
+        }
+        
+        // Load data with pagination
+        const [salesResult, purchasesResult] = await Promise.all([
+            filterType === 'purchases' ? { data: [], pagination: { total: 0 } } : loadSalesData(salesOptions),
+            filterType === 'sales' ? { data: [], pagination: { total: 0 } } : loadPurchasesData(purchasesOptions)
+        ]);
+        
+        // Handle both array responses (no pagination) and paginated responses
+        const salesData = Array.isArray(salesResult) ? salesResult : salesResult.data || [];
+        const purchaseData = Array.isArray(purchasesResult) ? purchasesResult : purchasesResult.data || [];
+        
+        // Combine entries
         allEntries = [
             ...salesData.map(sale => ({
                 ...sale,
@@ -2504,15 +2611,57 @@ async function searchAndFilterEntries() {
             }))
         ];
         
-        // Apply filters
-        const searchTerm = document.getElementById('searchEntries').value.toLowerCase();
-        const filterType = document.getElementById('filterType').value;
-        const filterCategory = document.getElementById('filterCategory').value;
+        filteredEntries = allEntries;
+        currentPage = 1;
+        displayEntries();
+        updatePagination();
         
+        console.log(`📊 Server-side search completed: ${filteredEntries.length} entries found`);
+        
+    } catch (error) {
+        console.error('Error in server-side search:', error);
+        // Fallback to client-side search
+        await searchEntriesClientSide(searchTerm, filterType, filterCategory);
+    }
+}
+
+// Original client-side search (for smaller datasets)
+async function searchEntriesClientSide(searchTerm, filterType, filterCategory) {
+    try {
+        // Get all data (original behavior)
+        const salesResponse = await fetch('/api/sales');
+        const salesData = await salesResponse.json();
+        
+        const purchasesResponse = await fetch('/api/purchases');
+        const purchaseData = await purchasesResponse.json();
+        
+        // Handle both array responses and paginated responses
+        const actualSalesData = Array.isArray(salesData) ? salesData : salesData.data || [];
+        const actualPurchaseData = Array.isArray(purchaseData) ? purchaseData : purchaseData.data || [];
+        
+        // Combine all entries
+        allEntries = [
+            ...actualSalesData.map(sale => ({
+                ...sale,
+                type: 'sale',
+                contact: sale.customer,
+                date: sale.sale_date,
+                created_at: sale.created_at
+            })),
+            ...actualPurchaseData.map(purchase => ({
+                ...purchase,
+                type: 'purchase',
+                contact: purchase.supplier,
+                date: purchase.purchase_date,
+                created_at: purchase.created_at
+            }))
+        ];
+        
+        // Apply client-side filters (original logic)
         filteredEntries = allEntries.filter(entry => {
             // Search filter
-            if (searchTerm && !entry.contact?.toLowerCase().includes(searchTerm) && 
-                !entry.description?.toLowerCase().includes(searchTerm)) {
+            if (searchTerm && !entry.contact?.toLowerCase().includes(searchTerm.toLowerCase()) && 
+                !entry.description?.toLowerCase().includes(searchTerm.toLowerCase())) {
                 return false;
             }
             
@@ -2548,9 +2697,11 @@ async function searchAndFilterEntries() {
         displayEntries();
         updatePagination();
         
+        console.log(`📊 Client-side search completed: ${filteredEntries.length} entries found`);
+        
     } catch (error) {
-        console.error('Error searching entries:', error);
-        showNotification('Error searching entries', 'error');
+        console.error('Error in client-side search:', error);
+        throw error;
     }
 }
 

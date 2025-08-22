@@ -110,6 +110,116 @@ class FirestoreService {
         }
     }
 
+    // Generic get documents with pagination
+    async getAllPaginated(collection, page = 1, limit = 50) {
+        try {
+            if (!this.db) throw new Error('Firestore not initialized');
+            
+            const offset = (page - 1) * limit;
+            let query = this.db.collection(collection).orderBy('created_at', 'desc');
+            
+            // Get total count for metadata
+            const totalSnapshot = await this.db.collection(collection).get();
+            const total = totalSnapshot.size;
+            
+            // Apply pagination
+            if (offset > 0) {
+                const offsetSnapshot = await query.limit(offset).get();
+                if (!offsetSnapshot.empty) {
+                    const lastVisible = offsetSnapshot.docs[offsetSnapshot.docs.length - 1];
+                    query = query.startAfter(lastVisible);
+                }
+            }
+            
+            const snapshot = await query.limit(limit).get();
+            const documents = [];
+            
+            snapshot.forEach(doc => {
+                documents.push({
+                    id: doc.id,
+                    ...this.convertTimestamps(doc.data())
+                });
+            });
+            
+            console.log(`📖 Retrieved ${documents.length} documents from ${collection} (page ${page}/${Math.ceil(total/limit)})`);
+            
+            return {
+                data: documents,
+                pagination: {
+                    page: parseInt(page),
+                    limit: parseInt(limit),
+                    total: total,
+                    totalPages: Math.ceil(total / limit),
+                    hasNext: (page * limit) < total,
+                    hasPrev: page > 1
+                }
+            };
+        } catch (error) {
+            console.error(`❌ Error getting paginated ${collection}:`, error.message);
+            throw error;
+        }
+    }
+
+    // Generic search with optional filters
+    async search(collection, searchTerm = '', filters = {}, page = 1, limit = 50) {
+        try {
+            if (!this.db) throw new Error('Firestore not initialized');
+            
+            let query = this.db.collection(collection).orderBy('created_at', 'desc');
+            
+            // Apply filters
+            Object.keys(filters).forEach(field => {
+                if (filters[field] && filters[field] !== '') {
+                    query = query.where(field, '==', filters[field]);
+                }
+            });
+            
+            // For text search, we'll get all matching records and filter client-side
+            // (Firestore doesn't have full-text search without additional setup)
+            const snapshot = await query.get();
+            let documents = [];
+            
+            snapshot.forEach(doc => {
+                documents.push({
+                    id: doc.id,
+                    ...this.convertTimestamps(doc.data())
+                });
+            });
+            
+            // Client-side text search if searchTerm provided
+            if (searchTerm && searchTerm.trim() !== '') {
+                const term = searchTerm.toLowerCase();
+                documents = documents.filter(doc => {
+                    return Object.values(doc).some(value => 
+                        value && value.toString().toLowerCase().includes(term)
+                    );
+                });
+            }
+            
+            // Apply pagination to filtered results
+            const total = documents.length;
+            const offset = (page - 1) * limit;
+            const paginatedDocs = documents.slice(offset, offset + limit);
+            
+            console.log(`🔍 Search found ${total} documents in ${collection}, returning ${paginatedDocs.length} (page ${page})`);
+            
+            return {
+                data: paginatedDocs,
+                pagination: {
+                    page: parseInt(page),
+                    limit: parseInt(limit),
+                    total: total,
+                    totalPages: Math.ceil(total / limit),
+                    hasNext: (page * limit) < total,
+                    hasPrev: page > 1
+                }
+            };
+        } catch (error) {
+            console.error(`❌ Error searching ${collection}:`, error.message);
+            throw error;
+        }
+    }
+
     // Generic add document to collection
     async add(collection, data) {
         try {
@@ -195,6 +305,14 @@ class FirestoreService {
         return this.getAll(this.collections.sales);
     }
 
+    async getSalesPaginated(page = 1, limit = 50) {
+        return this.getAllPaginated(this.collections.sales, page, limit);
+    }
+
+    async searchSales(searchTerm = '', filters = {}, page = 1, limit = 50) {
+        return this.search(this.collections.sales, searchTerm, filters, page, limit);
+    }
+
     async addSale(saleData) {
         return this.add(this.collections.sales, saleData);
     }
@@ -209,6 +327,14 @@ class FirestoreService {
 
     async getPurchases() {
         return this.getAll(this.collections.purchases);
+    }
+
+    async getPurchasesPaginated(page = 1, limit = 50) {
+        return this.getAllPaginated(this.collections.purchases, page, limit);
+    }
+
+    async searchPurchases(searchTerm = '', filters = {}, page = 1, limit = 50) {
+        return this.search(this.collections.purchases, searchTerm, filters, page, limit);
     }
 
     async addPurchase(purchaseData) {
