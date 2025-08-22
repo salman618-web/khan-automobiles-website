@@ -31,6 +31,9 @@
             <button class="nav-btn" onclick="showSection('sales')">
                 <i class="fas fa-money-bill-wave"></i> Add Sale
             </button>
+            <button class="nav-btn" onclick="showSection('bulkSales')">
+                <i class="fas fa-table"></i> Bulk Sales Entry
+            </button>
             <button class="nav-btn" onclick="showSection('purchase')">
                 <i class="fas fa-shopping-cart"></i> Add Purchase
             </button>
@@ -167,9 +170,56 @@
                     <i class="fas fa-plus"></i> Add Sale
                 </button>
             </form>
+                </div>
+
+        <!-- Bulk Sales Entry Section -->
+        <div id="bulkSales" class="admin-section">
+            <h2><i class="fas fa-table"></i> Bulk Sales Entry</h2>
+            <p style="color: #666; margin-bottom: 2rem;">Add multiple sales entries at once for faster data entry of historical sales.</p>
+            
+            <!-- Bulk Entry Controls -->
+            <div class="bulk-controls" style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; align-items: center;">
+                <button type="button" onclick="addBulkSaleRow()" style="background: #28a745; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 5px; cursor: pointer;">
+                    <i class="fas fa-plus"></i> Add Row
+                </button>
+                <button type="button" onclick="copyDateToAll()" style="background: #007bff; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 5px; cursor: pointer;">
+                    <i class="fas fa-copy"></i> Copy First Date to All
+                </button>
+                <button type="button" onclick="clearBulkSales()" style="background: #6c757d; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 5px; cursor: pointer;">
+                    <i class="fas fa-eraser"></i> Clear All
+                </button>
+                <button type="button" onclick="submitBulkSales()" style="background: #dc3545; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 5px; cursor: pointer;">
+                    <i class="fas fa-save"></i> Submit All Sales
+                </button>
+            </div>
+
+            <!-- Bulk Sales Table -->
+            <div style="overflow-x: auto;">
+                <table id="bulkSalesTable" style="width: 100%; border-collapse: collapse; margin-bottom: 2rem;">
+                    <thead>
+                        <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                            <th style="padding: 1rem; text-align: left; border: 1px solid #dee2e6;">Date</th>
+                            <th style="padding: 1rem; text-align: left; border: 1px solid #dee2e6;">Customer</th>
+                            <th style="padding: 1rem; text-align: left; border: 1px solid #dee2e6;">Category</th>
+                            <th style="padding: 1rem; text-align: left; border: 1px solid #dee2e6;">Description</th>
+                            <th style="padding: 1rem; text-align: left; border: 1px solid #dee2e6;">Amount (₹)</th>
+                            <th style="padding: 1rem; text-align: left; border: 1px solid #dee2e6;">Payment Method</th>
+                            <th style="padding: 1rem; text-align: left; border: 1px solid #dee2e6;">Notes</th>
+                            <th style="padding: 1rem; text-align: center; border: 1px solid #dee2e6;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bulkSalesTableBody">
+                        <!-- Initial row will be added by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="bulkSalesTotal" style="text-align: right; font-size: 1.2rem; font-weight: bold; margin-bottom: 1rem;">
+                Total Amount: ₹<span id="bulkSalesTotalAmount">0</span>
+            </div>
         </div>
 
-                <!-- Purchase Section -->
+        <!-- Purchase Section -->
         <div id="purchase" class="admin-section">
             <h1>Add New Purchase</h1>
             <p style="color: #ef4444; font-style: italic; margin-bottom: 1.5rem; font-size: 14px; font-weight: 500;">
@@ -753,6 +803,43 @@
                 pointer-events: none !important;
                 text-decoration: none !important;
                 color: inherit !important;
+            }
+
+            /* Bulk Sales Table Mobile Responsive Styles */
+            #bulkSalesTable {
+                font-size: 0.85rem !important;
+            }
+            
+            #bulkSalesTable th,
+            #bulkSalesTable td {
+                padding: 0.3rem !important;
+                min-width: 100px;
+            }
+            
+            #bulkSalesTable input[type="date"],
+            #bulkSalesTable input[type="text"],
+            #bulkSalesTable input[type="number"],
+            #bulkSalesTable select,
+            #bulkSalesTable textarea {
+                font-size: 0.8rem !important;
+                padding: 0.3rem !important;
+                min-width: 90px;
+            }
+            
+            #bulkSalesTable textarea {
+                height: 2rem !important;
+                resize: none !important;
+            }
+            
+            /* Bulk controls mobile layout */
+            #bulkSales .bulk-controls {
+                flex-direction: column !important;
+                gap: 0.5rem !important;
+            }
+            
+            #bulkSales .bulk-controls button {
+                width: 100% !important;
+                font-size: 0.9rem !important;
             }
             
             /* Ensure Today's cards don't have hover effects */

@@ -2059,6 +2059,254 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(addButtonClickEffects, 1000); // Add button effects after DOM is ready
 });
 
+// ========================================
+// BULK SALES ENTRY FUNCTIONALITY
+// ========================================
+
+let bulkSalesRowCounter = 0;
+
+// Initialize bulk sales section
+function initializeBulkSales() {
+    bulkSalesRowCounter = 0;
+    addBulkSaleRow(); // Add initial row
+}
+
+// Add a new row to bulk sales table
+function addBulkSaleRow() {
+    bulkSalesRowCounter++;
+    const tbody = document.getElementById('bulkSalesTableBody');
+    if (!tbody) return;
+
+    const row = document.createElement('tr');
+    row.id = `bulkSaleRow_${bulkSalesRowCounter}`;
+    row.innerHTML = `
+        <td style="padding: 0.5rem; border: 1px solid #dee2e6;">
+            <input type="date" id="bulkDate_${bulkSalesRowCounter}" 
+                   style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 3px;" 
+                   value="${new Date().toISOString().split('T')[0]}">
+        </td>
+        <td style="padding: 0.5rem; border: 1px solid #dee2e6;">
+            <input type="text" id="bulkCustomer_${bulkSalesRowCounter}" 
+                   placeholder="Customer Name" 
+                   style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 3px;">
+        </td>
+        <td style="padding: 0.5rem; border: 1px solid #dee2e6;">
+            <select id="bulkCategory_${bulkSalesRowCounter}" 
+                    style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 3px;">
+                <option value="">Select Category</option>
+                <option value="bike-parts">Bike Parts</option>
+                <option value="car-parts">Car Parts</option>
+                <option value="bike-service">Bike Service</option>
+                <option value="car-service">Car Service</option>
+            </select>
+        </td>
+        <td style="padding: 0.5rem; border: 1px solid #dee2e6;">
+            <input type="text" id="bulkDescription_${bulkSalesRowCounter}" 
+                   placeholder="Item/Service Description" 
+                   style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 3px;">
+        </td>
+        <td style="padding: 0.5rem; border: 1px solid #dee2e6;">
+            <input type="number" id="bulkAmount_${bulkSalesRowCounter}" 
+                   placeholder="Amount" min="0" step="0.01" 
+                   style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 3px;"
+                   onchange="updateBulkSalesTotal()">
+        </td>
+        <td style="padding: 0.5rem; border: 1px solid #dee2e6;">
+            <input type="text" id="bulkPayment_${bulkSalesRowCounter}" 
+                   placeholder="Payment Method" 
+                   style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 3px;">
+        </td>
+        <td style="padding: 0.5rem; border: 1px solid #dee2e6;">
+            <textarea id="bulkNotes_${bulkSalesRowCounter}" 
+                   placeholder="Notes (optional)" 
+                   style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 3px; resize: none; height: 2rem;"></textarea>
+        </td>
+        <td style="padding: 0.5rem; border: 1px solid #dee2e6; text-align: center;">
+            <button type="button" onclick="removeBulkSaleRow(${bulkSalesRowCounter})" 
+                    style="background: #dc3545; color: white; border: none; padding: 0.3rem 0.6rem; border-radius: 3px; cursor: pointer;">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    `;
+    
+    tbody.appendChild(row);
+    updateBulkSalesTotal();
+}
+
+// Remove a row from bulk sales table
+function removeBulkSaleRow(rowId) {
+    const row = document.getElementById(`bulkSaleRow_${rowId}`);
+    if (row) {
+        row.remove();
+        updateBulkSalesTotal();
+    }
+}
+
+// Update the total amount for all bulk sales
+function updateBulkSalesTotal() {
+    const tbody = document.getElementById('bulkSalesTableBody');
+    if (!tbody) return;
+    
+    let grandTotal = 0;
+    const rows = tbody.querySelectorAll('tr');
+    
+    rows.forEach(row => {
+        const amountInput = row.querySelector('input[id^="bulkAmount_"]');
+        if (amountInput) {
+            grandTotal += parseFloat(amountInput.value) || 0;
+        }
+    });
+    
+    const totalElement = document.getElementById('bulkSalesTotalAmount');
+    if (totalElement) {
+        totalElement.textContent = grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+    }
+}
+
+// Copy first row's date to all rows
+function copyDateToAll() {
+    const firstDateInput = document.querySelector('#bulkSalesTableBody input[id^="bulkDate_"]');
+    if (!firstDateInput || !firstDateInput.value) {
+        showNotification('Please enter a date in the first row first.', 'warning');
+        return;
+    }
+    
+    const allDateInputs = document.querySelectorAll('#bulkSalesTableBody input[id^="bulkDate_"]');
+    allDateInputs.forEach(input => {
+        input.value = firstDateInput.value;
+    });
+    
+    showNotification('Date copied to all rows!', 'success');
+}
+
+// Clear all bulk sales entries
+function clearBulkSales() {
+    if (confirm('Are you sure you want to clear all entries? This cannot be undone.')) {
+        const tbody = document.getElementById('bulkSalesTableBody');
+        if (tbody) {
+            tbody.innerHTML = '';
+            bulkSalesRowCounter = 0;
+            addBulkSaleRow(); // Add one empty row
+            updateBulkSalesTotal();
+        }
+        showNotification('All entries cleared!', 'info');
+    }
+}
+
+// Submit all bulk sales
+async function submitBulkSales() {
+    const tbody = document.getElementById('bulkSalesTableBody');
+    if (!tbody) return;
+    
+    const rows = tbody.querySelectorAll('tr');
+    const salesData = [];
+    let hasErrors = false;
+    
+    // Validate and collect data from each row
+    rows.forEach((row, index) => {
+        const rowNumber = index + 1;
+        const dateInput = row.querySelector('input[id^="bulkDate_"]');
+        const customerInput = row.querySelector('input[id^="bulkCustomer_"]');
+        const categoryInput = row.querySelector('select[id^="bulkCategory_"]');
+        const descriptionInput = row.querySelector('input[id^="bulkDescription_"]');
+        const amountInput = row.querySelector('input[id^="bulkAmount_"]');
+        const paymentInput = row.querySelector('input[id^="bulkPayment_"]');
+        const notesInput = row.querySelector('textarea[id^="bulkNotes_"]');
+        
+        // Basic validation
+        if (!dateInput.value || !customerInput.value || !categoryInput.value || 
+            !descriptionInput.value || !amountInput.value || !paymentInput.value) {
+            showNotification(`Row ${rowNumber}: Please fill all required fields (Date, Customer, Category, Description, Amount, Payment Method).`, 'error');
+            hasErrors = true;
+            return;
+        }
+        
+        const amount = parseFloat(amountInput.value);
+        
+        if (amount <= 0) {
+            showNotification(`Row ${rowNumber}: Amount must be greater than 0.`, 'error');
+            hasErrors = true;
+            return;
+        }
+        
+        salesData.push({
+            sale_date: dateInput.value,
+            customer_name: customerInput.value.trim(),
+            category: categoryInput.value,
+            description: descriptionInput.value.trim(),
+            total: amount,
+            payment_method: paymentInput.value.trim(),
+            notes: notesInput.value.trim()
+        });
+    });
+    
+    if (hasErrors || salesData.length === 0) {
+        return;
+    }
+    
+    // Show confirmation
+    const confirmMessage = `You are about to submit ${salesData.length} sales entries with a total value of ₹${salesData.reduce((sum, sale) => sum + sale.total, 0).toLocaleString('en-IN')}. Continue?`;
+    
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+    
+    // Submit all sales one by one
+    try {
+        showNotification('Submitting bulk sales... Please wait.', 'info');
+        let successCount = 0;
+        let errorCount = 0;
+        
+        for (let i = 0; i < salesData.length; i++) {
+            const sale = salesData[i];
+            try {
+                const response = await fetch('/api/sales', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(sale)
+                });
+                
+                if (response.ok) {
+                    successCount++;
+                } else {
+                    errorCount++;
+                    console.error(`Failed to submit sale ${i + 1}:`, await response.text());
+                }
+            } catch (error) {
+                errorCount++;
+                console.error(`Error submitting sale ${i + 1}:`, error);
+            }
+        }
+        
+        // Show results
+        if (errorCount === 0) {
+            showNotification(`✅ Successfully submitted all ${successCount} sales!`, 'success');
+            clearBulkSales(); // Clear the form
+            // Update dashboard if visible
+            if (document.getElementById('yearwiseFilter')) {
+                populateYearwiseFilter();
+                updateYearwiseData();
+            }
+            loadDashboard(); // Refresh dashboard data
+        } else {
+            showNotification(`⚠️ Submitted ${successCount} sales successfully, ${errorCount} failed. Check console for details.`, 'warning');
+        }
+        
+    } catch (error) {
+        console.error('Bulk sales submission error:', error);
+        showNotification('❌ Error during bulk submission. Please try again.', 'error');
+    }
+}
+
+// Initialize bulk sales when DOM is ready
+setTimeout(() => {
+    if (document.getElementById('bulkSalesTableBody')) {
+        initializeBulkSales();
+    }
+}, 1500);
+
 // Manage Entries functionality
 let allEntries = [];
 let filteredEntries = [];
