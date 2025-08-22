@@ -4356,6 +4356,15 @@ async function loadInsights() {
 
         console.log('🔍 Insights Debug: Bucket data after processing:', insightsData.bucketByYear);
         
+        // Verify that we have processed some data
+        const currentYearData = insightsData.bucketByYear[yThis]?.values;
+        const totalThisYear = currentYearData ? currentYearData.reduce((a, b) => a + b, 0) : 0;
+        console.log('🔍 Insights Debug: Total sales this year:', totalThisYear);
+        
+        if (totalThisYear === 0) {
+            console.warn('⚠️  No sales data processed for current year, charts may be empty');
+        }
+        
         // Load all sub-sections with proper error handling
         const loadPromises = [
             loadMainChart(),
@@ -4371,12 +4380,29 @@ async function loadInsights() {
         const results = await Promise.allSettled(loadPromises);
         console.log('🔍 Insights Debug: Load results:', results.map(r => r.status));
         
+        // Log any failures with detailed information
+        results.forEach((result, index) => {
+            const chartNames = ['MainChart', 'SeasonalHeatmap', 'GrowthIndicators', 'GoalGauge', 'HealthScore', 'CashFlowForecast', 'RevenueForecast', 'InteractiveFilters'];
+            if (result.status === 'rejected') {
+                console.error(`❌ Failed to load ${chartNames[index]}:`, result.reason);
+            } else {
+                console.log(`✅ Successfully loaded ${chartNames[index]}`);
+            }
+        });
+        
         // Test if interactive elements are working after a short delay
         setTimeout(() => {
             testInteractiveElements();
         }, 1000);
     } catch (e) {
-        console.error('Insights load error', e);
+        console.error('❌ Critical error in insights loading:', e);
+        
+        // Show error message to user in forecast containers
+        const containers = ['cashFlowForecast', 'revenueForecast'];
+        containers.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = `<div style="text-align:center;padding:2rem;color:#dc2626;"><p>❌ Error loading chart</p><p>${e.message}</p></div>`;
+        });
     }
 }
 
@@ -4999,12 +5025,23 @@ async function loadCashFlowForecast() {
     const chart = echarts.init(container);
     container._chartInstance = chart;
     
-            try {
-            const yThis = new Date().getFullYear();
-            const salesThisYear = insightsData.bucketByYear[yThis]?.values || Array(12).fill(0);
-            
-            // Responsive configuration
-            const isSmall = window.innerWidth < 768;
+    try {
+        const yThis = new Date().getFullYear();
+        console.log('🔍 Cash Flow Debug: Full insights data structure:', insightsData);
+        console.log('🔍 Cash Flow Debug: bucketByYear structure:', insightsData.bucketByYear);
+        console.log('🔍 Cash Flow Debug: Current year bucket:', insightsData.bucketByYear?.[yThis]);
+        
+        // Ensure we have data structure
+        if (!insightsData || !insightsData.bucketByYear || !insightsData.bucketByYear[yThis]) {
+            console.error('❌ No bucket data available for current year');
+            container.innerHTML = '<div style="text-align:center;padding:2rem;color:#666;"><p>🔄 No data available for cash flow forecast</p><p>Please add some sales and purchase records first.</p></div>';
+            return;
+        }
+        
+        const salesThisYear = insightsData.bucketByYear[yThis].values || Array(12).fill(0);
+        
+        // Responsive configuration
+        const isSmall = window.innerWidth < 768;
         
         // Calculate purchases by month for this year
         const purchasesByMonth = Array(12).fill(0);
@@ -5033,9 +5070,27 @@ async function loadCashFlowForecast() {
         
         // Calculate average monthly cash flow from available data
         const monthsWithData = netCashFlow.filter(cf => Math.abs(cf) > 0);
-        const avgCashFlow = monthsWithData.length > 0 ? 
+        let avgCashFlow = monthsWithData.length > 0 ? 
             monthsWithData.reduce((a,b) => a+b, 0) / monthsWithData.length : 
             10000; // Default positive cash flow
+            
+        console.log('🔍 Cash Flow Debug: Months with data:', monthsWithData.length);
+        console.log('🔍 Cash Flow Debug: Average cash flow calculated:', avgCashFlow);
+        
+        // If we have very little data, use a more intelligent fallback
+        if (monthsWithData.length === 0) {
+            // Check if we have ANY sales data at all
+            const totalSales = salesThisYear.reduce((a,b) => a+b, 0);
+            console.log('🔍 Cash Flow Debug: Total sales for year:', totalSales);
+            
+            if (totalSales > 0) {
+                // Use average monthly sales as baseline
+                avgCashFlow = totalSales / 12;
+                console.log('🔍 Cash Flow Debug: Using sales-based average:', avgCashFlow);
+            } else {
+                console.log('🔍 Cash Flow Debug: No sales data, using default forecast');
+            }
+        }
             
         // Calculate trend from last 6 months vs previous 6 months
         const recent6 = netCashFlow.slice(-6);
@@ -5192,6 +5247,17 @@ async function loadRevenueForecast() {
     
     const yThis = new Date().getFullYear(); 
     const yPrev = yThis - 1;
+    
+    console.log('🔍 Revenue Forecast Debug: Full insights data:', insightsData);
+    console.log('🔍 Revenue Forecast Debug: bucketByYear structure:', insightsData.bucketByYear);
+    
+    // Ensure we have data structure
+    if (!insightsData || !insightsData.bucketByYear || !insightsData.bucketByYear[yThis]) {
+        console.error('❌ No bucket data available for revenue forecast');
+        container.innerHTML = '<div style="text-align:center;padding:2rem;color:#666;"><p>🔄 No data available for revenue forecast</p><p>Please add some sales records first.</p></div>';
+        return;
+    }
+    
     const thisYear = insightsData.bucketByYear[yThis]?.values || [];
     const lastYear = insightsData.bucketByYear[yPrev]?.values || [];
     const currentMonth = new Date().getMonth();
