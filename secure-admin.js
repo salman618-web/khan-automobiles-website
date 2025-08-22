@@ -418,6 +418,17 @@ function populateYearwiseFilter() {
         console.log(`✅ Added year option: ${year}`);
     });
     
+    // Set current year as default selection
+    const currentYear = new Date().getFullYear();
+    if (sortedYears.includes(currentYear)) {
+        yearSelect.value = currentYear;
+        console.log(`🎯 Set default year to current year: ${currentYear}`);
+    } else if (sortedYears.length > 0) {
+        // If current year doesn't exist in data, select the most recent year
+        yearSelect.value = sortedYears[0];
+        console.log(`🎯 Current year not found, set to most recent year: ${sortedYears[0]}`);
+    }
+    
     console.log(`🎯 Total options in dropdown: ${yearSelect.children.length}`);
 }
 
