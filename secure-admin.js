@@ -625,130 +625,135 @@ function updateBulkDeleteButtons(selectedYear, salesCount, purchasesCount) {
             const responsiveStyle = document.createElement('style');
             responsiveStyle.id = 'danger-zone-responsive-css';
             responsiveStyle.textContent = `
-                /* Mobile Portrait - Very Small Screens */
-                @media (max-width: 480px) {
-                    #bulkDeleteButtons {
-                        padding: 1rem !important;
-                        margin-top: 1rem !important;
-                        border-radius: 8px !important;
-                    }
-                    
-                    .danger-zone-header strong {
-                        font-size: 1rem !important;
-                    }
-                    
-                    .danger-zone-info {
-                        font-size: 13px !important;
-                        margin-bottom: 1rem !important;
-                        padding: 0 0.5rem;
-                    }
-                    
-                    .danger-zone-buttons {
-                        grid-template-columns: 1fr !important;
-                        gap: 0.75rem !important;
-                        max-width: 100% !important;
-                    }
-                    
-                    .danger-btn {
-                        font-size: 13px !important;
-                        padding: 0.75rem 0.5rem !important;
-                        max-width: 100% !important;
-                        min-height: 50px !important;
-                    }
-                    
-                    .danger-btn span {
-                        display: block !important;
-                        text-align: center !important;
-                    }
-                    
-                    .danger-btn i {
-                        margin-right: 0.25rem !important;
-                    }
-                }
-                
-                /* Mobile Landscape & Small Tablets */
-                @media (min-width: 481px) and (max-width: 768px) {
-                    #bulkDeleteButtons {
-                        padding: 1.25rem !important;
-                        margin-top: 1.25rem !important;
-                    }
-                    
-                    .danger-zone-buttons {
-                        grid-template-columns: repeat(2, 1fr) !important;
-                        gap: 0.75rem !important;
-                    }
-                    
-                    .danger-btn-all {
-                        grid-column: 1 / -1 !important;
-                        max-width: 280px !important;
-                        justify-self: center !important;
-                    }
-                    
-                    .danger-btn {
-                        font-size: 13px !important;
-                        padding: 0.75rem 0.75rem !important;
-                        max-width: 180px !important;
-                    }
-                }
-                
-                /* Tablets */
-                @media (min-width: 769px) and (max-width: 1024px) {
-                    #bulkDeleteButtons {
-                        padding: 1.5rem !important;
-                        max-width: 90% !important;
-                        margin-left: auto !important;
-                        margin-right: auto !important;
-                    }
-                    
-                    .danger-zone-buttons {
-                        grid-template-columns: repeat(2, 1fr) !important;
-                        gap: 1rem !important;
-                        max-width: 600px !important;
-                    }
-                    
-                    .danger-btn-all {
-                        grid-column: 1 / -1 !important;
-                        max-width: 300px !important;
-                        justify-self: center !important;
-                    }
-                    
-                    .danger-btn {
-                        max-width: 240px !important;
-                    }
-                }
-                
-                /* Desktop - Large Screens */
-                @media (min-width: 1025px) {
-                    #bulkDeleteButtons {
-                        max-width: 800px !important;
-                        margin-left: auto !important;
-                        margin-right: auto !important;
-                    }
-                    
-                    .danger-zone-buttons {
-                        grid-template-columns: repeat(3, 1fr) !important;
-                        gap: 1rem !important;
-                        max-width: 720px !important;
-                    }
-                    
-                    .danger-btn-all {
-                        grid-column: 1 / -1 !important;
-                        max-width: 280px !important;
-                        justify-self: center !important;
-                        margin-top: 0.5rem !important;
-                    }
-                }
-                
-                /* Ultra-wide Screens */
-                @media (min-width: 1400px) {
-                    #bulkDeleteButtons {
-                        max-width: 900px !important;
-                    }
-                    
-                    .danger-zone-buttons {
-                        max-width: 800px !important;
-                    }
-                }
+                                 /* Mobile Portrait - Very Small Screens */
+                 @media (max-width: 480px) {
+                     #bulkDeleteButtons {
+                         padding: 1rem !important;
+                         margin-top: 1rem !important;
+                         border-radius: 8px !important;
+                     }
+                     
+                     .danger-zone-header strong {
+                         font-size: 1rem !important;
+                     }
+                     
+                     .danger-zone-info {
+                         font-size: 13px !important;
+                         margin-bottom: 1rem !important;
+                         padding: 0 0.5rem;
+                     }
+                     
+                     .button-row {
+                         flex-direction: column !important;
+                         align-items: center !important;
+                         max-width: 100% !important;
+                     }
+                     
+                     .danger-btn {
+                         font-size: 13px !important;
+                         padding: 0.75rem 0.5rem !important;
+                         width: 100% !important;
+                         max-width: 280px !important;
+                         min-height: 50px !important;
+                         flex: none !important;
+                     }
+                     
+                     .danger-btn span {
+                         display: block !important;
+                         text-align: center !important;
+                     }
+                     
+                     .danger-btn i {
+                         margin-right: 0.25rem !important;
+                     }
+                     
+                     .danger-btn-all {
+                         max-width: 280px !important;
+                         margin-top: 0.25rem !important;
+                     }
+                 }
+                 
+                 /* Mobile Landscape & Small Tablets */
+                 @media (min-width: 481px) and (max-width: 768px) {
+                     #bulkDeleteButtons {
+                         padding: 1.25rem !important;
+                         margin-top: 1.25rem !important;
+                     }
+                     
+                     .button-row {
+                         max-width: 450px !important;
+                     }
+                     
+                     .danger-btn {
+                         font-size: 13px !important;
+                         padding: 0.75rem 0.75rem !important;
+                         min-width: 160px !important;
+                         max-width: 200px !important;
+                     }
+                     
+                     .danger-btn-all {
+                         max-width: 280px !important;
+                         margin-top: 0.25rem !important;
+                     }
+                 }
+                 
+                 /* Tablets */
+                 @media (min-width: 769px) and (max-width: 1024px) {
+                     #bulkDeleteButtons {
+                         padding: 1.5rem !important;
+                         max-width: 90% !important;
+                         margin-left: auto !important;
+                         margin-right: auto !important;
+                     }
+                     
+                     .button-row {
+                         max-width: 500px !important;
+                     }
+                     
+                     .danger-btn {
+                         min-width: 200px !important;
+                         max-width: 240px !important;
+                     }
+                     
+                     .danger-btn-all {
+                         max-width: 300px !important;
+                         margin-top: 0.5rem !important;
+                     }
+                 }
+                 
+                 /* Desktop - Large Screens */
+                 @media (min-width: 1025px) {
+                     #bulkDeleteButtons {
+                         max-width: 800px !important;
+                         margin-left: auto !important;
+                         margin-right: auto !important;
+                     }
+                     
+                     .button-row {
+                         max-width: 500px !important;
+                     }
+                     
+                     .danger-btn {
+                         min-width: 200px !important;
+                         max-width: 220px !important;
+                     }
+                     
+                     .danger-btn-all {
+                         max-width: 280px !important;
+                         margin-top: 0.5rem !important;
+                     }
+                 }
+                 
+                 /* Ultra-wide Screens */
+                 @media (min-width: 1400px) {
+                     #bulkDeleteButtons {
+                         max-width: 900px !important;
+                     }
+                     
+                     .button-row {
+                         max-width: 550px !important;
+                     }
+                 }
                 
                 /* Touch Device Improvements */
                 @media (hover: none) and (pointer: coarse) {
@@ -809,78 +814,89 @@ function updateBulkDeleteButtons(selectedYear, salesCount, purchasesCount) {
                 <span id="bulkDeleteInfo">Select a specific year to enable bulk deletion</span>
             </div>
             <div class="danger-zone-buttons" style="
-                display: grid; 
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+                display: flex;
+                flex-direction: column;
                 gap: 0.75rem; 
                 max-width: 100%; 
                 margin: 0 auto;
-                place-items: center;
+                align-items: center;
             ">
-                <button id="bulkDeleteSales" onclick="confirmBulkDeleteSales()" 
-                        class="danger-btn danger-btn-sales"
-                        style="
-                            background: #dc2626; 
-                            color: white; 
-                            border: none; 
-                            padding: 0.75rem 1rem; 
-                            border-radius: 8px; 
-                            cursor: pointer; 
-                            font-size: 14px;
-                            font-weight: 500;
-                            width: 100%;
-                            max-width: 220px;
-                            min-height: 48px;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            gap: 0.5rem;
-                            transition: all 0.2s ease;
-                            box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
-                        "
-                        onmouseover="this.style.background='#b91c1c'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(220, 38, 38, 0.3)';"
-                        onmouseout="this.style.background='#dc2626'; this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(220, 38, 38, 0.2)';">
-                    <i class="fas fa-trash-alt"></i> 
-                    <span>Delete All Sales</span>
-                </button>
-                <button id="bulkDeletePurchases" onclick="confirmBulkDeletePurchases()" 
-                        class="danger-btn danger-btn-purchases"
-                        style="
-                            background: #dc2626; 
-                            color: white; 
-                            border: none; 
-                            padding: 0.75rem 1rem; 
-                            border-radius: 8px; 
-                            cursor: pointer; 
-                            font-size: 14px;
-                            font-weight: 500;
-                            width: 100%;
-                            max-width: 220px;
-                            min-height: 48px;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            gap: 0.5rem;
-                            transition: all 0.2s ease;
-                            box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
-                        "
-                        onmouseover="this.style.background='#b91c1c'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(220, 38, 38, 0.3)';"
-                        onmouseout="this.style.background='#dc2626'; this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(220, 38, 38, 0.2)';">
-                    <i class="fas fa-trash-alt"></i> 
-                    <span>Delete All Purchases</span>
-                </button>
+                <div class="button-row" style="
+                    display: flex;
+                    gap: 0.75rem;
+                    justify-content: center;
+                    flex-wrap: wrap;
+                    width: 100%;
+                    max-width: 500px;
+                ">
+                    <button id="bulkDeleteSales" onclick="confirmBulkDeleteSales()" 
+                            class="danger-btn danger-btn-sales"
+                            style="
+                                background: #dc2626; 
+                                color: white; 
+                                border: none; 
+                                padding: 0.75rem 1rem; 
+                                border-radius: 8px; 
+                                cursor: pointer; 
+                                font-size: 14px;
+                                font-weight: 500;
+                                flex: 1;
+                                min-width: 180px;
+                                max-width: 220px;
+                                min-height: 48px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                gap: 0.5rem;
+                                transition: all 0.2s ease;
+                                box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+                            "
+                            onmouseover="this.style.background='#b91c1c'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(220, 38, 38, 0.3)';"
+                            onmouseout="this.style.background='#dc2626'; this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(220, 38, 38, 0.2)';">
+                        <i class="fas fa-trash-alt"></i> 
+                        <span>Delete All Sales</span>
+                    </button>
+                    <button id="bulkDeletePurchases" onclick="confirmBulkDeletePurchases()" 
+                            class="danger-btn danger-btn-purchases"
+                            style="
+                                background: #dc2626; 
+                                color: white; 
+                                border: none; 
+                                padding: 0.75rem 1rem; 
+                                border-radius: 8px; 
+                                cursor: pointer; 
+                                font-size: 14px;
+                                font-weight: 500;
+                                flex: 1;
+                                min-width: 180px;
+                                max-width: 220px;
+                                min-height: 48px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                gap: 0.5rem;
+                                transition: all 0.2s ease;
+                                box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+                            "
+                            onmouseover="this.style.background='#b91c1c'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(220, 38, 38, 0.3)';"
+                            onmouseout="this.style.background='#dc2626'; this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(220, 38, 38, 0.2)';">
+                        <i class="fas fa-trash-alt"></i> 
+                        <span>Delete All Purchases</span>
+                    </button>
+                </div>
                 <button id="bulkDeleteBoth" onclick="confirmBulkDeleteBoth()" 
                         class="danger-btn danger-btn-all"
                         style="
                             background: #991b1b; 
                             color: white; 
                             border: none; 
-                            padding: 0.75rem 1rem; 
+                            padding: 0.75rem 1.25rem; 
                             border-radius: 8px; 
                             cursor: pointer; 
                             font-size: 14px;
                             font-weight: 600;
-                            width: 100%;
-                            max-width: 220px;
+                            min-width: 200px;
+                            max-width: 280px;
                             min-height: 48px;
                             display: flex;
                             align-items: center;
@@ -888,7 +904,6 @@ function updateBulkDeleteButtons(selectedYear, salesCount, purchasesCount) {
                             gap: 0.5rem;
                             transition: all 0.2s ease;
                             box-shadow: 0 2px 4px rgba(153, 27, 27, 0.3);
-                            grid-column: 1 / -1;
                         "
                         onmouseover="this.style.background='#7f1d1d'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(153, 27, 27, 0.4)';"
                         onmouseout="this.style.background='#991b1b'; this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(153, 27, 27, 0.3)';">
