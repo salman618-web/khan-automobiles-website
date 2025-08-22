@@ -2132,11 +2132,11 @@ function addBulkSalesResponsiveCSS() {
                 min-width: 50px;
             }
             
-            /* Also hide header columns if they exist */
-            .bulk-customer-header,
-            .bulk-category-header,
-            .bulk-payment-header,
-            .bulk-notes-header {
+            /* Hide header columns by position to match hidden data columns */
+            #bulkSalesTable thead th:nth-child(2), /* Customer */
+            #bulkSalesTable thead th:nth-child(3), /* Category */
+            #bulkSalesTable thead th:nth-child(6), /* Payment Method */
+            #bulkSalesTable thead th:nth-child(7)  /* Notes */ {
                 display: none !important;
             }
         }
