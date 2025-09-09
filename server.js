@@ -17,6 +17,34 @@ const firestoreService = require('./firebase-config');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Simple in-memory API cache (shared per process)
+const CACHE_TTL_MS = parseInt(process.env.API_CACHE_TTL_MS || '120000', 10); // 120s default
+const apiCache = {
+	sales: null,
+	purchases: null
+};
+
+async function getSalesCached() {
+	if (!firestoreService.isAvailable()) return sales; // fallback array
+	const now = Date.now();
+	if (apiCache.sales && apiCache.sales.expiresAt > now) return apiCache.sales.data;
+	const data = await firestoreService.getSales();
+	apiCache.sales = { data, expiresAt: now + CACHE_TTL_MS };
+	return data;
+}
+
+async function getPurchasesCached() {
+	if (!firestoreService.isAvailable()) return purchases; // fallback array
+	const now = Date.now();
+	if (apiCache.purchases && apiCache.purchases.expiresAt > now) return apiCache.purchases.data;
+	const data = await firestoreService.getPurchases();
+	apiCache.purchases = { data, expiresAt: now + CACHE_TTL_MS };
+	return data;
+}
+
+function invalidateSalesCache() { apiCache.sales = null; }
+function invalidatePurchasesCache() { apiCache.purchases = null; }
+
 // Feature flags (default off to preserve behavior)
 const SECURITY_ENFORCE = process.env.SECURITY_ENFORCE === 'true';
 const ENFORCE_HTTPS = process.env.ENFORCE_HTTPS === 'true';
@@ -438,21 +466,34 @@ app.get('/api/sales', async (req, res) => {
 		const { page, limit, search, category, customer } = req.query;
 		
 		if (firestoreService.isAvailable()) {
-			// If pagination parameters provided, use paginated endpoint
-			if (page || limit || search || category || customer) {
+			// Use cached snapshot to avoid repeated Firestore full reads
+			let all = await getSalesCached();
+			// Apply optional filters server-side
+			if (search) {
+				const term = String(search).toLowerCase();
+				all = all.filter(s => Object.values(s).some(v => v && v.toString().toLowerCase().includes(term)));
+			}
+			if (category) all = all.filter(s => s.category === category);
+			if (customer) all = all.filter(s => s.customer === customer);
+			
+			if (page || limit) {
 				const pageNum = parseInt(page) || 1;
 				const limitNum = parseInt(limit) || 50;
-				const filters = {};
-				if (category) filters.category = category;
-				if (customer) filters.customer = customer;
-				
-				const result = await firestoreService.searchSales(search || '', filters, pageNum, limitNum);
-				res.json(result);
-			} else {
-				// Default behavior - return all data (backward compatibility)
-				const salesData = await firestoreService.getSales();
-				res.json(salesData);
+				const offset = (pageNum - 1) * limitNum;
+				const slice = all.slice(offset, offset + limitNum);
+				return res.json({
+					data: slice,
+					pagination: {
+						page: pageNum,
+						limit: limitNum,
+						total: all.length,
+						totalPages: Math.ceil(all.length / limitNum),
+						hasNext: (pageNum * limitNum) < all.length,
+						hasPrev: pageNum > 1
+					}
+				});
 			}
+			return res.json(all);
 		} else {
 			// Fallback to local data with optional client-side filtering
 			let filteredSales = sales;
@@ -513,6 +554,7 @@ app.post('/api/sales', async (req, res) => {
 		}
 		if (firestoreService.isAvailable()) {
 			const newSale = await firestoreService.addSale(b);
+			invalidateSalesCache();
 			res.status(201).json({ success: true, id: newSale.id, message: 'Sale added successfully' });
 		} else {
 			const newSale = { id: Date.now().toString(), ...b, created_at: new Date().toISOString() };
@@ -532,6 +574,7 @@ app.put('/api/sales/:id', async (req, res) => {
 		const b = req.body || {};
 		if (firestoreService.isAvailable()) {
 			await firestoreService.updateSale(id, b);
+			invalidateSalesCache();
 			res.json({ success: true, message: 'Sale updated successfully' });
 		} else {
 			const idx = sales.findIndex(s => s.id == id);
@@ -554,6 +597,7 @@ app.delete('/api/sales/:id', async (req, res) => {
 		const { id } = req.params;
 		if (firestoreService.isAvailable()) {
 			await firestoreService.deleteSale(id);
+			invalidateSalesCache();
 			res.json({ success: true, message: 'Sale deleted successfully' });
 		} else {
 			const idx = sales.findIndex(s => s.id == id);
@@ -584,6 +628,7 @@ app.delete('/api/sales/year/:year', async (req, res) => {
 		
 		if (firestoreService.isAvailable()) {
 			const result = await firestoreService.deleteSalesByYear(year);
+			invalidateSalesCache();
 			res.json({ success: true, ...result });
 		} else {
 			// Fallback: Delete from local array
@@ -619,21 +664,32 @@ app.get('/api/purchases', async (req, res) => {
 		const { page, limit, search, category, supplier } = req.query;
 		
 		if (firestoreService.isAvailable()) {
-			// If pagination parameters provided, use paginated endpoint
-			if (page || limit || search || category || supplier) {
+			// Use cached snapshot to avoid repeated Firestore full reads
+			let all = await getPurchasesCached();
+			if (search) {
+				const term = String(search).toLowerCase();
+				all = all.filter(p => Object.values(p).some(v => v && v.toString().toLowerCase().includes(term)));
+			}
+			if (category) all = all.filter(p => p.category === category);
+			if (supplier) all = all.filter(p => p.supplier === supplier);
+			if (page || limit) {
 				const pageNum = parseInt(page) || 1;
 				const limitNum = parseInt(limit) || 50;
-				const filters = {};
-				if (category) filters.category = category;
-				if (supplier) filters.supplier = supplier;
-				
-				const result = await firestoreService.searchPurchases(search || '', filters, pageNum, limitNum);
-				res.json(result);
-			} else {
-				// Default behavior - return all data (backward compatibility)
-				const purchasesData = await firestoreService.getPurchases();
-				res.json(purchasesData);
+				const offset = (pageNum - 1) * limitNum;
+				const slice = all.slice(offset, offset + limitNum);
+				return res.json({
+					data: slice,
+					pagination: {
+						page: pageNum,
+						limit: limitNum,
+						total: all.length,
+						totalPages: Math.ceil(all.length / limitNum),
+						hasNext: (pageNum * limitNum) < all.length,
+						hasPrev: pageNum > 1
+					}
+				});
 			}
+			return res.json(all);
 		} else {
 			// Fallback to local data with optional client-side filtering
 			let filteredPurchases = purchases;
@@ -694,6 +750,7 @@ app.post('/api/purchases', async (req, res) => {
 		}
 		if (firestoreService.isAvailable()) {
 			const newPurchase = await firestoreService.addPurchase(b);
+			invalidatePurchasesCache();
 			res.status(201).json({ success: true, id: newPurchase.id, message: 'Purchase added successfully' });
 		} else {
 			const newPurchase = { id: Date.now().toString(), ...b, created_at: new Date().toISOString() };
@@ -713,6 +770,7 @@ app.put('/api/purchases/:id', async (req, res) => {
 		const b = req.body || {};
 		if (firestoreService.isAvailable()) {
 			await firestoreService.updatePurchase(id, b);
+			invalidatePurchasesCache();
 			res.json({ success: true, message: 'Purchase updated successfully' });
 		} else {
 			const idx = purchases.findIndex(p => p.id == id);
@@ -735,6 +793,7 @@ app.delete('/api/purchases/:id', async (req, res) => {
 		const { id } = req.params;
 		if (firestoreService.isAvailable()) {
 			await firestoreService.deletePurchase(id);
+			invalidatePurchasesCache();
 			res.json({ success: true, message: 'Purchase deleted successfully' });
 		} else {
 			const idx = purchases.findIndex(p => p.id == id);
@@ -765,6 +824,7 @@ app.delete('/api/purchases/year/:year', async (req, res) => {
 		
 		if (firestoreService.isAvailable()) {
 			const result = await firestoreService.deletePurchasesByYear(year);
+			invalidatePurchasesCache();
 			res.json({ success: true, ...result });
 		} else {
 			// Fallback: Delete from local array
@@ -798,8 +858,8 @@ app.get('/api/dashboard', async (req, res) => {
 		
 		if (firestoreService.isAvailable()) {
 			try {
-				currentSales = await firestoreService.getSales();
-				currentPurchases = await firestoreService.getPurchases();
+				currentSales = await getSalesCached();
+				currentPurchases = await getPurchasesCached();
 			} catch (error) {
 				console.error('Firestore dashboard error:', error);
 				// Use local data as fallback
