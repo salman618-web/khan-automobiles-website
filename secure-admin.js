@@ -1,5 +1,6 @@
 // Clean Secure Admin JavaScript - Works with simple server
 // No JWT tokens, no complex authentication - just working functionality
+// build: touch marker for deployment pipeline
 
 // Initialize insights data globally at the top
 let insightsData = { sales: [], purchases: [], bucketByYear: {}, goalAmount: 0 };
