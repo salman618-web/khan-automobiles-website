@@ -4776,7 +4776,8 @@ async function loadMainChart() {
             data: thisYearData.slice(0, 12) // Ensure exactly 12 data points
         }];
         
-        const yoyChecked = document.getElementById('toggleYoy')?.checked;
+        const yoyEl = document.getElementById('toggleYoy');
+        const yoyChecked = (yoyEl && typeof yoyEl.checked === 'boolean') ? yoyEl.checked : true; // default ON
         const smaChecked = document.getElementById('toggleSma')?.checked;
         console.log('🔍 getSeries: YoY checked:', yoyChecked, 'SMA checked:', smaChecked);
         
