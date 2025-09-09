@@ -5537,31 +5537,94 @@ async function loadRevenueForecast() {
     console.log('🔍 Revenue Forecast Debug: Base SMA:', baseSMA);
     console.log('🔍 Revenue Forecast Debug: Dynamic growth rate:', (dynamicGrowth * 100).toFixed(2) + '%');
     
-    // Generate forecast with seasonal adjustments
-    const forecast = [];
+    // High-accuracy forecast using Holt–Winters (additive) on monthly totals
     const months = ['Next 1M', 'Next 2M', 'Next 3M', 'Next 4M', 'Next 5M', 'Next 6M'];
-    
-    for (let i = 0; i < 6; i++) {
-        // Base forecast with compound growth
-        let baseValue = baseSMA * Math.pow(1 + dynamicGrowth, i);
-        
-        // Apply seasonal adjustment if we have historical data
-        const targetMonth = (currentMonth + i + 1) % 12;
-        const seasonalData = growthAnalysis.nextMonths[i];
-        
-        if (seasonalData && seasonalData.historical > 0 && baseSMA > 0) {
-            const seasonalMultiplier = seasonalData.historical / baseSMA;
-            // Blend seasonal adjustment (30%) with trend forecast (70%)
-            baseValue = (baseValue * 0.7) + (seasonalData.historical * 0.3);
+
+    function aggregateMonthlySales(sales) {
+        const bucket = {};
+        for (const s of sales) {
+            const d = new Date(s.sale_date || s.date);
+            if (Number.isNaN(d.getTime())) continue;
+            const ym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+            const val = parseFloat(s.total || s.total_amount || 0) || 0;
+            bucket[ym] = (bucket[ym] || 0) + val;
         }
-        
-        // Ensure minimum value and add some randomness for realism
-        const finalValue = Math.max(baseValue, 1000);
-        forecast.push(finalValue);
+        const keys = Object.keys(bucket).sort();
+        const values = keys.map(k => Number(bucket[k]) || 0);
+        return { keys, values };
     }
-    
-    console.log('🔍 Revenue Forecast Debug: Advanced forecast data:', forecast);
-    console.log('🔍 Revenue Forecast Debug: Growth rate used:', (dynamicGrowth * 100).toFixed(2) + '% per month');
+
+    function holtWintersAdditive(y, m, alpha, beta, gamma, h) {
+        // Initialize level, trend, season
+        const n = y.length;
+        const season = new Array(m).fill(0);
+        const seasonAvg = [];
+        for (let i = 0; i < m; i++) {
+            let sum = 0, count = 0;
+            for (let j = i; j < n; j += m) { sum += y[j]; count++; }
+            seasonAvg[i] = count > 0 ? sum / count : 0;
+        }
+        const l0 = y.slice(0, m).reduce((a,b)=>a+b,0) / m;
+        const b0 = (y.slice(m, 2*m).reduce((a,b)=>a+b,0) / m) - l0;
+        for (let i = 0; i < m; i++) season[i] = y[i] - l0;
+
+        let level = l0;
+        let trend = b0;
+        const s = season.slice();
+
+        for (let t = 0; t < n; t++) {
+            const yt = y[t];
+            const st = s[t % m];
+            const lastLevel = level;
+            level = alpha * (yt - st) + (1 - alpha) * (level + trend);
+            trend = beta * (level - lastLevel) + (1 - beta) * trend;
+            s[t % m] = gamma * (yt - level) + (1 - gamma) * st;
+        }
+
+        const fc = [];
+        for (let i = 1; i <= h; i++) {
+            fc.push(Math.max(0, level + i * trend + s[(n + i - 1) % m]));
+        }
+        return fc;
+    }
+
+    function evaluateForecastParams(y, m, h) {
+        const gridA = [0.2, 0.4, 0.6, 0.8];
+        const gridB = [0.01, 0.1, 0.2, 0.3];
+        const gridG = [0.2, 0.4, 0.6, 0.8];
+        const holdout = Math.min(h, Math.max(1, Math.floor(y.length * 0.2)));
+        const train = y.slice(0, y.length - holdout);
+        const test = y.slice(y.length - holdout);
+        let best = { err: Infinity, a: 0.4, b: 0.1, g: 0.4, fc: [] };
+        if (train.length < m + 2) return best;
+        for (const a of gridA) for (const b of gridB) for (const g of gridG) {
+            try {
+                const fc = holtWintersAdditive(train, m, a, b, g, holdout);
+                let err = 0;
+                for (let i = 0; i < holdout; i++) {
+                    const diff = (test[i] || 0) - (fc[i] || 0);
+                    err += diff * diff;
+                }
+                if (err < best.err) best = { err, a, b, g, fc };
+            } catch (_) {}
+        }
+        return best;
+    }
+
+    const { values: monthlyValues } = aggregateMonthlySales(insightsData.sales || []);
+    const seasonLen = 12; // yearly seasonality
+    let forecast = [];
+
+    if (monthlyValues.length >= seasonLen + 6) {
+        const best = evaluateForecastParams(monthlyValues, seasonLen, 6);
+        forecast = holtWintersAdditive(monthlyValues, seasonLen, best.a, best.b, best.g, 6);
+        console.log('🔍 Revenue Forecast (HW additive):', forecast, 'params', best);
+    } else {
+        // Fallback to previous heuristic if insufficient history
+        const base = baseSMA > 0 ? baseSMA : (monthlyValues.slice(-3).reduce((a,b)=>a+b,0)/Math.max(1, Math.min(3, monthlyValues.length)) || 50000);
+        forecast = Array.from({length:6}, (_,i)=> Math.max(1000, base * Math.pow(1 + dynamicGrowth, i)));
+        console.log('⚠️ Revenue Forecast fallback used:', forecast);
+    }
     
     const option = {
         tooltip: { 
