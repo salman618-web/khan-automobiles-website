@@ -4578,7 +4578,7 @@ async function loadInsights() {
         // Check if ECharts is loaded
         if (typeof echarts === 'undefined') {
             console.error('ECharts library not loaded');
-            const containers = ['insightsChart', 'seasonalHeatmap', 'growthChart', 'goalGauge', 'cashFlowForecast', 'revenueForecast'];
+            const containers = ['insightsChart', 'seasonalHeatmap', 'growthChart', 'cashFlowForecast', 'revenueForecast'];
             containers.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.innerHTML = '<p style="text-align:center;color:#666;padding:2rem;">ECharts library not loaded</p>';
@@ -4665,8 +4665,7 @@ async function loadInsights() {
             loadMainChart(),
             loadSeasonalHeatmap(),
             loadGrowthIndicators(),
-            loadGoalGauge(),
-            loadHealthScore(),
+
             loadCashFlowForecast(),
             loadRevenueForecast(),
             setupInteractiveFilters()
@@ -5181,128 +5180,6 @@ async function loadGrowthIndicators() {
     };
     chart.setOption(option);
     window.addEventListener('resize', () => chart.resize());
-}
-
-async function loadGoalGauge() {
-    const container = document.getElementById('goalGauge');
-    if (!container) return;
-    
-    document.getElementById('setGoal')?.addEventListener('click', () => {
-        const goal = parseFloat(document.getElementById('monthlyGoal')?.value || 0);
-        if (goal > 0) { insightsData.goalAmount = goal; updateGoalGauge(); }
-    });
-    
-    function updateGoalGauge() {
-        // Dispose existing chart if any
-        if (container._chartInstance) {
-            container._chartInstance.dispose();
-        }
-        
-        const chart = echarts.init(container);
-        container._chartInstance = chart;
-        const thisMonth = insightsData.bucketByYear[new Date().getFullYear()]?.values[new Date().getMonth()] || 0;
-        const progress = insightsData.goalAmount > 0 ? (thisMonth / insightsData.goalAmount * 100) : 0;
-        
-        // Responsive configuration based on screen size
-        const isSmall = window.innerWidth < 768;
-        const isVerySmall = window.innerWidth < 480;
-        
-        const option = {
-            series: [{
-                type: 'gauge', 
-                min: 0, 
-                max: 100, 
-                startAngle: 180, 
-                endAngle: 0,
-                radius: isVerySmall ? '65%' : isSmall ? '70%' : '75%',
-                center: ['50%', isSmall ? '70%' : '65%'],
-                axisLine: { 
-                    lineStyle: { 
-                        width: isVerySmall ? 10 : isSmall ? 12 : 15, 
-                        color: [[0.3, '#ef4444'], [0.7, '#f59e0b'], [1, '#22c55e']] 
-                    } 
-                },
-                pointer: { 
-                    itemStyle: { color: '#3b82f6' },
-                    width: isSmall ? 3 : 4,
-                    length: isSmall ? '55%' : '60%'
-                },
-                axisTick: { show: false }, 
-                axisLabel: { show: false }, 
-                splitLine: { show: false },
-                detail: { 
-                    formatter: '{value}%', 
-                    fontSize: isVerySmall ? 11 : isSmall ? 12 : 14, 
-                    offsetCenter: [0, isSmall ? '35%' : '30%'],
-                    color: '#374151',
-                    fontWeight: 'bold'
-                },
-                title: { show: false }, // Hide the default title to prevent overlap
-                data: [{ 
-                    value: Math.min(progress, 100), 
-                    name: '' // Remove the name to prevent overlap
-                }]
-            }]
-        };
-        
-        try {
-            chart.setOption(option);
-            console.log('🔍 Goal gauge updated successfully');
-        } catch (error) {
-            console.error('❌ Error updating goal gauge:', error);
-        }
-        
-        // Add responsive resize handler
-        const resizeHandler = () => {
-            if (chart && !chart.isDisposed()) {
-                chart.resize();
-                // Update responsive settings on resize
-                const newIsSmall = window.innerWidth < 768;
-                const newIsVerySmall = window.innerWidth < 480;
-                if (newIsSmall !== isSmall || newIsVerySmall !== isVerySmall) {
-                    updateGoalGauge(); // Re-render with new responsive settings
-                }
-            }
-        };
-        
-        window.addEventListener('resize', resizeHandler);
-    }
-    updateGoalGauge();
-}
-
-async function loadHealthScore() {
-    const yThis = new Date().getFullYear(); const thisYear = insightsData.bucketByYear[yThis]?.values || [];
-    const lastYear = insightsData.bucketByYear[yThis-1]?.values || [];
-    
-    // Simple health score based on: growth, consistency, profitability
-    const avgThisYear = thisYear.length > 0 ? thisYear.reduce((a,b)=>a+b,0) / thisYear.length : 0;
-    const avgLastYear = lastYear.length > 0 ? lastYear.reduce((a,b)=>a+b,0) / lastYear.length : 0;
-    const growth = avgLastYear > 0 ? (avgThisYear - avgLastYear) / avgLastYear : (avgThisYear > 0 ? 1 : 0);
-    
-    // Calculate consistency (lower variance = higher consistency)
-    const maxValue = Math.max(...thisYear, 1);
-    const minValue = Math.min(...thisYear.filter(v => v > 0), 0);
-    const consistency = maxValue > 0 ? Math.max(0, 100 - ((maxValue - minValue) / maxValue * 100)) : 50;
-    
-    const profitability = 75; // Placeholder - would need purchase data analysis
-    
-    // Normalize growth for scoring (cap at +/-100%)
-    const normalizedGrowth = Math.max(-1, Math.min(1, growth));
-    const growthScore = (normalizedGrowth + 1) * 50; // Convert to 0-100 scale
-    
-    const score = Math.max(0, Math.min(100, (growthScore * 0.4 + consistency * 0.3 + profitability * 0.3)));
-    
-    const scoreEl = document.getElementById('scoreValue');
-    const breakdownEl = document.getElementById('scoreBreakdown');
-    
-    if (scoreEl) {
-        scoreEl.textContent = Math.round(score);
-        scoreEl.style.color = score > 70 ? '#22c55e' : score > 40 ? '#f59e0b' : '#ef4444';
-    }
-    
-    if (breakdownEl) {
-        breakdownEl.innerHTML = `Growth: ${(growth*100).toFixed(1)}%<br/>Consistency: ${consistency.toFixed(1)}%<br/>Profitability: ${profitability}%`;
-    }
 }
 
 async function loadCashFlowForecast() {
