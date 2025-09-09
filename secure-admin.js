@@ -4742,6 +4742,9 @@ async function loadMainChart() {
         _yoyToggle.dataset.defaultSet = '1';
     }
 
+    // Track first render to force YoY on initial paint
+    let _firstRenderPending = true;
+
     const sma = (arr, w=3) => arr.map((_,i)=>{ const start = Math.max(0, i-w+1); const slice = arr.slice(start, i+1); return slice.reduce((a,b)=>a+b,0)/slice.length; });
 
     function getSeries() {
@@ -4776,8 +4779,9 @@ async function loadMainChart() {
             data: thisYearData.slice(0, 12) // Ensure exactly 12 data points
         }];
         
+        // Force YoY ON for the very first render; then respect the toggle or default-true fallback
         const yoyEl = document.getElementById('toggleYoy');
-        const yoyChecked = (yoyEl && typeof yoyEl.checked === 'boolean') ? yoyEl.checked : true; // default ON
+        const yoyChecked = _firstRenderPending ? true : ((yoyEl && typeof yoyEl.checked === 'boolean') ? yoyEl.checked : true);
         const smaChecked = document.getElementById('toggleSma')?.checked;
         console.log('🔍 getSeries: YoY checked:', yoyChecked, 'SMA checked:', smaChecked);
         
@@ -4913,6 +4917,15 @@ async function loadMainChart() {
         
         chart.setOption(option, true);
         console.log('🔍 Main chart option set successfully');
+        // Ensure YoY is visible by default on first render
+        const yoyToggle = document.getElementById('toggleYoy');
+        if (yoyToggle && !yoyToggle.dataset.defaultApplied) {
+            yoyToggle.checked = true;
+            yoyToggle.dataset.defaultApplied = '1';
+            // Rebuild with YoY series now that toggle is on
+            const fn = container._refreshFunction;
+            if (typeof fn === 'function') fn();
+        }
     } catch (error) {
         console.error('❌ Error setting main chart option:', error);
         console.log('🔍 Chart option:', option);
@@ -5579,7 +5592,7 @@ async function loadRevenueForecast() {
     
     // High-accuracy forecast using Holt–Winters (additive) on monthly totals
     const months = ['Next 1M', 'Next 2M', 'Next 3M', 'Next 4M', 'Next 5M', 'Next 6M'];
-
+    
     function aggregateMonthlySales(sales) {
         const bucket = {};
         for (const s of sales) {
