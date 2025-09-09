@@ -5637,7 +5637,16 @@ async function loadRevenueForecast() {
         const yPos = y.map(v => Math.max(1, Number(v)||0));
         // init level/trend/season
         let l0 = 0; for (let i=0;i<m;i++) l0 += yPos[i]; l0 /= m;
-        let b0 = 0; for (let i=0;i<m;i++) b0 += (yPos[i+m] - yPos[i]); b0 /= (m*m);
+        // Safe trend init: if not enough data for two full seasons, use average first-difference scaled per season
+        let b0 = 0;
+        if (n >= 2*m) {
+            for (let i=0;i<m;i++) b0 += ((yPos[i+m]||yPos[i]) - yPos[i]);
+            b0 /= (m*m);
+        } else {
+            let diffSum = 0; let cnt = 0;
+            for (let i=1;i<n;i++) { diffSum += (yPos[i]-yPos[i-1]); cnt++; }
+            b0 = (cnt>0 ? (diffSum/cnt) : 0) / Math.max(1, m);
+        }
         const s = new Array(m).fill(1);
         for (let i=0;i<m;i++) s[i] = yPos[i]/(l0||1);
         let level = l0; let trend = b0;
@@ -5681,7 +5690,7 @@ async function loadRevenueForecast() {
     const trainWindow = Math.max(seasonLen, Math.min(36, monthlyValuesAll.length));
     const monthlyValues = monthlyValuesAll.slice(-trainWindow);
 
-    if (monthlyValues.length >= seasonLen + 6 && monthlyValues.some(v=>v>0)) {
+    if (monthlyValues.length >= seasonLen * 2 && monthlyValues.some(v=>v>0)) {
         const best = evaluateForecastParamsMult(monthlyValues, seasonLen, 6);
         forecast = holtWintersMultiplicative(monthlyValues, seasonLen, best.a, best.b, best.g, 6);
         console.log('🔍 Revenue Forecast (HW multiplicative):', forecast, 'params', best);
@@ -5691,6 +5700,14 @@ async function loadRevenueForecast() {
         forecast = Array.from({length:6}, (_,i)=> Math.max(1000, base * Math.pow(1 + dynamicGrowth, i)));
         console.log('⚠️ Revenue Forecast fallback used:', forecast);
     }
+    
+    // Sanitize forecast to prevent blank charts due to NaN/Infinity
+    if (!Array.isArray(forecast) || forecast.some(v => !Number.isFinite(v))) {
+        console.warn('⚠️ Invalid forecast values detected, using safe fallback');
+        const base = baseSMA > 0 ? baseSMA : (monthlyValues.slice(-3).reduce((a,b)=>a+b,0)/Math.max(1, Math.min(3, monthlyValues.length)) || 50000);
+        forecast = Array.from({length:6}, (_,i)=> Math.max(1000, base * Math.pow(1 + dynamicGrowth, i)));
+    }
+    forecast = forecast.map(v => Math.max(0, Number.isFinite(v) ? v : 0));
     
     const option = {
         tooltip: { 
