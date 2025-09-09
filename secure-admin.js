@@ -5053,20 +5053,10 @@ async function loadMainChart() {
                 return;
             }
             if (!params || params.componentType !== 'series' || params.seriesType === 'line') return;
-            
             const m = params.dataIndex;
             if (typeof m !== 'number' || m < 0 || m > 11) return;
-            
-            // Determine base year from clicked series (supports YoY) or fallback to current year
-            let currentYear = new Date().getFullYear();
-            if (params.seriesName && /Sales\s+(\d{4})/.test(params.seriesName)) {
-                const match = params.seriesName.match(/Sales\s+(\d{4})/);
-                if (match) currentYear = parseInt(match[1], 10);
-            } else {
-                // If time range is "Last year", infer baseYear as previous year
-                const tr = document.getElementById('timeRangePicker');
-                if (tr && /last\s*year/i.test(tr.value || '')) currentYear = new Date().getFullYear() - 1;
-            }
+            // Always compare the current operational year vs its previous year for drill-down
+            const currentYear = new Date().getFullYear();
             const prevYear = currentYear - 1;
             const byYear = insightsData.bucketByYear || {};
             const getDaysInMonth = (y, mi) => {
@@ -5091,8 +5081,10 @@ async function loadMainChart() {
                 return Number(daysPrev[key] || 0);
             });
             const monthNamesShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            const nb = '\u00A0';
+            const titleText = `${monthNamesShort[m]}${nb}${currentYear}${nb}vs${nb}${prevYear}`; // non-breaking spaces prevent wrap
             chart.setOption({
-                title: { text: `${monthNamesShort[m]} ${currentYear} vs ${prevYear}`, left: 'center' },
+                title: { text: titleText, left: 'center', top: isSmall ? 6 : 8, textStyle: { fontSize: isSmall ? 13 : 16, fontWeight: 'bold' } },
                 grid: { left: isSmall?36:56, right: isSmall?20:40, top: isSmall?30:40, bottom: isSmall?60:60, containLabel: true },
                 xAxis: [{ type: 'category', data: xLabels, axisLabel: { fontSize: isSmall?10:12 } }],
                 yAxis: [{ type: 'value', axisLabel: { formatter: v => `₹${Number(v||0).toLocaleString('en-IN')}`, fontSize: isSmall?10:12 } }],
