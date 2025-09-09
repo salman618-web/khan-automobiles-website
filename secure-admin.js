@@ -4735,6 +4735,13 @@ async function loadMainChart() {
     const monthsShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const yThis = new Date().getFullYear(); const yPrev = yThis - 1;
 
+    // Ensure YoY is ON by default once
+    const _yoyToggle = document.getElementById('toggleYoy');
+    if (_yoyToggle && !_yoyToggle.dataset.defaultSet) {
+        _yoyToggle.checked = true;
+        _yoyToggle.dataset.defaultSet = '1';
+    }
+
     const sma = (arr, w=3) => arr.map((_,i)=>{ const start = Math.max(0, i-w+1); const slice = arr.slice(start, i+1); return slice.reduce((a,b)=>a+b,0)/slice.length; });
 
     function getSeries() {
@@ -5006,7 +5013,16 @@ async function loadMainChart() {
             const m = params.dataIndex;
             if (typeof m !== 'number' || m < 0 || m > 11) return;
             
-            const currentYear = new Date().getFullYear();
+            // Determine base year from clicked series (supports YoY) or fallback to current year
+            let currentYear = new Date().getFullYear();
+            if (params.seriesName && /Sales\s+(\d{4})/.test(params.seriesName)) {
+                const match = params.seriesName.match(/Sales\s+(\d{4})/);
+                if (match) currentYear = parseInt(match[1], 10);
+            } else {
+                // If time range is "Last year", infer baseYear as previous year
+                const tr = document.getElementById('timeRangePicker');
+                if (tr && /last\s*year/i.test(tr.value || '')) currentYear = new Date().getFullYear() - 1;
+            }
             const prevYear = currentYear - 1;
             const byYear = insightsData.bucketByYear || {};
             const getDaysInMonth = (y, mi) => {
@@ -5033,7 +5049,9 @@ async function loadMainChart() {
             const monthNamesShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
             chart.setOption({
                 title: { text: `${monthNamesShort[m]} ${currentYear} vs ${prevYear}`, left: 'center' },
-                xAxis: [{ type: 'category', data: xLabels }],
+                grid: { left: isSmall?36:56, right: isSmall?20:40, top: isSmall?30:40, bottom: isSmall?60:60, containLabel: true },
+                xAxis: [{ type: 'category', data: xLabels, axisLabel: { fontSize: isSmall?10:12 } }],
+                yAxis: [{ type: 'value', axisLabel: { formatter: v => `₹${Number(v||0).toLocaleString('en-IN')}`, fontSize: isSmall?10:12 } }],
                 legend: { data: ['Sales (₹)', `Sales ${prevYear} (₹)`] },
                 series: [
                     { name: 'Sales (₹)', type: 'bar', itemStyle: { color: '#22c55e' }, data: currSeries },
