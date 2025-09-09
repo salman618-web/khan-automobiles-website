@@ -1406,6 +1406,21 @@ const avgSaleValues = months.map(m => {
                         const lo = ex.min ? `<strong>Lowest:</strong> ₹${Number(ex.min.value).toLocaleString('en-IN')} (${ex.min.label})` : '';
                         if (hi || lo) s += `${hi}${hi && lo ? '<br/>' : ''}${lo}`;
                     }
+                    // Append last year's same-month sales (amount + count) if available
+                    try {
+                        if (key && key.includes('-')) {
+                            const [yy, mm] = key.split('-');
+                            const prevKey = `${Number(yy) - 1}-${mm}`;
+                            const prev = monthly[prevKey];
+                            if (prev) {
+                                const lyVal = Number(prev.sales || 0);
+                                const lyCnt = prev.saleCount || 0;
+                                const idx = Math.max(0, Math.min(11, parseInt(mm, 10) - 1));
+                                const monthName = monthNamesFull[idx] || '';
+                                s += `<br/><strong>${monthName} ${Number(yy) - 1} Sales:</strong> ₹${lyVal.toLocaleString('en-IN')} (${lyCnt} sales)`;
+                            }
+                        }
+                    } catch (_) {}
                     return s;
                 }
             },
@@ -4524,6 +4539,21 @@ async function loadOverallTimelineChart() {
                         const lo = ex.min ? `<strong>Lowest:</strong> ₹${Number(ex.min.value).toLocaleString('en-IN')} (${ex.min.label})` : '';
                         if (hi || lo) s += `${hi}${hi && lo ? '<br/>' : ''}${lo}`;
                     }
+                    // Append last year's same-month sales (amount + count) if available
+                    try {
+                        if (key && key.includes('-')) {
+                            const [yy, mm] = key.split('-');
+                            const prevKey = `${Number(yy) - 1}-${mm}`;
+                            const prev = monthly[prevKey];
+                            if (prev) {
+                                const lyVal = Number(prev.sales || 0);
+                                const lyCnt = prev.saleCount || 0;
+                                const idx = Math.max(0, Math.min(11, parseInt(mm, 10) - 1));
+                                const monthName = monthNamesFull[idx] || '';
+                                s += `<br/><strong>${monthName} ${Number(yy) - 1} Sales:</strong> ₹${lyVal.toLocaleString('en-IN')} (${lyCnt} sales)`;
+                            }
+                        }
+                    } catch (_) {}
                     return s;
                 }
             },
