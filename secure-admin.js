@@ -4934,7 +4934,7 @@ async function loadMainChart() {
                 series: newSeries
             };
             
-            chart.setOption(newOption, false); // false = merge mode off
+            chart.setOption(newOption, true); // notMerge=true: replace series completely to prevent stale YoY/SMA lines
             console.log('🔍 Chart refreshed successfully');
         } catch (error) {
             console.error('❌ Error refreshing chart:', error);
@@ -4995,31 +4995,52 @@ async function loadMainChart() {
 
     chart.on('click', params => {
         try {
+            // Toggle drill-down: monthly → daily (with YoY overlay), and click again to go back
+            if (container._isDaily) {
+                container._isDaily = false;
+                refresh();
+                return;
+            }
             if (!params || params.componentType !== 'series' || params.seriesType === 'line') return;
             
             const m = params.dataIndex;
             if (typeof m !== 'number' || m < 0 || m > 11) return;
             
             const currentYear = new Date().getFullYear();
-            const yearData = insightsData.bucketByYear[currentYear];
-            if (!yearData || !yearData.days || !yearData.days[m]) return;
-            
-            const daysMap = yearData.days[m];
-            const days = Object.keys(daysMap).sort();
-            if (days.length === 0) return;
-            
-            const dailyData = days.map(k => Number(daysMap[k]) || 0);
-            
-            chart.setOption({ 
-                xAxis: [{ type:'category', data: days }], 
-                series: [{ 
-                    name:'Sales (₹)', 
-                    type:'bar', 
-                    itemStyle:{color:'#22c55e'}, 
-                    data: dailyData 
-                }], 
-                legend: { data: ['Sales (₹)'] } 
+            const prevYear = currentYear - 1;
+            const byYear = insightsData.bucketByYear || {};
+            const getDaysInMonth = (y, mi) => {
+                const last = new Date(y, mi + 1, 0).getDate();
+                const out = [];
+                for (let d = 1; d <= last; d++) {
+                    const dd = String(d).padStart(2, '0');
+                    const mm = String(mi + 1).padStart(2, '0');
+                    out.push({ iso: `${y}-${mm}-${dd}`, dd });
+                }
+                return out;
+            };
+            // Build aligned daily series for current and previous year, same month
+            const daysCurr = (byYear[currentYear]?.days?.[m]) || {};
+            const daysPrev = (byYear[prevYear]?.days?.[m]) || {};
+            const dayList = getDaysInMonth(currentYear, m);
+            const xLabels = dayList.map(d => d.dd); // day-of-month labels
+            const currSeries = dayList.map(d => Number(daysCurr[d.iso] || 0));
+            const prevSeries = dayList.map(d => {
+                const mm = String(m + 1).padStart(2, '0');
+                const key = `${prevYear}-${mm}-${d.dd}`;
+                return Number(daysPrev[key] || 0);
             });
+            const monthNamesShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            chart.setOption({
+                title: { text: `${monthNamesShort[m]} ${currentYear} vs ${prevYear}`, left: 'center' },
+                xAxis: [{ type: 'category', data: xLabels }],
+                legend: { data: ['Sales (₹)', `Sales ${prevYear} (₹)`] },
+                series: [
+                    { name: 'Sales (₹)', type: 'bar', itemStyle: { color: '#22c55e' }, data: currSeries },
+                    { name: `Sales ${prevYear} (₹)`, type: 'bar', itemStyle: { color: '#94a3b8' }, data: prevSeries }
+                ]
+            }, true);
+            container._isDaily = true;
         } catch (error) {
             console.error('❌ Error handling chart click:', error);
         }
