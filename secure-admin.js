@@ -5086,10 +5086,10 @@ async function loadMainChart() {
             const titleText = `${monthNamesShort[m]}${nb}${currentYear}${nb}vs${nb}${prevYear}`; // non-breaking spaces prevent wrap
             chart.setOption({
                 title: { text: titleText, left: 'center', top: isSmall ? 6 : 8, textStyle: { fontSize: isSmall ? 13 : 16, fontWeight: 'bold' } },
-                grid: { left: isSmall?36:56, right: isSmall?20:40, top: isSmall?30:40, bottom: isSmall?60:60, containLabel: true },
+                grid: { left: isSmall?36:56, right: isSmall?20:40, top: isSmall?66:78, bottom: isSmall?60:60, containLabel: true },
                 xAxis: [{ type: 'category', data: xLabels, axisLabel: { fontSize: isSmall?10:12 } }],
                 yAxis: [{ type: 'value', axisLabel: { formatter: v => `₹${Number(v||0).toLocaleString('en-IN')}`, fontSize: isSmall?10:12 } }],
-                legend: { data: ['Sales (₹)', `Sales ${prevYear} (₹)`] },
+                legend: { data: ['Sales (₹)', `Sales ${prevYear} (₹)`], top: isSmall ? 28 : 36, left: 'center', itemGap: isSmall ? 8 : 16 },
                 series: [
                     { name: 'Sales (₹)', type: 'bar', itemStyle: { color: '#22c55e' }, data: currSeries },
                     { name: `Sales ${prevYear} (₹)`, type: 'bar', itemStyle: { color: '#94a3b8' }, data: prevSeries }
@@ -5613,7 +5613,7 @@ async function loadRevenueForecast() {
     console.log('🔍 Revenue Forecast Debug: Base SMA:', baseSMA);
     console.log('🔍 Revenue Forecast Debug: Dynamic growth rate:', (dynamicGrowth * 100).toFixed(2) + '%');
     
-    // High-accuracy forecast using Holt–Winters (additive) on monthly totals
+    // High-accuracy forecast using Holt–Winters (multiplicative) on monthly totals
     const months = ['Next 1M', 'Next 2M', 'Next 3M', 'Next 4M', 'Next 5M', 'Next 6M'];
     
     function aggregateMonthlySales(sales) {
@@ -5630,71 +5630,61 @@ async function loadRevenueForecast() {
         return { keys, values };
     }
 
-    function holtWintersAdditive(y, m, alpha, beta, gamma, h) {
-        // Initialize level, trend, season
+    // Multiplicative Holt–Winters
+    function holtWintersMultiplicative(y, m, alpha, beta, gamma, h) {
         const n = y.length;
-        const season = new Array(m).fill(0);
-        const seasonAvg = [];
-        for (let i = 0; i < m; i++) {
-            let sum = 0, count = 0;
-            for (let j = i; j < n; j += m) { sum += y[j]; count++; }
-            seasonAvg[i] = count > 0 ? sum / count : 0;
-        }
-        const l0 = y.slice(0, m).reduce((a,b)=>a+b,0) / m;
-        const b0 = (y.slice(m, 2*m).reduce((a,b)=>a+b,0) / m) - l0;
-        for (let i = 0; i < m; i++) season[i] = y[i] - l0;
-
-        let level = l0;
-        let trend = b0;
-        const s = season.slice();
-
-        for (let t = 0; t < n; t++) {
-            const yt = y[t];
+        // enforce positives
+        const yPos = y.map(v => Math.max(1, Number(v)||0));
+        // init level/trend/season
+        let l0 = 0; for (let i=0;i<m;i++) l0 += yPos[i]; l0 /= m;
+        let b0 = 0; for (let i=0;i<m;i++) b0 += (yPos[i+m] - yPos[i]); b0 /= (m*m);
+        const s = new Array(m).fill(1);
+        for (let i=0;i<m;i++) s[i] = yPos[i]/(l0||1);
+        let level = l0; let trend = b0;
+        for (let t=0;t<n; t++) {
+            const yt = yPos[t];
             const st = s[t % m];
             const lastLevel = level;
-            level = alpha * (yt - st) + (1 - alpha) * (level + trend);
-            trend = beta * (level - lastLevel) + (1 - beta) * trend;
-            s[t % m] = gamma * (yt - level) + (1 - gamma) * st;
+            level = alpha * (yt/(st||1)) + (1-alpha) * (level + trend);
+            trend = beta * (level - lastLevel) + (1-beta) * trend;
+            s[t % m] = gamma * (yt/(level||1)) + (1-gamma) * st;
         }
-
         const fc = [];
-        for (let i = 1; i <= h; i++) {
-            fc.push(Math.max(0, level + i * trend + s[(n + i - 1) % m]));
-        }
+        for (let i=1;i<=h;i++) fc.push(Math.max(0, (level + i*trend) * s[(n+i-1)%m]));
         return fc;
     }
 
-    function evaluateForecastParams(y, m, h) {
+    function evaluateForecastParamsMult(y, m, h) {
         const gridA = [0.2, 0.4, 0.6, 0.8];
         const gridB = [0.01, 0.1, 0.2, 0.3];
         const gridG = [0.2, 0.4, 0.6, 0.8];
         const holdout = Math.min(h, Math.max(1, Math.floor(y.length * 0.2)));
         const train = y.slice(0, y.length - holdout);
         const test = y.slice(y.length - holdout);
-        let best = { err: Infinity, a: 0.4, b: 0.1, g: 0.4, fc: [] };
+        let best = { err: Infinity, a: 0.6, b: 0.1, g: 0.4 };
         if (train.length < m + 2) return best;
         for (const a of gridA) for (const b of gridB) for (const g of gridG) {
             try {
-                const fc = holtWintersAdditive(train, m, a, b, g, holdout);
-                let err = 0;
-                for (let i = 0; i < holdout; i++) {
-                    const diff = (test[i] || 0) - (fc[i] || 0);
-                    err += diff * diff;
-                }
-                if (err < best.err) best = { err, a, b, g, fc };
-            } catch (_) {}
+                const fc = holtWintersMultiplicative(train, m, a, b, g, holdout);
+                let err = 0; for (let i=0;i<holdout;i++) { const d = (test[i]||0) - (fc[i]||0); err += d*d; }
+                if (err < best.err) best = { err, a, b, g };
+            } catch(_){}
         }
         return best;
     }
 
-    const { values: monthlyValues } = aggregateMonthlySales(insightsData.sales || []);
+    const { values: monthlyValuesAll } = aggregateMonthlySales(insightsData.sales || []);
     const seasonLen = 12; // yearly seasonality
     let forecast = [];
 
-    if (monthlyValues.length >= seasonLen + 6) {
-        const best = evaluateForecastParams(monthlyValues, seasonLen, 6);
-        forecast = holtWintersAdditive(monthlyValues, seasonLen, best.a, best.b, best.g, 6);
-        console.log('🔍 Revenue Forecast (HW additive):', forecast, 'params', best);
+    // Use last 12–36 months for training to reflect recent scale
+    const trainWindow = Math.max(seasonLen, Math.min(36, monthlyValuesAll.length));
+    const monthlyValues = monthlyValuesAll.slice(-trainWindow);
+
+    if (monthlyValues.length >= seasonLen + 6 && monthlyValues.some(v=>v>0)) {
+        const best = evaluateForecastParamsMult(monthlyValues, seasonLen, 6);
+        forecast = holtWintersMultiplicative(monthlyValues, seasonLen, best.a, best.b, best.g, 6);
+        console.log('🔍 Revenue Forecast (HW multiplicative):', forecast, 'params', best);
     } else {
         // Fallback to previous heuristic if insufficient history
         const base = baseSMA > 0 ? baseSMA : (monthlyValues.slice(-3).reduce((a,b)=>a+b,0)/Math.max(1, Math.min(3, monthlyValues.length)) || 50000);
