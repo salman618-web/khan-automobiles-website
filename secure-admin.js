@@ -1673,6 +1673,7 @@ async function handleAddSale(e) {
             // 🔄 Invalidate cache when new data is added
             CacheManager.invalidatePattern('sales');
             CacheManager.invalidatePattern('dashboard');
+            CacheManager.invalidatePattern('manage_entries');
             
             // Reset form immediately for better UX
             e.target.reset();
@@ -1810,6 +1811,7 @@ async function handleEditTransaction(e) {
             // 🔄 Invalidate cache when data changes
             CacheManager.invalidatePattern(type === 'sale' ? 'sales' : 'purchases');
             CacheManager.invalidatePattern('dashboard');
+            CacheManager.invalidatePattern('manage_entries');
             
             await loadDashboard();
         
@@ -1819,7 +1821,7 @@ async function handleEditTransaction(e) {
             // If we're in the manage section, refresh the entries list
             const currentSection = document.querySelector('.admin-section.active');
             if (currentSection && currentSection.id === 'manage') {
-                await searchAndFilterEntries();
+                await searchAndFilterEntries(true);
             } else {
                 // Navigate back to Dashboard only if not in manage section
                 setTimeout(() => {
@@ -3430,7 +3432,7 @@ async function loadManageEntries() {
     }
 }
 
-async function searchAndFilterEntries() {
+async function searchAndFilterEntries(forceRefresh = false) {
     try {
         const searchTerm = document.getElementById('searchEntries')?.value || '';
         const filterType = document.getElementById('filterType')?.value || 'all';
@@ -3444,7 +3446,10 @@ async function searchAndFilterEntries() {
             page: currentPage 
         });
         
-        const cachedResults = CacheManager.get(entriesCacheKey);
+        if (forceRefresh) {
+            try { CacheManager.delete(entriesCacheKey); } catch (_) {}
+        }
+        const cachedResults = forceRefresh ? null : CacheManager.get(entriesCacheKey);
         if (cachedResults) {
             console.log('🚀 Cache hit for manage entries - Firebase reads saved!');
             allEntries = cachedResults.allEntries || [];
@@ -3767,8 +3772,11 @@ async function deleteEntry(id, type) {
         if (result.success) {
             showNotification(`${type === 'sale' ? 'Sale' : 'Purchase'} deleted successfully!`, 'success');
             
+            // Invalidate manage entries cache and refresh list immediately
+            CacheManager.invalidatePattern('manage_entries');
+            
             // Refresh the entries list
-            await searchAndFilterEntries();
+            await searchAndFilterEntries(true);
             
             // Refresh dashboard
             await loadDashboard();
